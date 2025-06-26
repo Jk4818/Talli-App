@@ -1,42 +1,33 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow to flag potentially ambiguous items extracted from receipts for manual review.
+ * @fileOverview This file defines a Genkit tool to flag potentially ambiguous items extracted from receipts for manual review.
  *
- * - flagAmbiguousItems - A function that takes a list of items and flags those that seem unusual or incorrect.
- * - FlagAmbiguousItemsInput - The input type for the flagAmbiguousItems function.
- * - FlagAmbiguousItemsOutput - The output type for the flagAmbiguousItems function.
+ * - flagAmbiguousItemsTool - A tool that takes a list of items and flags those that seem unusual or incorrect.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const FlagAmbiguousItemsInputSchema = z.array(
-  z.object({
-    name: z.string().describe('The name of the item.'),
-    cost: z.number().describe('The cost of the item.'),
-  })
-);
-export type FlagAmbiguousItemsInput = z.infer<typeof FlagAmbiguousItemsInputSchema>;
+const ItemSchema = z.object({
+  name: z.string().describe('The name of the item.'),
+  cost: z.number().describe('The cost of the item.'),
+});
 
-const FlagAmbiguousItemsOutputSchema = z.array(
-  z.object({
-    name: z.string().describe('The name of the item.'),
-    cost: z.number().describe('The cost of the item.'),
-    isAmbiguous: z
-      .boolean()
-      .describe('Whether the item is potentially ambiguous or incorrect.'),
-  })
-);
-export type FlagAmbiguousItemsOutput = z.infer<typeof FlagAmbiguousItemsOutputSchema>;
+const FlaggedItemSchema = z.object({
+  name: z.string().describe('The name of the item.'),
+  cost: z.number().describe('The cost of the item.'),
+  isAmbiguous: z
+    .boolean()
+    .describe('Whether the item is potentially ambiguous or incorrect.'),
+});
 
-export async function flagAmbiguousItems(
-  input: FlagAmbiguousItemsInput
-): Promise<FlagAmbiguousItemsOutput> {
-  return flagAmbiguousItemsFlow(input);
-}
+const FlagAmbiguousItemsInputSchema = z.array(ItemSchema);
 
-const prompt = ai.definePrompt({
+const FlagAmbiguousItemsOutputSchema = z.array(FlaggedItemSchema);
+
+
+const flaggingPrompt = ai.definePrompt({
   name: 'flagAmbiguousItemsPrompt',
   input: {schema: FlagAmbiguousItemsInputSchema},
   output: {schema: FlagAmbiguousItemsOutputSchema},
@@ -53,14 +44,16 @@ const prompt = ai.definePrompt({
   {{/each}}`,
 });
 
-const flagAmbiguousItemsFlow = ai.defineFlow(
+export const flagAmbiguousItemsTool = ai.defineTool(
   {
-    name: 'flagAmbiguousItemsFlow',
+    name: 'flagAmbiguousItems',
+    description: 'Analyzes a list of receipt items and returns the same list with an "isAmbiguous" flag set for each. This should be used to flag items for manual review.',
     inputSchema: FlagAmbiguousItemsInputSchema,
     outputSchema: FlagAmbiguousItemsOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (items) => {
+    // This tool is backed by an LLM prompt to perform the analysis.
+    const { output } = await flaggingPrompt(items);
     return output!;
   }
 );

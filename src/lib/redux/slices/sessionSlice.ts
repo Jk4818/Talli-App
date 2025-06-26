@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge, Settlement } from '@/lib/types';
 import { MOCK_DATA } from '@/lib/mock-data';
 import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
-import { flagAmbiguousItems } from '@/ai/flows/flag-ambiguous-items';
 
 const initialState: SessionState = {
   step: 1,
@@ -27,17 +26,10 @@ export const processReceipt = createAsyncThunk(
         reader.readAsDataURL(file);
       });
 
+      // The `extractReceiptData` flow now handles item flagging via a tool.
       const extractedData = await extractReceiptData({ receiptDataUri: dataUri });
-      
-      const itemsToFlag = extractedData.items.map(item => ({ name: item.name, cost: item.cost }));
-      const flaggedItems = itemsToFlag.length > 0 ? await flagAmbiguousItems(itemsToFlag) : [];
-      
-      const itemsWithFlags = extractedData.items.map(item => {
-        const flaggedVersion = flaggedItems.find(f => f.name === item.name && f.cost === item.cost);
-        return { ...item, isAmbiguous: flaggedVersion?.isAmbiguous ?? false };
-      });
 
-      return { ...extractedData, fileName: file.name, items: itemsWithFlags };
+      return { ...extractedData, fileName: file.name };
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred during AI processing.');
     }
@@ -99,12 +91,15 @@ const sessionSlice = createSlice({
                 name: 'New Discount',
                 amount: 0,
             };
+            if (!receipt.discounts) {
+              receipt.discounts = [];
+            }
             receipt.discounts.push(newDiscount);
         }
     },
     updateDiscount: (state, action: PayloadAction<{ receiptId: string, discount: Partial<Discount> & { id: string } }>) => {
         const receipt = state.receipts.find(r => r.id === action.payload.receiptId);
-        if (receipt) {
+        if (receipt && receipt.discounts) {
             const discount = receipt.discounts.find(d => d.id === action.payload.discount.id);
             if (discount) {
                 Object.assign(discount, action.payload.discount);
@@ -113,7 +108,7 @@ const sessionSlice = createSlice({
     },
     removeDiscount: (state, action: PayloadAction<{ receiptId: string, discountId: string }>) => {
         const receipt = state.receipts.find(r => r.id === action.payload.receiptId);
-        if (receipt) {
+        if (receipt && receipt.discounts) {
             receipt.discounts = receipt.discounts.filter(d => d.id !== action.payload.discountId);
         }
     },
@@ -149,6 +144,11 @@ const sessionSlice = createSlice({
               item.percentageAssignments = {};
             }
             // For exact mode, we just add the user. Their value will be 0 by default.
+            if (item.splitMode === 'exact') {
+              if(!item.exactAssignments) {
+                item.exactAssignments = {};
+              }
+            }
         }
     },
     unassignItemFromUser: (state, action: PayloadAction<{ itemId: string; participantId: string }>) => {
@@ -158,7 +158,7 @@ const sessionSlice = createSlice({
             item.assignees = item.assignees.filter(id => id !== participantId);
             
             // Also reset percentages when a user is removed
-            if (item.splitMode === 'percentage') {
+            if (item.splitMode === 'percentage' && item.percentageAssignments) {
                 item.percentageAssignments = {};
             }
             if (item.splitMode === 'exact' && item.exactAssignments) {
@@ -203,6 +203,9 @@ const sessionSlice = createSlice({
     setExactAssignment: (state, action: PayloadAction<{ itemId: string; participantId: string; amount: number }>) => {
       const item = state.items.find(i => i.id === action.payload.itemId);
       if (item && item.splitMode === 'exact') {
+          if(!item.exactAssignments) {
+            item.exactAssignments = {};
+          }
           item.exactAssignments[action.payload.participantId] = action.payload.amount;
       }
     },
@@ -212,18 +215,14 @@ const sessionSlice = createSlice({
     setSettlements: (state, action: PayloadAction<Settlement[]>) => {
       const newSettlements = action.payload;
       const existingSettlementsById = new Map(state.settlements.map(s => [s.id, s]));
-
+      
       const mergedSettlements = newSettlements.map(newS => {
         const existingS = existingSettlementsById.get(newS.id);
-        // If a settlement with the same ID already exists, preserve its `paid` status.
-        // The `paid` status is user-managed state and should not be overwritten by a recalculation.
+        // Preserve existing `paid` status if the settlement still exists
         return existingS ? { ...newS, paid: existingS.paid } : newS;
       });
 
-      // This comparison prevents unnecessary updates if the calculated plan hasn't changed.
-      if (JSON.stringify(state.settlements) !== JSON.stringify(mergedSettlements)) {
-        state.settlements = mergedSettlements;
-      }
+      state.settlements = mergedSettlements;
     },
     toggleSettlementPaid: (state, action: PayloadAction<{ settlementId: string }>) => {
       const settlement = state.settlements.find(s => s.id === action.payload.settlementId);
@@ -257,7 +256,7 @@ const sessionSlice = createSlice({
           receiptId: receiptId,
           name: item.name,
           cost: Math.round(item.cost * 100),
-          isAmbiguous: item.isAmbiguous ?? false,
+          isAmbiguous: item.isAmbiguous,
           assignees: [],
           splitMode: 'equal',
           percentageAssignments: {},
