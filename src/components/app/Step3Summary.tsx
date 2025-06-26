@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useEffect } from 'react';
@@ -9,7 +10,7 @@ import BillSplitSummary from './BillSplitSummary';
 import SharePieChart from './SharePieChart';
 import { Button } from '../ui/button';
 import { resetSession, setSettlements, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
-import { HandCoins, Scale, RefreshCw, Calculator } from 'lucide-react';
+import { HandCoins, Scale, RefreshCw, Calculator, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Switch } from '../ui/switch';
@@ -24,9 +25,8 @@ export default function Step3Summary() {
   const { participants, items, receipts, settlements, globalCurrency } = sessionState;
 
   const summary = useMemo(() => {
-    if (participants.length > 0 && items.length > 0) {
-      // Pass only the necessary data to prevent re-calculation when irrelevant state (like settlements) changes.
-      return calculateSplits({ participants, items, receipts } as SessionState);
+    if (participants.length > 0) {
+      return calculateSplits({ participants, items, receipts, settlements, globalCurrency } as SessionState);
     }
     return { 
       participantSummaries: [], 
@@ -36,27 +36,41 @@ export default function Step3Summary() {
       totalDiscounts: 0, 
       totalServiceCharge: 0 
     };
-  }, [participants, items, receipts]);
+  }, [participants, items, receipts, settlements, globalCurrency]);
 
   useEffect(() => {
-    // This effect runs when the summary calculation changes to update the settlements in the store.
-    // The useMemo fix above prevents this from running in a loop.
-    if (summary.settlements.length > 0) {
+    if (summary.settlements.length > 0 && JSON.stringify(summary.settlements) !== JSON.stringify(settlements)) {
       dispatch(setSettlements(summary.settlements));
     }
-  }, [summary.settlements, dispatch]);
+  }, [summary.settlements, settlements, dispatch]);
 
   const handleStartNew = () => {
     dispatch(resetSession());
   };
 
-  const handleSave = () => {
-    console.log("Session Data:", sessionState);
-    console.log("Calculated Summary:", summary);
-    toast({
-        title: "Session Saved!",
-        description: "Your session data has been logged to the browser console."
-    })
+  const handleExport = () => {
+    try {
+      const sessionJson = JSON.stringify(sessionState, null, 2);
+      const blob = new Blob([sessionJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `splitzy_session_${new Date().toISOString()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({
+        title: "Session Exported!",
+        description: "Your session data has been downloaded as a JSON file."
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: "Export Failed",
+        description: "Could not export the session data."
+      });
+    }
   };
 
   const handleTogglePaid = (settlementId: string) => {
@@ -68,7 +82,7 @@ export default function Step3Summary() {
   return (
     <div className="space-y-8">
         <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleSave}>Save Session</Button>
+            <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export Session</Button>
             <Button onClick={handleStartNew}><RefreshCw className="mr-2 h-4 w-4" /> Start New Session</Button>
         </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -141,7 +155,7 @@ export default function Step3Summary() {
         </div>
         <div className="lg:col-span-1">
           <Card>
-            <CardHeader>
+            <CardHeader className='pt-6'>
               <CardTitle>Total Shares</CardTitle>
               <CardDescription>How the total bill is divided.</CardDescription>
             </CardHeader>

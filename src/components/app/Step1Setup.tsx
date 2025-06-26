@@ -9,6 +9,7 @@ import { processReceipt } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
+import ImportButton from './ImportButton';
 
 export default function Step1Setup() {
   const { receipts, status, error } = useSelector((state: RootState) => state.session);
@@ -61,7 +62,8 @@ export default function Step1Setup() {
                 <CardDescription>Upload one or more receipts.</CardDescription>
               </div>
             </div>
-            <div>
+            <div className="flex items-center gap-2">
+              <ImportButton variant="outline" />
               <input
                 type="file"
                 ref={fileInputRef}

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowRight, BarChart, Users, UploadCloud, Divide } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import Image from 'next/image';
+import ImportButton from '@/components/app/ImportButton';
 
 export default function Home() {
   const features = [
@@ -38,6 +39,7 @@ export default function Home() {
             <Button variant="ghost" asChild>
               <Link href="/demo">Demo</Link>
             </Button>
+            <ImportButton variant="ghost" />
             <Button asChild>
               <Link href="/app">
                 Split Now

@@ -53,6 +53,9 @@ const sessionSlice = createSlice({
       const demoState = { ...MOCK_DATA, status: 'succeeded', error: null };
       return { ...initialState, ...demoState, settlements: [] }; // Reset settlements for demo
     },
+    restoreSession: (state, action: PayloadAction<SessionState>) => {
+      return { ...action.payload, status: 'succeeded', error: null };
+    },
     resetSession: () => initialState,
     setStep: (state, action: PayloadAction<number>) => {
       state.step = action.payload;
@@ -214,6 +217,7 @@ const sessionSlice = createSlice({
 
 export const {
   loadDemoData,
+  restoreSession,
   resetSession,
   setStep,
   addParticipant,
