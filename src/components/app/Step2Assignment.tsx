@@ -1,46 +1,40 @@
 "use client";
 
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import useEmblaCarousel, { type EmblaCarouselType } from 'embla-carousel-react';
 import ItemAssignmentCard from './ItemAssignmentCard';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, ListTodo } from 'lucide-react';
 import { setCurrentAssignmentIndex } from '@/lib/redux/slices/sessionSlice';
 import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 export default function Step2Assignment() {
-  const { items, currentAssignmentIndex } = useSelector((state: RootState) => state.session);
+  const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
 
-  const itemsWithCost = items.filter(item => item.cost > 0);
-  const currentItem = itemsWithCost[currentAssignmentIndex];
-  const isCurrentItemAssigned = currentItem?.assignees.length > 0;
-  const isLastSlide = currentAssignmentIndex === itemsWithCost.length - 1;
+  const itemsWithCost = useMemo(() => items.filter(item => item.cost > 0), [items]);
 
-  const isDraggableRef = useRef(isCurrentItemAssigned);
-  useEffect(() => {
-    isDraggableRef.current = isCurrentItemAssigned;
-  }, [isCurrentItemAssigned]);
-
-  const [emblaRef, emblaApi] = useEmblaCarousel({ 
-    loop: false, 
-    keyboard: { active: false },
-  });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
   
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-  
-  const handlePointerDown = useCallback((event: PointerEvent) => {
-    if (!isDraggableRef.current) {
-        event.stopPropagation();
-    }
-  }, []);
 
+  const unassignedItems = useMemo(() => {
+    return itemsWithCost
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => item.assignees.length === 0);
+  }, [itemsWithCost]);
+
+  const handleJumpToItem = (index: number) => {
+    emblaApi?.scrollTo(index);
+  };
+  
   useEffect(() => {
     if (!emblaApi) return;
 
@@ -49,22 +43,16 @@ export default function Step2Assignment() {
       setCanScrollPrev(api.canScrollPrev());
       setCanScrollNext(api.canScrollNext());
     };
-    
-    const rootNode = emblaApi.rootNode();
-    rootNode.addEventListener('pointerdown', handlePointerDown, { capture: true });
 
     emblaApi.on('select', onSelect);
     emblaApi.on('reInit', onSelect);
-
     onSelect(emblaApi);
 
     return () => {
-      rootNode.removeEventListener('pointerdown', handlePointerDown, { capture: true });
       emblaApi.off('select', onSelect);
       emblaApi.off('reInit', onSelect);
     };
-  }, [emblaApi, dispatch, handlePointerDown]);
-
+  }, [emblaApi, dispatch]);
 
   useEffect(() => {
     if (emblaApi && emblaApi.selectedScrollSnap() !== currentAssignmentIndex) {
@@ -85,42 +73,77 @@ export default function Step2Assignment() {
   }
 
   return (
-    <div className="flex justify-center items-center py-8">
-      <div className="relative w-full max-w-md">
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex" style={{ marginLeft: '-1rem' }}>
-            {itemsWithCost.map((item, index) => (
-              <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
-                <ItemAssignmentCard item={item} itemNumber={index + 1} totalItems={itemsWithCost.length} />
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <Button
-            variant="outline"
-            size="icon"
-            className="absolute h-8 w-8 rounded-full -left-12 top-1/2 -translate-y-1/2"
-            onClick={scrollPrev}
-            disabled={!canScrollPrev}
-        >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Previous slide</span>
-        </Button>
+    <div className="space-y-8">
+        <div className="flex justify-center items-center">
+            <div className="relative w-full max-w-md">
+                <div className="overflow-hidden" ref={emblaRef}>
+                    <div className="flex" style={{ marginLeft: '-1rem' }}>
+                        {itemsWithCost.map((item, index) => (
+                        <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
+                            <ItemAssignmentCard item={item} itemNumber={index + 1} totalItems={itemsWithCost.length} />
+                        </div>
+                        ))}
+                    </div>
+                </div>
+                
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute h-8 w-8 rounded-full -left-12 top-1/2 -translate-y-1/2"
+                    onClick={scrollPrev}
+                    disabled={!canScrollPrev}
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="sr-only">Previous slide</span>
+                </Button>
 
-        { !isLastSlide && (
-            <Button
-                variant="outline"
-                size="icon"
-                className="absolute h-8 w-8 rounded-full -right-12 top-1/2 -translate-y-1/2"
-                onClick={scrollNext}
-                disabled={!canScrollNext || !isCurrentItemAssigned}
-            >
-                <ArrowRight className="h-4 w-4" />
-                <span className="sr-only">Next slide</span>
-            </Button>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute h-8 w-8 rounded-full -right-12 top-1/2 -translate-y-1/2"
+                    onClick={scrollNext}
+                    disabled={!canScrollNext}
+                >
+                    <ArrowRight className="h-4 w-4" />
+                    <span className="sr-only">Next slide</span>
+                </Button>
+            </div>
+        </div>
+
+        {unassignedItems.length > 0 && (
+            <Card className="max-w-xl mx-auto border-amber-500/50 bg-amber-50/20 dark:bg-amber-950/20">
+                <CardHeader className='flex-row items-center gap-4 space-y-0'>
+                    <ListTodo className="w-6 h-6 text-amber-600 dark:text-amber-500"/>
+                    <div>
+                        <CardTitle className="text-amber-700 dark:text-amber-400">Unassigned Items</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <p className='text-sm text-muted-foreground mb-4'>Click an item to jump to it and assign it to someone.</p>
+                    <div className="flex flex-wrap gap-2">
+                        {unassignedItems.map(({ item, index }) => {
+                             const receipt = receipts.find(r => r.id === item.receiptId);
+                             const currency = receipt?.currency || globalCurrency;
+                             return (
+                                <Button 
+                                    key={item.id} 
+                                    variant="outline"
+                                    className='h-auto'
+                                    onClick={() => handleJumpToItem(index)}
+                                >
+                                    <div className='flex flex-col text-left p-1'>
+                                        <span>{item.name}</span>
+                                        <span className='text-xs text-muted-foreground'>
+                                            {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
+                                        </span>
+                                    </div>
+                                </Button>
+                            )
+                        })}
+                    </div>
+                </CardContent>
+            </Card>
         )}
-      </div>
     </div>
   );
 }

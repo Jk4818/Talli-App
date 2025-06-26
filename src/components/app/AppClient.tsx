@@ -13,7 +13,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 export function AppClient({ isDemo }: { isDemo: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
-  const { step, participants, items, receipts, currentAssignmentIndex } = useSelector((state: RootState) => state.session);
+  const { step, participants, items, receipts } = useSelector((state: RootState) => state.session);
 
   useEffect(() => {
     dispatch(resetSession());
@@ -34,8 +34,6 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     }
   };
   
-  const itemsWithCost = items.filter(item => item.cost > 0);
-  const isLastSlide = currentAssignmentIndex === itemsWithCost.length - 1;
   const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
   const isStep2Complete = items.every(item => item.cost === 0 || item.assignees.length > 0);
 
@@ -75,7 +73,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             )}
-            {step === 2 && isLastSlide && (
+            {step === 2 && (
               <Button onClick={handleNext} disabled={!isStep2Complete}>
                 View Summary
                 <ArrowRight className="ml-2 h-4 w-4" />
