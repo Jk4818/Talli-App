@@ -169,7 +169,7 @@ export default function Home() {
                 <Image 
                   src="https://placehold.co/1200x800.png" 
                   alt="A phone showing the Splitzy app interface with a receipt being scanned."
-                  data-ai-hint="receipt phone app"
+                  data-ai-hint="receipt scan"
                   width={1200}
                   height={800}
                   className="rounded-xl shadow-2xl"
