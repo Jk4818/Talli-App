@@ -70,7 +70,7 @@ export default function Home() {
                       <Link href="/login">Sign In</Link>
                     </Button>
                     <Button asChild>
-                      <Link href="/login">
+                      <Link href="/signup">
                         Sign Up
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
@@ -112,7 +112,7 @@ export default function Home() {
                   ) : (
                     !loading && (
                       <Button asChild size="lg" className="w-full">
-                        <Link href="/login">
+                        <Link href="/signup">
                           Start Splitting
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
@@ -137,7 +137,7 @@ export default function Home() {
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Button size="lg" asChild>
-              <Link href={user ? "/app" : "/login"}>
+              <Link href={user ? "/app" : "/signup"}>
                 Start Splitting
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>

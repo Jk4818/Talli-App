@@ -1,16 +1,18 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, signInWithPopup, type User } from 'firebase/auth';
+import { onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, type User } from 'firebase/auth';
 import { auth } from './client';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { checkInviteStatus } from '@/ai/flows/check-beta-status';
+import { checkSignupEligibility } from '@/ai/flows/check-signup-eligibility';
+
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signUpWithEmailPassword: (email: string, password: string) => Promise<boolean>;
+  signInWithEmailPassword: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -26,38 +28,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
       if (currentUser) {
-        try {
-          // User has successfully signed in. Check their invite status on the server.
-          const { isInvited } = await checkInviteStatus({
-            user: {
-              email: currentUser.email,
-              email_verified: currentUser.emailVerified,
-            },
-          });
-
-          if (isInvited) {
-            // User is on the list, set the user state and grant access.
-            setUser(currentUser);
-          } else {
-            // User is not on the list. Show a message and sign them out immediately.
-            toast({
-              variant: 'destructive',
-              title: 'Access Denied',
-              description: 'This account is not on the invite list. Please contact support.',
-            });
-            await firebaseSignOut(auth); // This will re-trigger onAuthStateChanged with user=null
-          }
-        } catch (error) {
-          console.error("Error checking invite status:", error);
-           toast({
-            variant: 'destructive',
-            title: 'Authentication Error',
-            description: 'Could not verify access permissions. Please try again.',
-          });
-          await firebaseSignOut(auth);
+        if (currentUser.emailVerified) {
+          setUser(currentUser);
+        } else {
+          // This case handles when a user is already logged in from a previous session
+          // but hasn't verified their email. They should be prompted again.
+          setUser(null);
         }
       } else {
-        // User is signed out or was never signed in.
         setUser(null);
       }
       setLoading(false);
@@ -66,23 +44,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [toast]);
 
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
+  const signUpWithEmailPassword = async (email: string, password: string): Promise<boolean> => {
+    setLoading(true);
     try {
-      setLoading(true);
-      await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener will handle verification and state changes.
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
+      const { isEligible } = await checkSignupEligibility({ email });
+      if (!isEligible) {
+        toast({
+          variant: 'destructive',
+          title: 'Signup Not Allowed',
+          description: 'This email address is not on the invite list. Please contact support.',
+        });
+        return false;
+      }
+
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCredential.user);
+      
+      // Sign the user out immediately. They must verify their email before logging in.
+      await firebaseSignOut(auth);
+      
+      return true;
+
+    } catch (error: any) {
+      console.error('Error signing up:', error);
+      const errorCode = error.code;
+      let errorMessage = 'An unexpected error occurred during signup.';
+      if (errorCode === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already in use. Please try logging in instead.';
+      } else if (errorCode === 'auth/weak-password') {
+        errorMessage = 'The password is too weak. Please choose a stronger password.';
+      }
+
       toast({
         variant: 'destructive',
-        title: 'Sign-in Failed',
-        description: 'Could not sign in with Google. Please try again.',
+        title: 'Signup Failed',
+        description: errorMessage,
       });
+      return false;
+    } finally {
       setLoading(false);
     }
   };
+
+  const signInWithEmailPassword = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      if (!userCredential.user.emailVerified) {
+        await firebaseSignOut(auth); // Sign out user if email is not verified
+        toast({
+          variant: 'destructive',
+          title: 'Email Not Verified',
+          description: 'Please check your inbox and verify your email address before signing in.',
+        });
+      }
+      // The onAuthStateChanged listener will handle setting the user state upon successful, verified login
+    } catch (error: any) {
+      console.error('Error signing in:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Sign-in Failed',
+        description: 'Invalid email or password. Please try again.',
+      });
+    } finally {
+        setLoading(false);
+    }
+  };
+
 
   const signOut = async () => {
     try {
@@ -105,7 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     loading,
-    signInWithGoogle,
+    signUpWithEmailPassword,
+    signInWithEmailPassword,
     signOut,
   };
 

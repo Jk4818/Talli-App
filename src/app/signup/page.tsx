@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth";
 import { Button } from "@/components/ui/button";
@@ -12,15 +11,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/Logo";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters long." }),
 });
 
-export default function LoginPage() {
-  const { user, signInWithEmailPassword, loading } = useAuth();
+export default function SignupPage() {
+  const { signUpWithEmailPassword, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -30,23 +31,16 @@ export default function LoginPage() {
     },
   });
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/app');
-    }
-  }, [user, loading, router]);
-
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    await signInWithEmailPassword(values.email, values.password);
+    const success = await signUpWithEmailPassword(values.email, values.password);
+    if (success) {
+      toast({
+        title: "Account Created!",
+        description: "Please check your email to verify your account before signing in.",
+      });
+      router.push("/login");
+    }
   };
-
-  if (loading || user) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-secondary/50 p-4">
-        <p>Loading...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-secondary/50 p-4">
@@ -55,8 +49,8 @@ export default function LoginPage() {
           <div className="mx-auto mb-4">
             <Logo />
           </div>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Enter your credentials to sign in.</CardDescription>
+          <CardTitle className="text-2xl">Create an Account</CardTitle>
+          <CardDescription>Enter your email and password to sign up.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -88,16 +82,16 @@ export default function LoginPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in..." : "Sign In"}
+                {loading ? "Creating Account..." : "Sign Up"}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardContent className="mt-4 text-center text-sm">
             <p className="text-muted-foreground">
-                Don't have an account?{" "}
-                <Link href="/signup" className="font-medium text-primary hover:underline">
-                    Sign up
+                Already have an account?{" "}
+                <Link href="/login" className="font-medium text-primary hover:underline">
+                    Sign in
                 </Link>
             </p>
         </CardContent>

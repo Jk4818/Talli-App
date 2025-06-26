@@ -86,10 +86,10 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                 </Button>
               )}
               {receipt.status === 'unprocessed' && (
-                <Button onClick={handleScanReceipt} disabled={!user}>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Scan with AI
-                </Button>
+                  <Button onClick={handleScanReceipt} disabled={!user}>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Scan with AI
+                  </Button>
               )}
               {receipt.status === 'processing' && (
                 <Button disabled>
