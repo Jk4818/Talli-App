@@ -7,14 +7,14 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import ItemAssignmentCard from './ItemAssignmentCard';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertCircle, ArrowLeft, ArrowRight, ListTodo } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { setCurrentAssignmentIndex } from '@/lib/redux/slices/sessionSlice';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
-import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -152,50 +152,45 @@ export default function Step2Assignment() {
 
         {itemsRequiringAttention.length > 0 && (
             <motion.div variants={fadeInUp}>
-                <Card className="max-w-xl mx-auto border-amber-500/50 bg-amber-50/20 dark:bg-amber-950/20">
+                <Card className="max-w-2xl mx-auto">
                     <CardHeader className='flex-row items-center gap-4 space-y-0'>
-                        <ListTodo className="w-6 h-6 text-amber-600 dark:text-amber-500"/>
+                        <AlertCircle className="w-6 h-6 text-destructive"/>
                         <div>
-                            <CardTitle className="text-amber-700 dark:text-amber-400">Items Requiring Attention</CardTitle>
+                            <CardTitle>Items Requiring Attention</CardTitle>
+                            <CardDescription>These items have incomplete assignments. Click 'Go to Item' to fix them.</CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <p className='text-sm text-muted-foreground mb-4'>Click an item to jump to it and resolve the assignment issue.</p>
-                        <div className="flex flex-wrap gap-2">
-                            {itemsRequiringAttention.map(({ item, index, issue }) => {
-                                 const receipt = receipts.find(r => r.id === item.receiptId);
-                                 const currency = receipt?.currency || globalCurrency;
-                                 return (
-                                    <AccessibleTooltip
-                                      key={item.id}
-                                      content={
-                                        <>
-                                          <p>{item.name}</p>
-                                          <p className="text-destructive">{issue}</p>
-                                        </>
-                                      }
-                                    >
-                                      <Button
-                                        variant="outline"
-                                        className="h-auto max-w-[200px]"
-                                        onClick={() => handleJumpToItem(index)}
-                                      >
-                                        <div className="flex flex-col text-left p-1 w-full">
-                                          <span className="truncate">{item.name}</span>
-                                          <span className="text-xs text-muted-foreground">
-                                            {(item.cost / 100).toLocaleString(
-                                              undefined,
-                                              { style: 'currency', currency }
-                                            )}
-                                          </span>
-                                          <span className="text-xs text-destructive truncate">
-                                            {issue}
-                                          </span>
-                                        </div>
-                                      </Button>
-                                    </AccessibleTooltip>
-                                )
-                            })}
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Item</TableHead>
+                                        <TableHead>Issue</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {itemsRequiringAttention.map(({ item, index, issue }) => {
+                                        const receipt = receipts.find(r => r.id === item.receiptId);
+                                        const currency = receipt?.currency || globalCurrency;
+                                        return (
+                                            <TableRow key={item.id}>
+                                                <TableCell>
+                                                    <div className="font-medium">{item.name}</div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-destructive font-medium">{issue}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="outline" size="sm" onClick={() => handleJumpToItem(index)}>Go to Item</Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
                         </div>
                     </CardContent>
                 </Card>
