@@ -11,6 +11,7 @@ import { setCurrentAssignmentIndex } from '@/lib/redux/slices/sessionSlice';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -137,19 +138,27 @@ export default function Step2Assignment() {
                              const receipt = receipts.find(r => r.id === item.receiptId);
                              const currency = receipt?.currency || globalCurrency;
                              return (
-                                <Button 
-                                    key={item.id} 
-                                    variant="outline"
-                                    className='h-auto'
-                                    onClick={() => handleJumpToItem(index)}
-                                >
-                                    <div className='flex flex-col text-left p-1'>
-                                        <span>{item.name}</span>
-                                        <span className='text-xs text-muted-foreground'>
-                                            {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
-                                        </span>
-                                    </div>
-                                </Button>
+                                <TooltipProvider key={item.id}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button 
+                                                variant="outline"
+                                                className='h-auto max-w-[200px]'
+                                                onClick={() => handleJumpToItem(index)}
+                                            >
+                                                <div className='flex flex-col text-left p-1 w-full'>
+                                                    <span className="truncate">{item.name}</span>
+                                                    <span className='text-xs text-muted-foreground'>
+                                                        {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
+                                                    </span>
+                                                </div>
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{item.name}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                             )
                         })}
                     </div>
