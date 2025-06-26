@@ -155,7 +155,16 @@ const sessionSlice = createSlice({
       state.currentAssignmentIndex = action.payload;
     },
     setSettlements: (state, action: PayloadAction<Settlement[]>) => {
-      state.settlements = action.payload;
+      const newSettlements = action.payload;
+      const existingSettlementsById = new Map(state.settlements.map(s => [s.id, s]));
+      
+      const mergedSettlements = newSettlements.map(newS => {
+        const existingS = existingSettlementsById.get(newS.id);
+        // Preserve existing `paid` status if the settlement still exists
+        return existingS ? { ...newS, paid: existingS.paid } : newS;
+      });
+
+      state.settlements = mergedSettlements;
     },
     toggleSettlementPaid: (state, action: PayloadAction<{ settlementId: string }>) => {
       const settlement = state.settlements.find(s => s.id === action.payload.settlementId);

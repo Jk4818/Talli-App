@@ -14,15 +14,19 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import type { SessionState } from '@/lib/types';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
+  
+  const { participants, items, receipts, settlements, globalCurrency } = sessionState;
 
   const summary = useMemo(() => {
-    if (sessionState.participants.length > 0 && sessionState.items.length > 0) {
-      return calculateSplits(sessionState);
+    if (participants.length > 0 && items.length > 0) {
+      // Pass only the necessary data to prevent re-calculation when irrelevant state (like settlements) changes.
+      return calculateSplits({ participants, items, receipts } as SessionState);
     }
     return { 
       participantSummaries: [], 
@@ -32,15 +36,15 @@ export default function Step3Summary() {
       totalDiscounts: 0, 
       totalServiceCharge: 0 
     };
-  }, [sessionState]);
+  }, [participants, items, receipts]);
 
   useEffect(() => {
+    // This effect runs when the summary calculation changes to update the settlements in the store.
+    // The useMemo fix above prevents this from running in a loop.
     if (summary.settlements.length > 0) {
       dispatch(setSettlements(summary.settlements));
     }
   }, [summary.settlements, dispatch]);
-
-  const { settlements } = sessionState;
 
   const handleStartNew = () => {
     dispatch(resetSession());
@@ -59,7 +63,7 @@ export default function Step3Summary() {
     dispatch(toggleSettlementPaid({ settlementId }));
   };
 
-  const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: sessionState.globalCurrency });
+  const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
 
   return (
     <div className="space-y-8">
