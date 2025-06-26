@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
@@ -37,51 +37,51 @@ export default function SharePieChart({ summary }: SharePieChartProps) {
   const totalAmount = summary.total;
 
   return (
-    <ChartContainer config={chartConfig} className="w-full flex flex-col items-center">
-        <div className="relative w-full h-48">
-            <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                    <Tooltip
-                        cursor={false}
-                        content={<ChartTooltipContent 
-                            formatter={(value) => (Number(value) / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
-                            nameKey="name"
-                        />}
-                    />
-                    <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        innerRadius={60}
-                        paddingAngle={2}
-                        dataKey="value"
-                    >
-                        {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                    </Pie>
-                </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <p className="text-sm text-muted-foreground">Total Bill</p>
-                <p className="text-3xl font-bold font-headline">
-                    {(totalAmount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
-                </p>
-            </div>
+    <div className='flex flex-col items-center w-full'>
+      <div className="relative w-full max-w-[300px] aspect-square">
+        <ChartContainer config={chartConfig} className="w-full h-full">
+          <PieChart>
+            <Tooltip
+              cursor={false}
+              content={<ChartTooltipContent 
+                formatter={(value) => (Number(value) / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
+                nameKey="name"
+              />}
+            />
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius="80%" // Responsive radius
+              innerRadius="60%" // Responsive radius
+              paddingAngle={2}
+              dataKey="value"
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+            <p className="text-sm text-muted-foreground">Total Bill</p>
+            <p className="text-2xl sm:text-3xl font-bold font-headline">
+                {(totalAmount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
+            </p>
         </div>
-        
-        <div className="mt-4">
-            <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                {legendData.map((entry, index) => (
-                    <li key={`item-${index}`} className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                        {entry.name}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    </ChartContainer>
+      </div>
+      
+      <div className="mt-4 w-full">
+        <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          {legendData.map((entry, index) => (
+            <li key={`item-${index}`} className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+              {entry.name}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
