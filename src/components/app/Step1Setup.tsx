@@ -78,6 +78,7 @@ export default function Step1Setup() {
       variants={staggerContainer(0.2, 0.1)}
       initial="hidden"
       animate="show"
+      exit="exit"
     >
       <motion.div variants={fadeInUp} className="flex flex-wrap items-center justify-end gap-2">
         <ImportButton variant="outline">

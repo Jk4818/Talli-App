@@ -12,6 +12,7 @@ import { AppHeader } from './AppHeader';
 import { Button } from '../ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
+import { AnimatePresence } from 'framer-motion';
 
 export function AppClient({ isDemo }: { isDemo: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -82,13 +83,13 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   const renderStep = () => {
     switch (step) {
       case 1:
-        return <Step1Setup />;
+        return <Step1Setup key="step1" />;
       case 2:
-        return <Step2Assignment />;
+        return <Step2Assignment key="step2" />;
       case 3:
-        return <Step3Summary />;
+        return <Step3Summary key="step3" />;
       default:
-        return <Step1Setup />;
+        return <Step1Setup key="step-default"/>;
     }
   };
 
@@ -96,7 +97,9 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     <div className="flex flex-col min-h-dvh bg-secondary/50">
       <AppHeader />
       <main className="flex-1 py-8 px-4 container mx-auto">
-        {renderStep()}
+        <AnimatePresence mode="wait">
+          {renderStep()}
+        </AnimatePresence>
       </main>
       <footer className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">

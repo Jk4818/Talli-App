@@ -111,6 +111,7 @@ export default function Step3Summary() {
       variants={staggerContainer(0.2, 0.1)}
       initial="hidden"
       animate="show"
+      exit="exit"
     >
         <motion.div variants={fadeInUp} className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export Session</Button>

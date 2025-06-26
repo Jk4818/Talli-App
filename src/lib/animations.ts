@@ -8,6 +8,12 @@ export const staggerContainer = (staggerChildren: number, delayChildren: number)
       delayChildren,
     },
   },
+  exit: {
+    transition: {
+      staggerChildren,
+      staggerDirection: -1,
+    },
+  },
 });
 
 export const fadeInUp: Variants = {

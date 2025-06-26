@@ -105,6 +105,7 @@ export default function Step2Assignment() {
       variants={staggerContainer(0.2, 0.1)}
       initial="hidden"
       animate="show"
+      exit="exit"
     >
         <motion.div variants={fadeInUp} className="max-w-md mx-auto space-y-2">
             <div className="flex justify-between text-sm font-medium text-muted-foreground">
