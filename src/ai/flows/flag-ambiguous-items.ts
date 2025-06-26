@@ -52,8 +52,8 @@ export const flagAmbiguousItemsTool = ai.defineTool(
     inputSchema: FlagAmbiguousItemsInputSchema,
     outputSchema: FlagAmbiguousItemsOutputSchema,
   },
-  async (items, auth) => {
-    assertAuth(auth);
+  async (items, context) => {
+    assertAuth(context.auth);
     // This tool is backed by an LLM prompt to perform the analysis.
     const { output } = await flaggingPrompt(items);
     return output!;
