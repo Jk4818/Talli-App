@@ -180,11 +180,10 @@ export default function Home() {
               </motion.div>
               <motion.div variants={fadeIn}>
                 <Image 
-                  src="https://placehold.co/1200x800.png" 
-                  alt="Friends laughing and looking at a phone to split a restaurant bill with the Splitzy app."
-                  data-ai-hint="friends restaurant"
-                  width={1200}
-                  height={800}
+                  src="/hero-image.png" 
+                  alt="Illustration of friends happily splitting a restaurant bill using the Splitzy app on a smartphone."
+                  width={900}
+                  height={600}
                   className="rounded-xl shadow-2xl"
                 />
               </motion.div>
