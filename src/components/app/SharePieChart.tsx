@@ -68,7 +68,7 @@ export default function SharePieChart({ summary }: SharePieChartProps) {
                 )} />
             </PieChart>
         </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -translate-y-2">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -translate-y-4">
             <p className="text-sm text-muted-foreground">Total Bill</p>
             <p className="text-3xl font-bold font-headline">
                 {(totalAmount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}

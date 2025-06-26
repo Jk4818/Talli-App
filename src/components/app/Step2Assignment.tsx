@@ -11,7 +11,7 @@ import { setCurrentAssignmentIndex } from '@/lib/redux/slices/sessionSlice';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -87,43 +87,41 @@ export default function Step2Assignment() {
             </div>
             <Progress value={itemsWithCost.length > 0 ? (assignedItemsCount / itemsWithCost.length) * 100 : 100} />
         </div>
-        <TooltipProvider>
-            <div className="flex justify-center items-center">
-                <div className="relative w-full max-w-md">
-                    <div className="overflow-hidden" ref={emblaRef}>
-                        <div className="flex" style={{ marginLeft: '-1rem' }}>
-                            {itemsWithCost.map((item, index) => (
-                            <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
-                                <ItemAssignmentCard item={item} itemNumber={index + 1} totalItems={itemsWithCost.length} />
-                            </div>
-                            ))}
+        <div className="flex justify-center items-center">
+            <div className="relative w-full max-w-md">
+                <div className="overflow-hidden" ref={emblaRef}>
+                    <div className="flex" style={{ marginLeft: '-1rem' }}>
+                        {itemsWithCost.map((item, index) => (
+                        <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
+                            <ItemAssignmentCard item={item} itemNumber={index + 1} totalItems={itemsWithCost.length} />
                         </div>
+                        ))}
                     </div>
-                    
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="absolute h-8 w-8 rounded-full -left-12 top-1/2 -translate-y-1/2"
-                        onClick={scrollPrev}
-                        disabled={!canScrollPrev}
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        <span className="sr-only">Previous slide</span>
-                    </Button>
-
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="absolute h-8 w-8 rounded-full -right-12 top-1/2 -translate-y-1/2"
-                        onClick={scrollNext}
-                        disabled={!canScrollNext}
-                    >
-                        <ArrowRight className="h-4 w-4" />
-                        <span className="sr-only">Next slide</span>
-                    </Button>
                 </div>
+                
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute h-8 w-8 rounded-full -left-12 top-1/2 -translate-y-1/2"
+                    onClick={scrollPrev}
+                    disabled={!canScrollPrev}
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="sr-only">Previous slide</span>
+                </Button>
+
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute h-8 w-8 rounded-full -right-12 top-1/2 -translate-y-1/2"
+                    onClick={scrollNext}
+                    disabled={!canScrollNext}
+                >
+                    <ArrowRight className="h-4 w-4" />
+                    <span className="sr-only">Next slide</span>
+                </Button>
             </div>
-        </TooltipProvider>
+        </div>
 
         {unassignedItems.length > 0 && (
             <Card className="max-w-xl mx-auto border-amber-500/50 bg-amber-50/20 dark:bg-amber-950/20">
@@ -140,27 +138,25 @@ export default function Step2Assignment() {
                              const receipt = receipts.find(r => r.id === item.receiptId);
                              const currency = receipt?.currency || globalCurrency;
                              return (
-                                <TooltipProvider key={item.id}>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button 
-                                                variant="outline"
-                                                className='h-auto max-w-[200px]'
-                                                onClick={() => handleJumpToItem(index)}
-                                            >
-                                                <div className='flex flex-col text-left p-1 w-full'>
-                                                    <span className="truncate">{item.name}</span>
-                                                    <span className='text-xs text-muted-foreground'>
-                                                        {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
-                                                    </span>
-                                                </div>
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>{item.name}</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
+                                <Tooltip key={item.id}>
+                                    <TooltipTrigger asChild>
+                                        <Button 
+                                            variant="outline"
+                                            className='h-auto max-w-[200px]'
+                                            onClick={() => handleJumpToItem(index)}
+                                        >
+                                            <div className='flex flex-col text-left p-1 w-full'>
+                                                <span className="truncate">{item.name}</span>
+                                                <span className='text-xs text-muted-foreground'>
+                                                    {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
+                                                </span>
+                                            </div>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>{item.name}</p>
+                                    </TooltipContent>
+                                </Tooltip>
                             )
                         })}
                     </div>
