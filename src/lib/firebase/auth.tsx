@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, type User } from 'firebase/auth';
+import { onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, type User } from 'firebase/auth';
 import { auth } from './client';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,7 @@ interface AuthContextType {
   signUpWithEmailPassword: (email: string, password: string) => Promise<boolean>;
   signInWithEmailPassword: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -136,12 +137,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const sendPasswordReset = async (email: string) => {
+    if (!email) {
+      toast({
+        variant: 'destructive',
+        title: 'Email Required',
+        description: 'Please enter your email address to reset your password.',
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      // For security, we show a generic success message to prevent email enumeration.
+      toast({
+        title: 'Password Reset Email Sent',
+        description: 'If an account exists for this email, you will receive instructions to reset your password.',
+      });
+    } catch (error: any) {
+      console.error('Error sending password reset email:', error);
+      // Even on error, show the generic message.
+      toast({
+        title: 'Password Reset Email Sent',
+        description: 'If an account exists for this email, you will receive instructions to reset your password.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   const value = {
     user,
     loading,
     signUpWithEmailPassword,
     signInWithEmailPassword,
     signOut,
+    sendPasswordReset,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

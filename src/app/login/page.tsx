@@ -19,7 +19,7 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { user, signInWithEmailPassword, loading } = useAuth();
+  const { user, signInWithEmailPassword, loading, sendPasswordReset } = useAuth();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -38,6 +38,16 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     await signInWithEmailPassword(values.email, values.password);
+  };
+
+  const handlePasswordReset = () => {
+    // Trigger validation and if the email is valid, send the reset email.
+    form.trigger("email").then((isValid) => {
+      if (isValid) {
+        const email = form.getValues("email");
+        sendPasswordReset(email);
+      }
+    });
   };
 
   if (loading || user) {
@@ -79,7 +89,18 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Password</FormLabel>
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="p-0 h-auto text-xs text-primary hover:underline"
+                        onClick={handlePasswordReset}
+                        disabled={loading}
+                      >
+                        Forgot Password?
+                      </Button>
+                    </div>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
