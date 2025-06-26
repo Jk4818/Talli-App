@@ -166,17 +166,17 @@ export default function Step2Assignment() {
                                     const receipt = receipts.find(r => r.id === item.receiptId);
                                     const currency = receipt?.currency || globalCurrency;
                                     return (
-                                        <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-x-4 gap-y-2">
-                                            <div className="flex-1 space-y-1">
-                                                <div className="flex justify-between items-start gap-4">
-                                                    <p className="font-medium leading-snug">{item.name}</p>
-                                                    <p className="text-sm text-muted-foreground whitespace-nowrap">
+                                        <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                                            <div className="flex-1 space-y-1.5 min-w-0">
+                                                <div className="flex justify-between items-center gap-4">
+                                                    <p className="font-medium leading-snug truncate" title={item.name}>{item.name}</p>
+                                                    <p className="text-sm font-mono text-muted-foreground whitespace-nowrap shrink-0">
                                                         {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
                                                     </p>
                                                 </div>
                                                 <p className="text-sm text-destructive font-medium">{issue}</p>
                                             </div>
-                                            <Button variant="outline" size="sm" onClick={() => handleJumpToItem(index)} className="w-full shrink-0 sm:w-auto">
+                                            <Button variant="outline" size="sm" onClick={() => handleJumpToItem(index)} className="w-full sm:w-auto shrink-0">
                                                 Go to Item
                                             </Button>
                                         </div>
