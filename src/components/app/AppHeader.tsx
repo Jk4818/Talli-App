@@ -1,11 +1,12 @@
 "use client";
 
-import { useSelector } from 'react-redux';
-import { RootState } from '@/lib/redux/store';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '@/lib/redux/store';
+import { setStep } from '@/lib/redux/slices/sessionSlice';
 import { Logo } from '../Logo';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 const steps = [
     { id: 1, name: 'Setup', description: 'Add participants & receipts' },
@@ -14,7 +15,46 @@ const steps = [
 ]
 
 export function AppHeader() {
-  const currentStep = useSelector((state: RootState) => state.session.step);
+  const dispatch = useDispatch<AppDispatch>();
+  const { step: currentStep, participants, items, receipts } = useSelector((state: RootState) => state.session);
+
+  const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
+  
+  const isStep2Complete = useMemo(() => {
+    return items.every(item => {
+      if (item.cost === 0) return true;
+      if (item.assignees.length === 0) return false;
+
+      if (item.splitMode === 'percentage') {
+        if (!item.percentageAssignments) return false;
+        const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments[pid] || 0), 0);
+        return totalPercentage === 100;
+      }
+  
+      if (item.splitMode === 'exact') {
+        if (!item.exactAssignments) return false;
+        const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments[pid] || 0), 0);
+        return totalExact === item.cost;
+      }
+      
+      return true; // 'equal' split is always valid if assignees exist.
+    });
+  }, [items]);
+
+  const canNavigateTo = (targetStep: number) => {
+    if (targetStep < currentStep) return true;
+    if (targetStep > currentStep) {
+      if (targetStep === 2) return isStep1Complete;
+      if (targetStep === 3) return isStep1Complete && isStep2Complete;
+    }
+    return false; // Can't navigate to current step or invalid future step
+  };
+
+  const handleStepClick = (targetStep: number) => {
+    if (canNavigateTo(targetStep)) {
+      dispatch(setStep(targetStep));
+    }
+  };
 
   return (
     <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -25,7 +65,15 @@ export function AppHeader() {
             {steps.map((step, stepIdx) => (
               <React.Fragment key={step.name}>
                 <li className="relative">
-                  <>
+                    <button
+                        onClick={() => handleStepClick(step.id)}
+                        disabled={!canNavigateTo(step.id)}
+                        className={cn(
+                            "text-left disabled:cursor-not-allowed",
+                            canNavigateTo(step.id) && "transition-opacity hover:opacity-75"
+                        )}
+                        aria-label={`Go to step ${step.id}: ${step.name}`}
+                    >
                     {step.id < currentStep ? (
                       <div className="flex items-center">
                         <span className="flex h-9 items-center">
@@ -63,7 +111,7 @@ export function AppHeader() {
                         </span>
                       </div>
                     )}
-                  </>
+                  </button>
                 </li>
 
                 {stepIdx < steps.length - 1 ? (
