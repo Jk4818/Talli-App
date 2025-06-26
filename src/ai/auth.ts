@@ -1,4 +1,3 @@
-'use server';
 
 const ALLOWLIST = ['work.jk4818@gmail.com'];
 
