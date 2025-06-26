@@ -4,6 +4,7 @@ import { ReduxProvider } from '@/lib/redux/provider';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/lib/firebase/auth';
+import { PageTransitionWrapper } from '@/components/PageTransitionWrapper';
 
 export const metadata: Metadata = {
   title: 'Splitzy - Effortless Bill Splitting',
@@ -27,7 +28,7 @@ export default function RootLayout({
         <AuthProvider>
           <ReduxProvider>
             <TooltipProvider>
-              {children}
+              <PageTransitionWrapper>{children}</PageTransitionWrapper>
               <Toaster />
             </TooltipProvider>
           </ReduxProvider>

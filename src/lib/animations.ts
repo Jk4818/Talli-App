@@ -68,7 +68,7 @@ export const pageTransition: Variants = {
   },
   exit: {
     opacity: 0,
-    y: 15,
+    y: -15,
     transition: {
       duration: 0.3,
       ease: 'easeIn',

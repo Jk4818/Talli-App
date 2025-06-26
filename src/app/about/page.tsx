@@ -7,7 +7,7 @@ import { ArrowLeft, BrainCircuit, Target } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { pageTransition, staggerContainer, fadeInUp } from '@/lib/animations';
+import { staggerContainer, fadeInUp } from '@/lib/animations';
 
 export default function AboutPage() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -29,11 +29,8 @@ export default function AboutPage() {
           </Button>
         </div>
       </header>
-      <motion.main
+      <main
         className="flex-1"
-        variants={pageTransition}
-        initial="hidden"
-        animate="show"
       >
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto text-center space-y-4">
@@ -100,7 +97,7 @@ export default function AboutPage() {
             </motion.p>
           </div>
         </div>
-      </motion.main>
+      </main>
       <footer className="border-t py-6">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 text-center text-sm text-muted-foreground md:flex-row">
             <Logo />
