@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import useEmblaCarousel, { type EmblaCarouselType } from 'embla-carousel-react';
@@ -19,6 +19,11 @@ export default function Step2Assignment() {
   const isCurrentItemAssigned = currentItem?.assignees.length > 0;
   const isLastSlide = currentAssignmentIndex === itemsWithCost.length - 1;
 
+  const isDraggableRef = useRef(isCurrentItemAssigned);
+  useEffect(() => {
+    isDraggableRef.current = isCurrentItemAssigned;
+  }, [isCurrentItemAssigned]);
+
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: false, 
     keyboard: { active: false },
@@ -29,6 +34,12 @@ export default function Step2Assignment() {
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+  
+  const handlePointerDown = useCallback((event: PointerEvent) => {
+    if (!isDraggableRef.current) {
+        event.stopPropagation();
+    }
+  }, []);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -38,6 +49,9 @@ export default function Step2Assignment() {
       setCanScrollPrev(api.canScrollPrev());
       setCanScrollNext(api.canScrollNext());
     };
+    
+    const rootNode = emblaApi.rootNode();
+    rootNode.addEventListener('pointerdown', handlePointerDown, { capture: true });
 
     emblaApi.on('select', onSelect);
     emblaApi.on('reInit', onSelect);
@@ -45,19 +59,12 @@ export default function Step2Assignment() {
     onSelect(emblaApi);
 
     return () => {
+      rootNode.removeEventListener('pointerdown', handlePointerDown, { capture: true });
       emblaApi.off('select', onSelect);
       emblaApi.off('reInit', onSelect);
     };
-  }, [emblaApi, dispatch]);
+  }, [emblaApi, dispatch, handlePointerDown]);
 
-  useEffect(() => {
-    if (!emblaApi) return;
-    emblaApi.reInit({
-      loop: false,
-      keyboard: { active: false },
-      draggable: isCurrentItemAssigned,
-    });
-  }, [emblaApi, isCurrentItemAssigned]);
 
   useEffect(() => {
     if (emblaApi && emblaApi.selectedScrollSnap() !== currentAssignmentIndex) {
