@@ -1,10 +1,15 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, BarChart, Users, UploadCloud, Divide } from 'lucide-react';
+import { ArrowRight, BarChart, Users, UploadCloud, Divide, Menu } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import Image from 'next/image';
 import ImportButton from '@/components/app/ImportButton';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export default function Home() {
   const features = [
@@ -35,7 +40,9 @@ export default function Home() {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4">
           <Logo />
-          <div className="flex items-center gap-2">
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden items-center gap-2 md:flex">
             <Button variant="ghost" asChild>
               <Link href="/demo">Demo</Link>
             </Button>
@@ -46,6 +53,35 @@ export default function Home() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
+          </nav>
+
+          {/* Mobile Navigation */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right">
+                <nav className="flex flex-col gap-8 pt-10 text-center">
+                  <div className="flex justify-center">
+                    <Logo />
+                  </div>
+                  <Link href="/demo" className="text-lg font-medium text-foreground hover:text-primary">
+                      Demo
+                  </Link>
+                  <ImportButton variant="link" className="text-lg font-medium h-auto p-0 text-foreground hover:text-primary hover:no-underline justify-center w-full" />
+                  <Button asChild size="lg">
+                    <Link href="/app">
+                      Start Splitting
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>

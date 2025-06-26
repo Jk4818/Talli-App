@@ -105,8 +105,8 @@ export default function Step2Assignment() {
             </div>
             <Progress value={itemsWithCost.length > 0 ? (assignedItemsCount / itemsWithCost.length) * 100 : 100} />
         </div>
-        <div className="flex justify-center items-center">
-            <div className="relative w-full max-w-md">
+        <div className="flex flex-col items-center justify-center">
+            <div className="w-full max-w-md">
                 <div className="overflow-hidden" ref={emblaRef}>
                     <div className="flex" style={{ marginLeft: '-1rem' }}>
                         {itemsWithCost.map((item, index) => (
@@ -116,27 +116,27 @@ export default function Step2Assignment() {
                         ))}
                     </div>
                 </div>
-                
+            </div>
+            <div className="flex items-center justify-center gap-4 mt-4">
                 <Button
                     variant="outline"
-                    size="icon"
-                    className="absolute h-8 w-8 rounded-full -left-2 sm:-left-12 top-1/2 -translate-y-1/2 z-10"
+                    size="lg"
+                    className="w-28"
                     onClick={scrollPrev}
                     disabled={!canScrollPrev}
                 >
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="sr-only">Previous slide</span>
+                    <ArrowLeft className="h-5 w-5" />
+                    <span>Prev</span>
                 </Button>
-
                 <Button
                     variant="outline"
-                    size="icon"
-                    className="absolute h-8 w-8 rounded-full -right-2 sm:-right-12 top-1/2 -translate-y-1/2 z-10"
+                    size="lg"
+                    className="w-28"
                     onClick={scrollNext}
                     disabled={!canScrollNext}
                 >
-                    <ArrowRight className="h-4 w-4" />
-                    <span className="sr-only">Next slide</span>
+                    <span>Next</span>
+                    <ArrowRight className="h-5 w-5" />
                 </Button>
             </div>
         </div>
