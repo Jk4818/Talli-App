@@ -123,22 +123,22 @@ export default function Step1Setup() {
                 <CardDescription>Upload and manage your receipts.</CardDescription>
               </div>
             </div>
-            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-4">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
-                <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
-                  <SelectTrigger id="global-currency" className="w-[90px] h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                    <SelectItem value="CAD">CAD</SelectItem>
-                    <SelectItem value="AUD">AUD</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-end">
+                <div className="flex flex-1 items-center justify-center gap-2 sm:flex-none sm:justify-start">
+                    <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
+                    <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
+                    <SelectTrigger id="global-currency" className="w-[90px] h-9">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="EUR">EUR</SelectItem>
+                        <SelectItem value="GBP">GBP</SelectItem>
+                        <SelectItem value="CAD">CAD</SelectItem>
+                        <SelectItem value="AUD">AUD</SelectItem>
+                    </SelectContent>
+                    </Select>
+                </div>
               <input
                 type="file"
                 ref={fileInputRef}
@@ -146,7 +146,7 @@ export default function Step1Setup() {
                 className="hidden"
                 accept="image/*"
               />
-              <Button onClick={handleUploadClick} size="sm">
+              <Button onClick={handleUploadClick} size="sm" className="flex-1 sm:flex-none">
                 <FilePlus2 className="mr-2 h-4 w-4" />
                 Upload
               </Button>
