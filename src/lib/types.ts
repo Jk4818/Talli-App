@@ -34,6 +34,7 @@ export interface Receipt {
   serviceCharge: ServiceCharge;
   currency: string;
   exchangeRate?: number;
+  imageDataUri?: string;
 }
 
 export interface Settlement {

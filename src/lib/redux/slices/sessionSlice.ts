@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge, Settlement } from '@/lib/types';
 import { MOCK_DATA } from '@/lib/mock-data';
 import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
@@ -27,10 +27,9 @@ export const processReceipt = createAsyncThunk(
         reader.readAsDataURL(file);
       });
 
-      // The `extractReceiptData` flow now handles item flagging via a tool.
       const extractedData = await extractReceiptData({ receiptDataUri: dataUri });
 
-      return { ...extractedData, fileName: file.name };
+      return { ...extractedData, fileName: file.name, imageDataUri: dataUri };
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred during AI processing.');
     }
@@ -290,6 +289,7 @@ const sessionSlice = createSlice({
           discounts: action.payload.discounts.map((d, i) => ({...d, id: `d_${receiptId}_${i}`, amount: Math.round(d.amount * 100)})),
           serviceCharge: { type: 'fixed', value: Math.round(serviceChargeTotal * 100) },
           currency: action.payload.currency || state.globalCurrency,
+          imageDataUri: action.payload.imageDataUri,
         };
         
         const newItems: Item[] = action.payload.items.map((item, index) => ({
