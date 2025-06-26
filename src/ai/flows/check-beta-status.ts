@@ -1,42 +1,38 @@
 'use server';
 /**
- * @fileOverview A simple flow to check if the current user has beta access.
- *
- * - checkBetaStatus - A function that returns the user's beta status.
- * - CheckBetaStatusInput - The input type for the checkBetaStatus function.
- * - CheckBetaStatusOutput - The return type for the checkBetaStatus function.
+ * @fileOverview A flow to check if a user is on the invite list.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { isUserOnAllowlist, type AuthUser } from '@/ai/auth';
 
-const CheckBetaStatusInputSchema = z.object({
+const CheckInviteStatusInputSchema = z.object({
   user: z.object({
     email: z.string().nullable(),
     email_verified: z.boolean(),
   }).nullable(),
 });
-export type CheckBetaStatusInput = z.infer<typeof CheckBetaStatusInputSchema>;
+export type CheckInviteStatusInput = z.infer<typeof CheckInviteStatusInputSchema>;
 
 
-const CheckBetaStatusOutputSchema = z.object({
-  isBetaUser: z.boolean(),
+const CheckInviteStatusOutputSchema = z.object({
+  isInvited: z.boolean(),
 });
-export type CheckBetaStatusOutput = z.infer<typeof CheckBetaStatusOutputSchema>;
+export type CheckInviteStatusOutput = z.infer<typeof CheckInviteStatusOutputSchema>;
 
-export async function checkBetaStatus(input: CheckBetaStatusInput): Promise<CheckBetaStatusOutput> {
-  return checkBetaStatusFlow(input);
+export async function checkInviteStatus(input: CheckInviteStatusInput): Promise<CheckInviteStatusOutput> {
+  return checkInviteStatusFlow(input);
 }
 
-const checkBetaStatusFlow = ai.defineFlow(
+const checkInviteStatusFlow = ai.defineFlow(
   {
-    name: 'checkBetaStatusFlow',
-    inputSchema: CheckBetaStatusInputSchema,
-    outputSchema: CheckBetaStatusOutputSchema,
+    name: 'checkInviteStatusFlow',
+    inputSchema: CheckInviteStatusInputSchema,
+    outputSchema: CheckInviteStatusOutputSchema,
   },
   async (input) => {
-    const isBetaUser = isUserOnAllowlist(input.user);
-    return { isBetaUser };
+    const isInvited = isUserOnAllowlist(input.user);
+    return { isInvited };
   }
 );

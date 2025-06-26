@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, sig
 import { auth } from './client';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { isUserOnAllowlist } from '@/ai/auth';
+import { checkInviteStatus } from '@/ai/flows/check-beta-status';
 
 interface AuthContextType {
   user: User | null;
@@ -26,23 +26,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
       if (currentUser) {
-        // User has successfully signed in. Now, verify if they are on our invite list.
-        const isAllowed = isUserOnAllowlist({ 
-          email: currentUser.email, 
-          email_verified: currentUser.emailVerified 
-        });
-
-        if (isAllowed) {
-          // User is on the list, set the user state and grant access.
-          setUser(currentUser);
-        } else {
-          // User is not on the list. Show a message and sign them out immediately.
-          toast({
-            variant: 'destructive',
-            title: 'Access Denied',
-            description: 'This account is not on the invite list. Please contact support.',
+        try {
+          // User has successfully signed in. Check their invite status on the server.
+          const { isInvited } = await checkInviteStatus({
+            user: {
+              email: currentUser.email,
+              email_verified: currentUser.emailVerified,
+            },
           });
-          await firebaseSignOut(auth); // This will re-trigger onAuthStateChanged with user=null
+
+          if (isInvited) {
+            // User is on the list, set the user state and grant access.
+            setUser(currentUser);
+          } else {
+            // User is not on the list. Show a message and sign them out immediately.
+            toast({
+              variant: 'destructive',
+              title: 'Access Denied',
+              description: 'This account is not on the invite list. Please contact support.',
+            });
+            await firebaseSignOut(auth); // This will re-trigger onAuthStateChanged with user=null
+          }
+        } catch (error) {
+          console.error("Error checking invite status:", error);
+           toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'Could not verify access permissions. Please try again.',
+          });
+          await firebaseSignOut(auth);
         }
       } else {
         // User is signed out or was never signed in.
