@@ -1,43 +1,23 @@
 'use server';
 
 /**
- * @fileOverview A Genkit flow to check if a user is eligible to sign up based on an allowlist.
+ * @fileOverview A server action to check if a user is eligible to sign up based on an allowlist.
  *
  * - checkSignupEligibility - Checks if an email is in the allowlist.
- * - CheckSignupEligibilityInput - The input type for the checkSignupEligibility function.
- * - CheckSignupEligibilityOutput - The return type for the checkSignupEligibility function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+export async function checkSignupEligibility({
+  email,
+}: {
+  email: string;
+}): Promise<{ isEligible: boolean }> {
+  // Directly access the environment variable on the server.
+  const allowlist = process.env.EMAIL_ALLOWLIST || '';
+  const allowedEmails = allowlist
+    .toLowerCase()
+    .split(',')
+    .map((e) => e.trim());
+  const isEligible = allowedEmails.includes(email.toLowerCase());
 
-const CheckSignupEligibilityInputSchema = z.object({
-  email: z.string().email().describe('The email address to check.'),
-});
-export type CheckSignupEligibilityInput = z.infer<typeof CheckSignupEligibilityInputSchema>;
-
-const CheckSignupEligibilityOutputSchema = z.object({
-  isEligible: z.boolean().describe('Whether the email is on the allowlist.'),
-});
-export type CheckSignupEligibilityOutput = z.infer<typeof CheckSignupEligibilityOutputSchema>;
-
-
-export async function checkSignupEligibility(input: CheckSignupEligibilityInput): Promise<CheckSignupEligibilityOutput> {
-  return checkSignupEligibilityFlow(input);
+  return { isEligible };
 }
-
-
-const checkSignupEligibilityFlow = ai.defineFlow(
-  {
-    name: 'checkSignupEligibilityFlow',
-    inputSchema: CheckSignupEligibilityInputSchema,
-    outputSchema: CheckSignupEligibilityOutputSchema,
-  },
-  async ({ email }) => {
-    const allowlist = process.env.EMAIL_ALLOWLIST || '';
-    const allowedEmails = allowlist.toLowerCase().split(',').map(e => e.trim());
-    const isEligible = allowedEmails.includes(email.toLowerCase());
-
-    return { isEligible };
-  }
-);
