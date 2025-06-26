@@ -127,6 +127,7 @@ const sessionSlice = createSlice({
         assignees: [],
         splitMode: 'equal',
         percentageAssignments: {},
+        exactAssignments: {},
       };
       state.items.push(newItem);
     },
@@ -143,8 +144,11 @@ const sessionSlice = createSlice({
         const item = state.items.find(i => i.id === action.payload.itemId);
         if (item && !item.assignees.includes(action.payload.participantId)) {
             item.assignees.push(action.payload.participantId);
-            if(item.splitMode === 'percentage') {
+            if (item.splitMode === 'percentage') {
               item.percentageAssignments = {};
+            }
+            if (item.splitMode === 'exact') {
+              item.exactAssignments = {};
             }
         }
     },
@@ -152,8 +156,11 @@ const sessionSlice = createSlice({
         const item = state.items.find(i => i.id === action.payload.itemId);
         if (item) {
             item.assignees = item.assignees.filter(id => id !== action.payload.participantId);
-            if(item.splitMode === 'percentage') {
+            if (item.splitMode === 'percentage') {
               delete item.percentageAssignments[action.payload.participantId];
+            }
+            if (item.splitMode === 'exact') {
+              delete item.exactAssignments[action.payload.participantId];
             }
         }
     },
@@ -165,19 +172,23 @@ const sessionSlice = createSlice({
         } else {
           item.assignees = [];
         }
-        if(item.splitMode === 'percentage') {
+        if (item.splitMode === 'percentage') {
           item.percentageAssignments = {};
+        }
+        if (item.splitMode === 'exact') {
+          item.exactAssignments = {};
         }
       }
     },
     setGlobalCurrency: (state, action: PayloadAction<string>) => {
       state.globalCurrency = action.payload;
     },
-    setItemSplitMode: (state, action: PayloadAction<{ itemId: string; splitMode: 'equal' | 'percentage' }>) => {
+    setItemSplitMode: (state, action: PayloadAction<{ itemId: string; splitMode: 'equal' | 'percentage' | 'exact' }>) => {
       const item = state.items.find(i => i.id === action.payload.itemId);
       if (item) {
         item.splitMode = action.payload.splitMode;
         item.percentageAssignments = {};
+        item.exactAssignments = {};
       }
     },
     setPercentageAssignment: (state, action: PayloadAction<{ itemId: string; participantId: string; percentage: number }>) => {
@@ -185,6 +196,12 @@ const sessionSlice = createSlice({
         if (item && item.splitMode === 'percentage') {
             item.percentageAssignments[action.payload.participantId] = action.payload.percentage;
         }
+    },
+    setExactAssignment: (state, action: PayloadAction<{ itemId: string; participantId: string; amount: number }>) => {
+      const item = state.items.find(i => i.id === action.payload.itemId);
+      if (item && item.splitMode === 'exact') {
+          item.exactAssignments[action.payload.participantId] = action.payload.amount;
+      }
     },
     setCurrentAssignmentIndex: (state, action: PayloadAction<number>) => {
       state.currentAssignmentIndex = action.payload;
@@ -237,6 +254,7 @@ const sessionSlice = createSlice({
           assignees: [],
           splitMode: 'equal',
           percentageAssignments: {},
+          exactAssignments: {},
         }));
 
         state.receipts.push(newReceipt);
@@ -271,6 +289,7 @@ export const {
   setGlobalCurrency,
   setItemSplitMode,
   setPercentageAssignment,
+  setExactAssignment,
   setCurrentAssignmentIndex,
   setSettlements,
   toggleSettlementPaid,

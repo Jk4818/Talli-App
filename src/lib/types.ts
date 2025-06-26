@@ -10,8 +10,9 @@ export interface Item {
   cost: number; // in cents
   isAmbiguous: boolean;
   assignees: string[]; // array of participant IDs
-  splitMode: 'equal' | 'percentage';
+  splitMode: 'equal' | 'percentage' | 'exact';
   percentageAssignments: { [participantId: string]: number }; // participantId -> percentage (e.g. 50 for 50%)
+  exactAssignments: { [participantId: string]: number }; // participantId -> amount in cents
 }
 
 export interface Discount {

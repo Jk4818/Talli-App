@@ -38,9 +38,8 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     const rate = (receipt.currency !== globalCurrency && receipt.exchangeRate) ? receipt.exchangeRate : 1;
 
     // Create a temporary, converted version of the receipt data
-    const convertedItems = items
-      .filter(i => i.receiptId === receipt.id)
-      .map(item => ({ ...item, cost: Math.round(item.cost * rate) }));
+    const receiptItems = items.filter(i => i.receiptId === receipt.id);
+    const convertedItems = receiptItems.map(item => ({ ...item, cost: Math.round(item.cost * rate) }));
     
     const convertedReceiptSubtotal = convertedItems.reduce((sum, item) => sum + item.cost, 0);
     totalItemCost += convertedReceiptSubtotal;
@@ -91,13 +90,14 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         }
     }
 
-    convertedItems.forEach(item => {
+    receiptItems.forEach(item => {
       const adjustedCost = adjustedItemCosts.get(item.id) || 0;
       if (adjustedCost > 0 && item.assignees.length > 0) {
         
         let fallbackToEqual = item.splitMode === 'equal';
+        
         if (item.splitMode === 'percentage') {
-          const totalPercentage = Object.values(item.percentageAssignments).reduce((sum, p) => sum + (p || 0), 0);
+          const totalPercentage = Object.values(item.percentageAssignments || {}).reduce((sum, p) => sum + (p || 0), 0);
           if (totalPercentage === 100) {
             let distributedAmount = 0;
             const participantShares: {pid: string, share: number}[] = [];
@@ -112,20 +112,41 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
             let remainder = adjustedCost - distributedAmount;
             for(const ps of participantShares) {
               if (remainder === 0) break;
-              if (remainder > 0) {
-                ps.share++;
-                remainder--;
-              } else if (remainder < 0) {
-                ps.share--;
-                remainder++;
-              }
+              if (remainder > 0) { ps.share++; remainder--; }
+              else if (remainder < 0) { ps.share--; remainder++; }
             }
 
             participantShares.forEach(ps => {
               const summary = summaries.get(ps.pid);
-              if (summary) {
-                summary.totalShare += ps.share;
-              }
+              if (summary) { summary.totalShare += ps.share; }
+            });
+          } else {
+            fallbackToEqual = true;
+          }
+        } else if (item.splitMode === 'exact') {
+          const totalExact = Object.values(item.exactAssignments || {}).reduce((sum, p) => sum + (p || 0), 0);
+          if (totalExact === item.cost && item.cost > 0) {
+            let distributedAmount = 0;
+            const participantShares: {pid: string, share: number}[] = [];
+    
+            item.assignees.forEach(pid => {
+                const exactAmount = item.exactAssignments[pid] || 0;
+                // Distribute the adjusted (final) cost proportionally to the original exact amounts
+                const share = Math.round((exactAmount / item.cost) * adjustedCost);
+                participantShares.push({ pid, share });
+                distributedAmount += share;
+            });
+    
+            let remainder = adjustedCost - distributedAmount;
+            for (const s of participantShares) {
+                if (remainder === 0) break;
+                if (remainder > 0) { s.share++; remainder--; }
+                else if (remainder < 0) { s.share--; remainder++; }
+            }
+    
+            participantShares.forEach(s => {
+                const summary = summaries.get(s.pid);
+                if (summary) { summary.totalShare += s.share; }
             });
           } else {
             fallbackToEqual = true;

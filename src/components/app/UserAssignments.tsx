@@ -3,10 +3,9 @@
 import React, { useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
-import { assignItemToUser, unassignItemFromUser, toggleAllAssignees, setItemSplitMode, setPercentageAssignment } from '@/lib/redux/slices/sessionSlice';
+import { assignItemToUser, unassignItemFromUser, toggleAllAssignees, setItemSplitMode, setPercentageAssignment, setExactAssignment } from '@/lib/redux/slices/sessionSlice';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
-import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { AlertCircle, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -42,13 +41,12 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
   };
   
   const handleModeChange = (mode: string) => {
-    if (mode === 'equal' || mode === 'percentage') {
-      dispatch(setItemSplitMode({ itemId, splitMode: mode }));
+    if (mode === 'equal' || mode === 'percentage' || mode === 'exact') {
+      dispatch(setItemSplitMode({ itemId, splitMode: mode as 'equal' | 'percentage' | 'exact' }));
     }
   };
   
   const handlePercentageChange = (participantId: string, value: string) => {
-    // allow empty string to clear value
     if (value === '') {
         dispatch(setPercentageAssignment({ itemId, participantId, percentage: 0 }));
         return;
@@ -58,18 +56,26 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
         dispatch(setPercentageAssignment({ itemId, participantId, percentage }));
     }
   }
-
-  const getInitials = (name: string) => {
-    const names = name.split(' ');
-    if (names.length > 1) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+  
+  const handleExactAmountChange = (participantId: string, value: string) => {
+    if (value === '') {
+      dispatch(setExactAssignment({ itemId, participantId, amount: 0 }));
+      return;
     }
-    return name.substring(0, 2).toUpperCase();
-  };
+    const amountInCents = Math.round(parseFloat(value.replace(/[^0-9.]/g, '')) * 100);
+    if (!isNaN(amountInCents) && amountInCents >= 0) {
+      dispatch(setExactAssignment({ itemId, participantId, amount: amountInCents }));
+    }
+  }
 
   const totalPercentage = useMemo(() => {
     if (!item || !item.percentageAssignments) return 0;
     return item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments[pid] || 0), 0);
+  }, [item]);
+  
+  const totalExactAmount = useMemo(() => {
+    if (!item || !item.exactAssignments) return 0;
+    return item.assignees.reduce((sum, pid) => sum + (item.exactAssignments[pid] || 0), 0);
   }, [item]);
 
 
@@ -89,7 +95,7 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
           }
           shares[id] = share;
         });
-    } else { // percentage
+    } else if (item.splitMode === 'percentage') {
         if (totalPercentage === 100) {
             let distributedAmount = 0;
             const calculatedShares = assignees.map(id => {
@@ -115,19 +121,26 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
         } else {
             assignees.forEach(id => shares[id] = 0);
         }
+    } else if (item.splitMode === 'exact') {
+      if (totalExactAmount === itemCost) {
+          assignees.forEach(pid => {
+              shares[pid] = item.exactAssignments[pid] || 0;
+          });
+      } else {
+          assignees.forEach(id => shares[id] = 0);
+      }
     }
     return shares;
-  }, [item, assignees, itemCost, totalPercentage]);
-
-  const assignedParticipants = participants.filter(p => assignees.includes(p.id));
+  }, [item, assignees, itemCost, totalPercentage, totalExactAmount]);
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <Tabs value={splitMode} onValueChange={handleModeChange} className="w-[200px]">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={splitMode} onValueChange={handleModeChange} className="w-auto">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="equal">Equal</TabsTrigger>
             <TabsTrigger value="percentage">Percent</TabsTrigger>
+            <TabsTrigger value="exact">Exact</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -172,6 +185,19 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
                             </div>
                         )}
+                        {splitMode === 'exact' && isChecked && (
+                            <div className="relative w-24">
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={item?.exactAssignments[p.id] !== undefined ? (item.exactAssignments[p.id] / 100).toFixed(2) : ''}
+                                    onChange={e => handleExactAmountChange(p.id, e.target.value)}
+                                    className="pl-4 text-right"
+                                    placeholder="0.00"
+                                />
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{receipt?.currency}</span>
+                            </div>
+                        )}
                         {shares[p.id] ? (
                             <span className="font-mono text-sm text-muted-foreground w-20 text-right">
                                 {(shares[p.id] / 100).toLocaleString(undefined, { style: 'currency', currency: receipt?.currency || 'USD' })}
@@ -192,6 +218,16 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
           <AlertTitle>Percentages must total 100%</AlertTitle>
           <AlertDescription>
             Current total: {totalPercentage}%.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {splitMode === 'exact' && assignees.length > 0 && totalExactAmount !== itemCost && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Amounts must total {(itemCost / 100).toLocaleString(undefined, { style: 'currency', currency: receipt?.currency || 'USD' })}</AlertTitle>
+          <AlertDescription>
+            Current total: {(totalExactAmount / 100).toLocaleString(undefined, { style: 'currency', currency: receipt?.currency || 'USD' })}. Remaining: {((itemCost - totalExactAmount) / 100).toLocaleString(undefined, { style: 'currency', currency: receipt?.currency || 'USD' })}
           </AlertDescription>
         </Alert>
       )}
