@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { assertAuth } from '@/ai/auth';
 
 const ExtractReceiptDataInputSchema = z.object({
   receiptDataUri: z
@@ -73,7 +74,8 @@ const extractReceiptDataFlow = ai.defineFlow(
     inputSchema: ExtractReceiptDataInputSchema,
     outputSchema: ExtractReceiptDataOutputSchema,
   },
-  async input => {
+  async (input, auth) => {
+    assertAuth(auth);
     const {output} = await extractReceiptDataPrompt(input);
     return output!;
   }

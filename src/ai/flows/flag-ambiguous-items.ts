@@ -8,6 +8,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { assertAuth } from '../auth';
 
 const ItemSchema = z.object({
   name: z.string().describe('The name of the item.'),
@@ -51,7 +52,8 @@ export const flagAmbiguousItemsTool = ai.defineTool(
     inputSchema: FlagAmbiguousItemsInputSchema,
     outputSchema: FlagAmbiguousItemsOutputSchema,
   },
-  async (items) => {
+  async (items, auth) => {
+    assertAuth(auth);
     // This tool is backed by an LLM prompt to perform the analysis.
     const { output } = await flaggingPrompt(items);
     return output!;
