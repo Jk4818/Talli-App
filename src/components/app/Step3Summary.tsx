@@ -27,7 +27,21 @@ export default function Step3Summary() {
   // It only re-runs when that core data changes, not when settlements are marked as 'paid'.
   const calculatedSummary = useMemo(() => {
     if (participants.length > 0) {
-      const tempState = { participants, items, receipts, settlements: [], globalCurrency } as SessionState;
+      // Create a full SessionState object to satisfy the strict type checking in Vercel's build environment.
+      // The calculateSplits function only uses a subset of these properties, so the dummy values are safe.
+      const tempState: SessionState = {
+        participants,
+        items,
+        receipts,
+        settlements: [], // Use an empty array to avoid dependency cycles
+        globalCurrency,
+        // Add dummy values for the remaining required properties
+        step: 3,
+        status: 'succeeded',
+        error: null,
+        isDemoSession: false,
+        currentAssignmentIndex: 0,
+      };
       return calculateSplits(tempState);
     }
     // Return a default empty summary if there are no participants.
