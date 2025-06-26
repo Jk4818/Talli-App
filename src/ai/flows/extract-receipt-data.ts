@@ -10,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { flagAmbiguousItemsTool } from './flag-ambiguous-items';
 
 const ExtractReceiptDataInputSchema = z.object({
   receiptDataUri: z
@@ -53,20 +52,18 @@ const extractReceiptDataPrompt = ai.definePrompt({
   name: 'extractReceiptDataPrompt',
   input: {schema: ExtractReceiptDataInputSchema},
   output: {schema: ExtractReceiptDataOutputSchema},
-  tools: [flagAmbiguousItemsTool],
-  prompt: `You are an expert AI assistant specializing in extracting data from receipts.
+  prompt: `You are an expert AI assistant specializing in extracting structured data from receipts.
 
-You will receive an image of a receipt. Your task is to first extract all items with their names and costs.
-After extracting the items, you MUST use the "flagAmbiguousItems" tool to analyze the list of items. The tool will determine if any item is ambiguous and requires manual review.
-Finally, extract all discounts, service charges, and the currency from the receipt.
+You will receive an image of a receipt. Your task is to analyze the image and extract the following information:
+1.  A list of all individual items, including their name and cost.
+2.  For each item, determine if it is ambiguous. An item is considered ambiguous if its name is unusual, illegible, or if its cost seems disproportionately high or low. Set the 'isAmbiguous' flag to 'true' for these items, and 'false' otherwise.
+3.  A list of all discounts applied, including the discount name and the amount.
+4.  A list of all service charges or tips, including a description and the amount.
+5.  The currency of the receipt (e.g., USD, GBP, EUR).
 
-Combine the information from the initial extraction and the tool's output to produce the final JSON result. The 'isAmbiguous' field for each item should come from the tool's output.
-
-Analyze the following receipt image and extract the data:
+Analyze the following receipt image and return the data in the specified JSON format.
 
 Receipt Image: {{media url=receiptDataUri}}
-
-Return the data in the specified JSON format.
 `,
 });
 
