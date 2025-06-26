@@ -7,7 +7,6 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { calculateSplits } from '@/lib/splitter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import BillSplitSummary from './BillSplitSummary';
-import SharePieChart from './SharePieChart';
 import { Button } from '../ui/button';
 import { resetSession, setSettlements, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
 import { HandCoins, Scale, RefreshCw, Calculator, Download } from 'lucide-react';
@@ -16,6 +15,8 @@ import { cn } from '@/lib/utils';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import type { SessionState } from '@/lib/types';
+import SharePieChart from './SharePieChart';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
@@ -26,7 +27,7 @@ export default function Step3Summary() {
 
   const summary = useMemo(() => {
     if (participants.length > 0) {
-      return calculateSplits({ participants, items, receipts, settlements, globalCurrency } as SessionState);
+      return calculateSplits({ participants, items, receipts, settlements: [], globalCurrency } as SessionState);
     }
     return { 
       participantSummaries: [], 
@@ -36,13 +37,16 @@ export default function Step3Summary() {
       totalDiscounts: 0, 
       totalServiceCharge: 0 
     };
-  }, [participants, items, receipts, settlements, globalCurrency]);
+  }, [participants, items, receipts, globalCurrency]);
 
   useEffect(() => {
-    if (summary.settlements.length > 0 && JSON.stringify(summary.settlements) !== JSON.stringify(settlements)) {
-      dispatch(setSettlements(summary.settlements));
+    // Only dispatch to update settlements if the calculated ones differ from what's in the store.
+    // This avoids loops while preserving the `paid` state.
+    if (summary.settlements.length > 0 && JSON.stringify(summary.settlements) !== JSON.stringify(settlements.map(({paid, ...rest}) => rest))) {
+        dispatch(setSettlements(summary.settlements));
     }
   }, [summary.settlements, settlements, dispatch]);
+
 
   const handleStartNew = () => {
     dispatch(resetSession());
@@ -160,7 +164,7 @@ export default function Step3Summary() {
               <CardDescription>How the total bill is divided.</CardDescription>
             </CardHeader>
             <CardContent>
-              <SharePieChart summary={summary} />
+                <SharePieChart summary={summary} />
             </CardContent>
           </Card>
         </div>
