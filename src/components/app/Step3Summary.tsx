@@ -16,36 +16,39 @@ import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import type { SessionState } from '@/lib/types';
 import SharePieChart from './SharePieChart';
-import { TooltipProvider } from '@radix-ui/react-tooltip';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
+  const { participants, items, receipts, settlements, globalCurrency } = sessionState;
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
-  
-  const { participants, items, receipts, settlements, globalCurrency } = sessionState;
 
-  const summary = useMemo(() => {
+  // Step 1: Calculate the summary and settlement plan in a memoized function.
+  // This is a pure calculation based on the core data (participants, items, receipts).
+  // It only re-runs when that core data changes, not when settlements are marked as 'paid'.
+  const calculatedSummary = useMemo(() => {
     if (participants.length > 0) {
-      return calculateSplits({ participants, items, receipts, settlements: [], globalCurrency } as SessionState);
+      const tempState = { participants, items, receipts, settlements: [], globalCurrency } as SessionState;
+      return calculateSplits(tempState);
     }
-    return { 
-      participantSummaries: [], 
-      settlements: [], 
-      total: 0, 
-      totalItemCost: 0, 
-      totalDiscounts: 0, 
-      totalServiceCharge: 0 
+    // Return a default empty summary if there are no participants.
+    return {
+      participantSummaries: [],
+      settlements: [],
+      total: 0,
+      totalItemCost: 0,
+      totalDiscounts: 0,
+      totalServiceCharge: 0
     };
   }, [participants, items, receipts, globalCurrency]);
 
+  // Step 2: Sync the calculated settlement plan with the Redux store.
+  // This effect runs ONLY when the calculated plan changes (i.e., when core data changes).
+  // This avoids the infinite loop because it does not depend on the `settlements` from the store.
   useEffect(() => {
-    // Only dispatch to update settlements if the calculated ones differ from what's in the store.
-    // This avoids loops while preserving the `paid` state.
-    if (summary.settlements.length > 0 && JSON.stringify(summary.settlements) !== JSON.stringify(settlements.map(({paid, ...rest}) => rest))) {
-        dispatch(setSettlements(summary.settlements));
-    }
-  }, [summary.settlements, settlements, dispatch]);
+    // The `setSettlements` reducer is smart enough to preserve the `paid` state.
+    dispatch(setSettlements(calculatedSummary.settlements));
+  }, [calculatedSummary.settlements, dispatch]);
 
 
   const handleStartNew = () => {
@@ -77,12 +80,15 @@ export default function Step3Summary() {
     }
   };
 
+  // This action only dispatches a minimal update and does not trigger a full recalculation.
   const handleTogglePaid = (settlementId: string) => {
     dispatch(toggleSettlementPaid({ settlementId }));
   };
 
   const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
 
+  // For rendering, we use `calculatedSummary` for display values and `settlements` from the store
+  // for the list, as it contains the correct `paid` status.
   return (
     <div className="space-y-8">
         <div className="flex justify-end gap-2">
@@ -100,7 +106,7 @@ export default function Step3Summary() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <BillSplitSummary summary={summary} />
+                    <BillSplitSummary summary={calculatedSummary} />
                 </CardContent>
             </Card>
 
@@ -113,11 +119,11 @@ export default function Step3Summary() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span>Original Items Subtotal</span> <span className="font-medium">{formatCurrency(summary.totalItemCost)}</span></div>
-                    {summary.totalDiscounts > 0 && <div className="flex justify-between text-destructive"><span>Discounts</span> <span className="font-medium">- {formatCurrency(summary.totalDiscounts)}</span></div>}
-                    <div className="flex justify-between border-t pt-2 mt-2"><span>Subtotal</span> <span className="font-medium">{formatCurrency(summary.totalItemCost - summary.totalDiscounts)}</span></div>
-                    {summary.totalServiceCharge > 0 && <div className="flex justify-between"><span>Service Charges & Tips</span> <span className="font-medium">+ {formatCurrency(summary.totalServiceCharge)}</span></div>}
-                    <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2"><span>Grand Total</span> <span>{formatCurrency(summary.total)}</span></div>
+                    <div className="flex justify-between"><span>Original Items Subtotal</span> <span className="font-medium">{formatCurrency(calculatedSummary.totalItemCost)}</span></div>
+                    {calculatedSummary.totalDiscounts > 0 && <div className="flex justify-between text-destructive"><span>Discounts</span> <span className="font-medium">- {formatCurrency(calculatedSummary.totalDiscounts)}</span></div>}
+                    <div className="flex justify-between border-t pt-2 mt-2"><span>Subtotal</span> <span className="font-medium">{formatCurrency(calculatedSummary.totalItemCost - calculatedSummary.totalDiscounts)}</span></div>
+                    {calculatedSummary.totalServiceCharge > 0 && <div className="flex justify-between"><span>Service Charges & Tips</span> <span className="font-medium">+ {formatCurrency(calculatedSummary.totalServiceCharge)}</span></div>}
+                    <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2"><span>Grand Total</span> <span>{formatCurrency(calculatedSummary.total)}</span></div>
                 </CardContent>
             </Card>
 
@@ -164,7 +170,7 @@ export default function Step3Summary() {
               <CardDescription>How the total bill is divided.</CardDescription>
             </CardHeader>
             <CardContent>
-                <SharePieChart summary={summary} />
+                <SharePieChart summary={calculatedSummary} />
             </CardContent>
           </Card>
         </div>

@@ -189,6 +189,7 @@ const sessionSlice = createSlice({
       const item = state.items.find(i => i.id === action.payload.itemId);
       if (item) {
         item.splitMode = action.payload.splitMode;
+        // Reset assignments when changing mode to avoid carrying over invalid data
         item.percentageAssignments = {};
         item.exactAssignments = {};
       }
@@ -211,14 +212,18 @@ const sessionSlice = createSlice({
     setSettlements: (state, action: PayloadAction<Settlement[]>) => {
       const newSettlements = action.payload;
       const existingSettlementsById = new Map(state.settlements.map(s => [s.id, s]));
-      
+
       const mergedSettlements = newSettlements.map(newS => {
         const existingS = existingSettlementsById.get(newS.id);
-        // Preserve existing `paid` status if the settlement still exists
+        // If a settlement with the same ID already exists, preserve its `paid` status.
+        // The `paid` status is user-managed state and should not be overwritten by a recalculation.
         return existingS ? { ...newS, paid: existingS.paid } : newS;
       });
 
-      state.settlements = mergedSettlements;
+      // This comparison prevents unnecessary updates if the calculated plan hasn't changed.
+      if (JSON.stringify(state.settlements) !== JSON.stringify(mergedSettlements)) {
+        state.settlements = mergedSettlements;
+      }
     },
     toggleSettlementPaid: (state, action: PayloadAction<{ settlementId: string }>) => {
       const settlement = state.settlements.find(s => s.id === action.payload.settlementId);
