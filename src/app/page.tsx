@@ -9,6 +9,7 @@ import {
   Sheet,
   SheetContent,
   SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from '@/components/ui/separator';
@@ -70,6 +71,7 @@ export default function Home() {
               <SheetContent side="right">
                 <SheetHeader>
                   <Logo />
+                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 </SheetHeader>
                 <Separator className="my-4" />
                 <nav className="flex flex-col gap-2">
