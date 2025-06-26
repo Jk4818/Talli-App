@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 import type { SessionState } from '@/lib/types';
 
-export default function ImportButton({ children, ...props }: ButtonProps) {
+export default function ImportButton({ children, ...props }: React.PropsWithChildren<ButtonProps>) {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const { toast } = useToast();
@@ -78,7 +78,7 @@ export default function ImportButton({ children, ...props }: ButtonProps) {
         accept="application/json"
       />
       <Button onClick={handleButtonClick} {...props}>
-        {children || <><Upload className="mr-2 h-4 w-4" /> Import Session</>}
+        {children}
       </Button>
     </>
   );

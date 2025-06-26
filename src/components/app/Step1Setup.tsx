@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { FilePlus2, ReceiptText, Users, RefreshCw } from 'lucide-react';
+import { FilePlus2, ReceiptText, Users, RefreshCw, Upload } from 'lucide-react';
 import { addReceiptFromFile, setGlobalCurrency, resetSession } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
@@ -72,6 +72,35 @@ export default function Step1Setup() {
 
   return (
     <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <ImportButton variant="outline">
+          <Upload className="mr-2 h-4 w-4" /> Import Session
+        </ImportButton>
+        {isSessionActive && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <RefreshCw className="mr-2 h-4 w-4" /> Reset Session
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all participants, receipts, and item assignments from the current session. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetSession}>
+                  Yes, Reset Session
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-1">
           <CardHeader className="flex flex-row items-center gap-4 space-y-0">
@@ -94,7 +123,7 @@ export default function Step1Setup() {
                 <CardDescription>Upload and manage your receipts.</CardDescription>
               </div>
             </div>
-            <div className="flex w-full flex-wrap items-center justify-between gap-y-2 sm:w-auto sm:justify-end sm:gap-x-4">
+            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-4">
               <div className="flex items-center gap-2">
                 <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
                 <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
@@ -110,43 +139,17 @@ export default function Step1Setup() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                {isSessionActive && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        <RefreshCw className="mr-2 h-4 w-4" /> Reset
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete all participants, receipts, and item assignments from the current session. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleResetSession}>
-                          Yes, Reset Session
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-                <ImportButton variant="outline" size="sm" />
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                  accept="image/*"
-                />
-                <Button onClick={handleUploadClick} size="sm">
-                  <FilePlus2 className="mr-2 h-4 w-4" />
-                  Upload
-                </Button>
-              </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/*"
+              />
+              <Button onClick={handleUploadClick} size="sm">
+                <FilePlus2 className="mr-2 h-4 w-4" />
+                Upload
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
