@@ -10,6 +10,8 @@ export interface Item {
   cost: number; // in cents
   isAmbiguous: boolean;
   assignees: string[]; // array of participant IDs
+  splitMode: 'equal' | 'percentage';
+  percentageAssignments: { [participantId: string]: number }; // participantId -> percentage (e.g. 50 for 50%)
 }
 
 export interface Discount {
@@ -40,4 +42,5 @@ export interface SessionState {
   globalCurrency: string;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
+  currentAssignmentIndex: number;
 }

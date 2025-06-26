@@ -96,13 +96,54 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     receiptItems.forEach(item => {
       const adjustedCost = adjustedItemCosts.get(item.id) || 0;
       if (adjustedCost > 0 && item.assignees.length > 0) {
-        const shares = distributeCents(adjustedCost, item.assignees.length);
-        item.assignees.forEach((pid, index) => {
-          const summary = summaries.get(pid);
-          if (summary) {
-            summary.totalShare += shares[index];
+        
+        let fallbackToEqual = item.splitMode === 'equal';
+        if (item.splitMode === 'percentage') {
+          const totalPercentage = Object.values(item.percentageAssignments).reduce((sum, p) => sum + (p || 0), 0);
+          if (totalPercentage === 100) {
+            let distributedAmount = 0;
+            const participantShares: {pid: string, share: number}[] = [];
+
+            item.assignees.forEach(pid => {
+              const percentage = item.percentageAssignments[pid] || 0;
+              const share = Math.round((adjustedCost * percentage) / 100);
+              participantShares.push({ pid, share });
+              distributedAmount += share;
+            });
+
+            // Distribute rounding errors
+            let remainder = adjustedCost - distributedAmount;
+            for(const ps of participantShares) {
+              if (remainder === 0) break;
+              if (remainder > 0) {
+                ps.share++;
+                remainder--;
+              } else if (remainder < 0) {
+                ps.share--;
+                remainder++;
+              }
+            }
+
+            participantShares.forEach(ps => {
+              const summary = summaries.get(ps.pid);
+              if (summary) {
+                summary.totalShare += ps.share;
+              }
+            });
+          } else {
+            fallbackToEqual = true;
           }
-        });
+        }
+        
+        if (fallbackToEqual) {
+          const shares = distributeCents(adjustedCost, item.assignees.length);
+          item.assignees.forEach((pid, index) => {
+            const summary = summaries.get(pid);
+            if (summary) {
+              summary.totalShare += shares[index];
+            }
+          });
+        }
       }
     });
 

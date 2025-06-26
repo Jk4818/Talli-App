@@ -12,6 +12,7 @@ const initialState: SessionState = {
   globalCurrency: 'USD',
   status: 'idle',
   error: null,
+  currentAssignmentIndex: 0,
 };
 
 export const processReceipt = createAsyncThunk(
@@ -35,7 +36,7 @@ export const processReceipt = createAsyncThunk(
         return { ...item, isAmbiguous: flaggedVersion?.isAmbiguous ?? false };
       });
 
-      return { ...extractedData, fileName: file.name };
+      return { ...extractedData, fileName: file.name, items: itemsWithFlags };
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred during AI processing.');
     }
@@ -87,6 +88,8 @@ const sessionSlice = createSlice({
         cost: 0,
         isAmbiguous: false,
         assignees: [],
+        splitMode: 'equal',
+        percentageAssignments: {},
       };
       state.items.push(newItem);
     },
@@ -103,12 +106,18 @@ const sessionSlice = createSlice({
         const item = state.items.find(i => i.id === action.payload.itemId);
         if (item && !item.assignees.includes(action.payload.participantId)) {
             item.assignees.push(action.payload.participantId);
+            if(item.splitMode === 'percentage') {
+              item.percentageAssignments = {};
+            }
         }
     },
     unassignItemFromUser: (state, action: PayloadAction<{ itemId: string; participantId: string }>) => {
         const item = state.items.find(i => i.id === action.payload.itemId);
         if (item) {
             item.assignees = item.assignees.filter(id => id !== action.payload.participantId);
+            if(item.splitMode === 'percentage') {
+              delete item.percentageAssignments[action.payload.participantId];
+            }
         }
     },
     toggleAllAssignees: (state, action: PayloadAction<{ itemId: string; assignAll: boolean }>) => {
@@ -119,10 +128,29 @@ const sessionSlice = createSlice({
         } else {
           item.assignees = [];
         }
+        if(item.splitMode === 'percentage') {
+          item.percentageAssignments = {};
+        }
       }
     },
     setGlobalCurrency: (state, action: PayloadAction<string>) => {
       state.globalCurrency = action.payload;
+    },
+    setItemSplitMode: (state, action: PayloadAction<{ itemId: string; splitMode: 'equal' | 'percentage' }>) => {
+      const item = state.items.find(i => i.id === action.payload.itemId);
+      if (item) {
+        item.splitMode = action.payload.splitMode;
+        item.percentageAssignments = {};
+      }
+    },
+    setPercentageAssignment: (state, action: PayloadAction<{ itemId: string; participantId: string; percentage: number }>) => {
+        const item = state.items.find(i => i.id === action.payload.itemId);
+        if (item && item.splitMode === 'percentage') {
+            item.percentageAssignments[action.payload.participantId] = action.payload.percentage;
+        }
+    },
+    setCurrentAssignmentIndex: (state, action: PayloadAction<number>) => {
+      state.currentAssignmentIndex = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -147,8 +175,10 @@ const sessionSlice = createSlice({
           receiptId: receiptId,
           name: item.name,
           cost: Math.round(item.cost * 100),
-          isAmbiguous: item.isAmbiguous,
+          isAmbiguous: item.isAmbiguous ?? false,
           assignees: [],
+          splitMode: 'equal',
+          percentageAssignments: {},
         }));
 
         state.receipts.push(newReceipt);
@@ -175,7 +205,10 @@ export const {
   assignItemToUser,
   unassignItemFromUser,
   toggleAllAssignees,
-  setGlobalCurrency
+  setGlobalCurrency,
+  setItemSplitMode,
+  setPercentageAssignment,
+  setCurrentAssignmentIndex,
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;
