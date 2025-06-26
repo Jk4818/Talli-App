@@ -85,6 +85,38 @@ const sessionSlice = createSlice({
         Object.assign(receipt, action.payload);
       }
     },
+    updateServiceCharge: (state, action: PayloadAction<{ receiptId: string, serviceCharge: ServiceCharge }>) => {
+      const receipt = state.receipts.find(r => r.id === action.payload.receiptId);
+      if (receipt) {
+        receipt.serviceCharge = action.payload.serviceCharge;
+      }
+    },
+    addDiscount: (state, action: PayloadAction<{ receiptId: string }>) => {
+        const receipt = state.receipts.find(r => r.id === action.payload.receiptId);
+        if (receipt) {
+            const newDiscount: Discount = {
+                id: `d_${receipt.id}_${new Date().getTime()}`,
+                name: 'New Discount',
+                amount: 0,
+            };
+            receipt.discounts.push(newDiscount);
+        }
+    },
+    updateDiscount: (state, action: PayloadAction<{ receiptId: string, discount: Partial<Discount> & { id: string } }>) => {
+        const receipt = state.receipts.find(r => r.id === action.payload.receiptId);
+        if (receipt) {
+            const discount = receipt.discounts.find(d => d.id === action.payload.discount.id);
+            if (discount) {
+                Object.assign(discount, action.payload.discount);
+            }
+        }
+    },
+    removeDiscount: (state, action: PayloadAction<{ receiptId: string, discountId: string }>) => {
+        const receipt = state.receipts.find(r => r.id === action.payload.receiptId);
+        if (receipt) {
+            receipt.discounts = receipt.discounts.filter(d => d.id !== action.payload.discountId);
+        }
+    },
     addItem: (state, action: PayloadAction<{ receiptId: string }>) => {
       const newItem: Item = {
         id: `item_${new Date().getTime()}`,
@@ -184,12 +216,15 @@ const sessionSlice = createSlice({
       })
       .addCase(processReceipt.fulfilled, (state, action) => {
         const receiptId = `receipt_${new Date().getTime()}`;
+        
+        const serviceChargeTotal = action.payload.serviceCharges.reduce((sum, sc) => sum + sc.amount, 0);
+
         const newReceipt: Receipt = {
           id: receiptId,
           name: action.payload.fileName,
           payerId: null,
           discounts: action.payload.discounts.map((d, i) => ({...d, id: `d_${receiptId}_${i}`, amount: Math.round(d.amount * 100)})),
-          serviceCharge: { type: 'fixed', value: 0 },
+          serviceCharge: { type: 'fixed', value: Math.round(serviceChargeTotal * 100) },
           currency: action.payload.currency || state.globalCurrency,
         };
         
@@ -223,6 +258,10 @@ export const {
   addParticipant,
   removeParticipant,
   updateReceipt,
+  updateServiceCharge,
+  addDiscount,
+  updateDiscount,
+  removeDiscount,
   addItem,
   updateItem,
   removeItem,
