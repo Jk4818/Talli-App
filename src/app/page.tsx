@@ -168,8 +168,8 @@ export default function Home() {
               <div className="relative">
                 <Image 
                   src="https://placehold.co/1200x800.png" 
-                  alt="A phone showing the Splitzy app interface with a receipt being scanned."
-                  data-ai-hint="receipt scan"
+                  alt="Friends laughing and looking at a phone to split a restaurant bill with the Splitzy app."
+                  data-ai-hint="friends restaurant"
                   width={1200}
                   height={800}
                   className="rounded-xl shadow-2xl"
