@@ -5,7 +5,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { FilePlus2, ReceiptText, Users, RefreshCw } from 'lucide-react';
-import { processReceipt, setGlobalCurrency, resetSession } from '@/lib/redux/slices/sessionSlice';
+import { addReceiptFromFile, setGlobalCurrency, resetSession } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
@@ -25,25 +25,29 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function Step1Setup() {
-  const { participants, receipts, items, status, error, globalCurrency } = useSelector((state: RootState) => state.session);
+  const { participants, receipts, items, error, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   React.useEffect(() => {
-    if (status === 'failed' && error) {
+    if (error) {
       toast({
         variant: 'destructive',
-        title: 'AI Processing Failed',
+        title: 'An Error Occurred',
         description: error,
       });
     }
-  }, [status, error, toast]);
+  }, [error, toast]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      dispatch(processReceipt(file));
+      dispatch(addReceiptFromFile(file));
+    }
+    // Reset file input to allow uploading the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -136,11 +140,10 @@ export default function Step1Setup() {
                   onChange={handleFileChange}
                   className="hidden"
                   accept="image/*"
-                  disabled={status === 'loading'}
                 />
-                <Button onClick={handleUploadClick} disabled={status === 'loading'} size="sm">
+                <Button onClick={handleUploadClick} size="sm">
                   <FilePlus2 className="mr-2 h-4 w-4" />
-                  {status === 'loading' ? 'Processing...' : 'Upload'}
+                  Upload
                 </Button>
               </div>
             </div>

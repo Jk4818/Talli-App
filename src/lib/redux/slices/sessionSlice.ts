@@ -16,20 +16,33 @@ const initialState: SessionState = {
   currentAssignmentIndex: 0,
 };
 
-export const processReceipt = createAsyncThunk(
-  'session/processReceipt',
+// This thunk now just reads the file and creates a receipt "shell".
+export const addReceiptFromFile = createAsyncThunk(
+  'session/addReceiptFromFile',
   async (file: File, { rejectWithValue }) => {
     try {
-      const dataUri = await new Promise<string>((resolve, reject) => {
+      const imageDataUri = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onerror = () => reject(new Error('Failed to read file.'));
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(file);
       });
+      return { name: file.name, imageDataUri };
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Could not read file.');
+    }
+  }
+);
 
-      const extractedData = await extractReceiptData({ receiptDataUri: dataUri });
 
-      return { ...extractedData, fileName: file.name, imageDataUri: dataUri };
+// This thunk now takes a receipt ID and its data URI to process.
+export const processReceipt = createAsyncThunk(
+  'session/processReceipt',
+  async ({ receiptId, imageDataUri }: { receiptId: string; imageDataUri: string; }, { rejectWithValue }) => {
+    try {
+      const extractedData = await extractReceiptData({ receiptDataUri: imageDataUri });
+
+      return { receiptId, ...extractedData };
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred during AI processing.');
     }
@@ -43,14 +56,14 @@ const sessionSlice = createSlice({
   reducers: {
     loadDemoData: (state) => {
       const demoState = { ...MOCK_DATA, status: 'succeeded', error: null, isDemoSession: true };
-      return { ...initialState, ...demoState, settlements: [] }; // Reset settlements for demo
+      const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'processed' as const}));
+      return { ...initialState, ...demoState, receipts: processedDemoReceipts, settlements: [] };
     },
     restoreSession: (state, action: PayloadAction<Partial<SessionState>>) => {
       const importedData = action.payload;
     
-      // Provide default values for every item to ensure backward compatibility.
       const sanitizedItems = (importedData.items || []).map((item): Item => ({
-        id: `item_${Date.now()}_${Math.random()}`, // fallback id
+        id: `item_${Date.now()}_${Math.random()}`,
         receiptId: '',
         name: 'New Item',
         cost: 0,
@@ -59,28 +72,27 @@ const sessionSlice = createSlice({
         splitMode: 'equal',
         percentageAssignments: {},
         exactAssignments: {},
-        ...item, // Overwrite defaults with imported values
+        ...item,
       }));
     
-      // Provide default values for every receipt.
       const sanitizedReceipts = (importedData.receipts || []).map((receipt): Receipt => ({
-        id: `receipt_${Date.now()}_${Math.random()}`, // fallback id
+        id: `receipt_${Date.now()}_${Math.random()}`,
         name: 'New Receipt',
         payerId: null,
         discounts: [],
         serviceCharge: { type: 'fixed', value: 0 },
         currency: 'USD',
-        ...receipt, // Overwrite defaults with imported values
+        status: 'unprocessed',
+        ...receipt,
       }));
     
-      // Merge the sanitized data with the initial state to cover top-level fields.
       return {
         ...initialState,
         ...importedData,
         items: sanitizedItems,
         receipts: sanitizedReceipts,
         participants: importedData.participants || [],
-        settlements: [], // Always start with fresh settlements on import
+        settlements: [],
         globalCurrency: importedData.globalCurrency || initialState.globalCurrency,
         step: importedData.step || 1,
         status: 'succeeded',
@@ -179,11 +191,9 @@ const sessionSlice = createSlice({
         const item = state.items.find(i => i.id === action.payload.itemId);
         if (item && !item.assignees.includes(action.payload.participantId)) {
             item.assignees.push(action.payload.participantId);
-            // For percentage mode, it's better to reset because the total needs to be 100%.
             if (item.splitMode === 'percentage') {
               item.percentageAssignments = {};
             }
-            // For exact mode, we just add the user. Their value will be 0 by default.
             if (item.splitMode === 'exact') {
               if(!item.exactAssignments) {
                 item.exactAssignments = {};
@@ -197,7 +207,6 @@ const sessionSlice = createSlice({
             const participantId = action.payload.participantId;
             item.assignees = item.assignees.filter(id => id !== participantId);
             
-            // Also reset percentages when a user is removed
             if (item.splitMode === 'percentage' && item.percentageAssignments) {
                 item.percentageAssignments = {};
             }
@@ -229,7 +238,6 @@ const sessionSlice = createSlice({
       const item = state.items.find(i => i.id === action.payload.itemId);
       if (item) {
         item.splitMode = action.payload.splitMode;
-        // Reset assignments when changing mode to avoid carrying over invalid data
         item.percentageAssignments = {};
         item.exactAssignments = {};
       }
@@ -258,7 +266,6 @@ const sessionSlice = createSlice({
       
       const mergedSettlements = newSettlements.map(newS => {
         const existingS = existingSettlementsById.get(newS.id);
-        // Preserve existing `paid` status if the settlement still exists
         return existingS ? { ...newS, paid: existingS.paid } : newS;
       });
 
@@ -273,43 +280,57 @@ const sessionSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(processReceipt.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
+      .addCase(addReceiptFromFile.fulfilled, (state, action) => {
+        const newReceipt: Receipt = {
+          id: `receipt_${new Date().getTime()}`,
+          name: action.payload.name,
+          imageDataUri: action.payload.imageDataUri,
+          status: 'unprocessed',
+          payerId: null,
+          discounts: [],
+          serviceCharge: { type: 'fixed', value: 0 },
+          currency: state.globalCurrency,
+        };
+        state.receipts.push(newReceipt);
+      })
+      .addCase(processReceipt.pending, (state, action) => {
+        const receipt = state.receipts.find(r => r.id === action.meta.arg.receiptId);
+        if (receipt) {
+          receipt.status = 'processing';
+          state.error = null;
+        }
       })
       .addCase(processReceipt.fulfilled, (state, action) => {
-        const receiptId = `receipt_${new Date().getTime()}`;
-        
-        const serviceChargeTotal = action.payload.serviceCharges.reduce((sum, sc) => sum + sc.amount, 0);
+        const { receiptId } = action.payload;
+        const receipt = state.receipts.find(r => r.id === receiptId);
+        if (receipt) {
+          const serviceChargeTotal = action.payload.serviceCharges.reduce((sum, sc) => sum + sc.amount, 0);
+          
+          receipt.discounts = action.payload.discounts.map((d, i) => ({...d, id: `d_${receiptId}_${i}`, amount: Math.round(d.amount * 100)}));
+          receipt.serviceCharge = { type: 'fixed', value: Math.round(serviceChargeTotal * 100) };
+          receipt.currency = action.payload.currency || state.globalCurrency;
+          receipt.status = 'processed';
 
-        const newReceipt: Receipt = {
-          id: receiptId,
-          name: action.payload.fileName,
-          payerId: null,
-          discounts: action.payload.discounts.map((d, i) => ({...d, id: `d_${receiptId}_${i}`, amount: Math.round(d.amount * 100)})),
-          serviceCharge: { type: 'fixed', value: Math.round(serviceChargeTotal * 100) },
-          currency: action.payload.currency || state.globalCurrency,
-          imageDataUri: action.payload.imageDataUri,
-        };
-        
-        const newItems: Item[] = action.payload.items.map((item, index) => ({
-          id: `item_${receiptId}_${index}`,
-          receiptId: receiptId,
-          name: item.name,
-          cost: Math.round(item.cost * 100),
-          isAmbiguous: item.isAmbiguous,
-          assignees: [],
-          splitMode: 'equal',
-          percentageAssignments: {},
-          exactAssignments: {},
-        }));
+          const newItems: Item[] = action.payload.items.map((item, index) => ({
+            id: `item_${receiptId}_${index}`,
+            receiptId: receiptId,
+            name: item.name,
+            cost: Math.round(item.cost * 100),
+            isAmbiguous: item.isAmbiguous,
+            assignees: [],
+            splitMode: 'equal',
+            percentageAssignments: {},
+            exactAssignments: {},
+          }));
 
-        state.receipts.push(newReceipt);
-        state.items.push(...newItems);
-        state.status = 'succeeded';
+          state.items.push(...newItems);
+        }
       })
       .addCase(processReceipt.rejected, (state, action) => {
-        state.status = 'failed';
+        const receipt = state.receipts.find(r => r.id === action.meta.arg.receiptId);
+        if (receipt) {
+          receipt.status = 'failed';
+        }
         state.error = action.payload as string;
       });
   }
