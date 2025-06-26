@@ -102,7 +102,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>This feature is only available for beta users.</p>
+                      <p>AI scanning is available for beta users only. Please contact support to request access.</p>
                     </TooltipContent>
                   </Tooltip>
                 )

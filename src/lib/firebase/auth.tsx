@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, sig
 import { auth } from './client';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { checkBetaStatus } from '@/ai/flows/check-beta-status';
+import { checkBetaStatus, type CheckBetaStatusInput } from '@/ai/flows/check-beta-status';
 
 interface AuthContextType {
   user: User | null;
@@ -59,8 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     } else if (user) { // Only show for logged-in non-beta users
       toast({
-        title: 'Welcome to Splitzy!',
-        description: 'AI features are in a limited beta. You can still use the app manually or try the demo.',
+        title: 'Welcome!',
+        description: 'AI features are in a limited beta. To request access, please contact support.',
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
