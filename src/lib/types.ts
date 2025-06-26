@@ -32,6 +32,7 @@ export interface Receipt {
   discounts: Discount[];
   serviceCharge: ServiceCharge;
   currency: string;
+  exchangeRate?: number;
 }
 
 export interface Settlement {

@@ -5,14 +5,16 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { FilePlus2, ReceiptText, Users } from 'lucide-react';
-import { processReceipt } from '@/lib/redux/slices/sessionSlice';
+import { processReceipt, setGlobalCurrency } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
 import ImportButton from './ImportButton';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export default function Step1Setup() {
-  const { receipts, status, error } = useSelector((state: RootState) => state.session);
+  const { receipts, status, error, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -37,6 +39,10 @@ export default function Step1Setup() {
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
+  
+  const handleGlobalCurrencyChange = (currency: string) => {
+    dispatch(setGlobalCurrency(currency));
+  };
 
   return (
     <div className="space-y-8">
@@ -54,33 +60,50 @@ export default function Step1Setup() {
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <ReceiptText className="w-8 h-8 text-primary" />
               <div>
                 <CardTitle>Receipts</CardTitle>
-                <CardDescription>Upload one or more receipts.</CardDescription>
+                <CardDescription>Upload and manage your receipts.</CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <ImportButton variant="outline" />
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept="image/*"
-                disabled={status === 'loading'}
-              />
-              <Button onClick={handleUploadClick} disabled={status === 'loading'}>
-                <FilePlus2 className="mr-2 h-4 w-4" />
-                {status === 'loading' ? 'Processing...' : 'Upload Receipt'}
-              </Button>
+            <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
+                <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
+                  <SelectTrigger id="global-currency" className="w-[90px] h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="CAD">CAD</SelectItem>
+                    <SelectItem value="AUD">AUD</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <ImportButton variant="outline" size="sm" />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept="image/*"
+                  disabled={status === 'loading'}
+                />
+                <Button onClick={handleUploadClick} disabled={status === 'loading'} size="sm">
+                  <FilePlus2 className="mr-2 h-4 w-4" />
+                  {status === 'loading' ? 'Processing...' : 'Upload'}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             {receipts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 {receipts.map(receipt => (
                   <ReceiptCard key={receipt.id} receipt={receipt} />
                 ))}
@@ -88,7 +111,7 @@ export default function Step1Setup() {
             ) : (
               <div className="text-center py-12 border-2 border-dashed rounded-lg">
                 <p className="text-muted-foreground">No receipts uploaded yet.</p>
-                <p className="text-sm text-muted-foreground">Click "Upload Receipt" to get started.</p>
+                <p className="text-sm text-muted-foreground">Click "Upload" to get started.</p>
               </div>
             )}
           </CardContent>

@@ -1,4 +1,4 @@
-import { SessionState, Participant, Receipt, SplitSummary, ParticipantSummary, Settlement } from './types';
+import { SessionState, Participant, Receipt, SplitSummary, ParticipantSummary, Settlement, Item } from './types';
 
 // Distributes a total amount into N parts as evenly as possible (in cents)
 const distributeCents = (total: number, n: number): number[] => {
@@ -13,7 +13,7 @@ const distributeCents = (total: number, n: number): number[] => {
 };
 
 export const calculateSplits = (session: SessionState): SplitSummary => {
-  const { participants, receipts, items } = session;
+  const { participants, receipts, items, globalCurrency, settlements: existingSettlements } = session;
 
   const summaries = new Map<string, ParticipantSummary>();
   participants.forEach(p => {
@@ -32,50 +32,63 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   let totalServiceCharge = 0;
 
   receipts.forEach(receipt => {
-    const receiptItems = items.filter(i => i.receiptId === receipt.id);
-    const receiptSubtotal = receiptItems.reduce((sum, item) => sum + item.cost, 0);
-    totalItemCost += receiptSubtotal;
+    const rate = (receipt.currency !== globalCurrency && receipt.exchangeRate) ? receipt.exchangeRate : 1;
 
-    const receiptDiscounts = receipt.discounts.reduce((sum, d) => sum + d.amount, 0);
-    totalDiscounts += receiptDiscounts;
+    // Create a temporary, converted version of the receipt data
+    const convertedItems = items
+      .filter(i => i.receiptId === receipt.id)
+      .map(item => ({ ...item, cost: Math.round(item.cost * rate) }));
     
-    const subtotalAfterDiscounts = receiptSubtotal - receiptDiscounts;
+    const convertedReceiptSubtotal = convertedItems.reduce((sum, item) => sum + item.cost, 0);
+    totalItemCost += convertedReceiptSubtotal;
+    
+    const totalConvertedDiscounts = receipt.discounts.reduce((sum, d) => sum + Math.round(d.amount * rate), 0);
+    totalDiscounts += totalConvertedDiscounts;
 
-    let serviceChargeAmount = 0;
+    const subtotalAfterDiscounts = convertedReceiptSubtotal - totalConvertedDiscounts;
+    
+    let convertedServiceChargeAmount = 0;
     if (receipt.serviceCharge.type === 'fixed') {
-      serviceChargeAmount = receipt.serviceCharge.value;
+      convertedServiceChargeAmount = Math.round(receipt.serviceCharge.value * rate);
     } else if (receipt.serviceCharge.type === 'percentage') {
-      serviceChargeAmount = Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
+      convertedServiceChargeAmount = Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
     }
-    totalServiceCharge += serviceChargeAmount;
-
-    const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
-    grandTotal += receiptTotal;
-
-    const adjustedItemCosts = new Map<string, number>();
-    if (receiptSubtotal > 0) {
-      let distributedTotal = 0;
-      receiptItems.forEach(item => {
-        const adjustedCost = Math.round((item.cost / receiptSubtotal) * receiptTotal);
-        adjustedItemCosts.set(item.id, adjustedCost);
-        distributedTotal += adjustedCost;
-      });
-
-      let roundingDiff = receiptTotal - distributedTotal;
-      for (const itemId of adjustedItemCosts.keys()) {
-        if (roundingDiff === 0) break;
-        const currentCost = adjustedItemCosts.get(itemId)!;
-        if (roundingDiff > 0) {
-          adjustedItemCosts.set(itemId, currentCost + 1);
-          roundingDiff--;
-        } else {
-          adjustedItemCosts.set(itemId, currentCost - 1);
-          roundingDiff++;
-        }
+    totalServiceCharge += convertedServiceChargeAmount;
+    
+    const receiptTotalInGlobal = subtotalAfterDiscounts + convertedServiceChargeAmount;
+    grandTotal += receiptTotalInGlobal;
+    
+    if (receipt.payerId) {
+      const payerSummary = summaries.get(receipt.payerId);
+      if (payerSummary) {
+        payerSummary.totalPaid += receiptTotalInGlobal;
       }
     }
 
-    receiptItems.forEach(item => {
+    const adjustedItemCosts = new Map<string, number>();
+    if (convertedReceiptSubtotal > 0) {
+        let distributedTotal = 0;
+        convertedItems.forEach(item => {
+            const adjustedCost = Math.round((item.cost / convertedReceiptSubtotal) * receiptTotalInGlobal);
+            adjustedItemCosts.set(item.id, adjustedCost);
+            distributedTotal += adjustedCost;
+        });
+
+        let roundingDiff = receiptTotalInGlobal - distributedTotal;
+        for (const itemId of adjustedItemCosts.keys()) {
+            if (roundingDiff === 0) break;
+            const currentCost = adjustedItemCosts.get(itemId)!;
+            if (roundingDiff > 0) {
+                adjustedItemCosts.set(itemId, currentCost + 1);
+                roundingDiff--;
+            } else {
+                adjustedItemCosts.set(itemId, currentCost - 1);
+                roundingDiff++;
+            }
+        }
+    }
+
+    convertedItems.forEach(item => {
       const adjustedCost = adjustedItemCosts.get(item.id) || 0;
       if (adjustedCost > 0 && item.assignees.length > 0) {
         
@@ -127,13 +140,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         }
       }
     });
-
-    if (receipt.payerId) {
-      const payerSummary = summaries.get(receipt.payerId);
-      if (payerSummary) {
-        payerSummary.totalPaid += receiptTotal;
-      }
-    }
   });
 
   summaries.forEach(summary => {
@@ -141,15 +147,14 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   });
 
   const settlements: Settlement[] = [];
-  // Clone summaries for settlement calculation to avoid mutating original balances
   const settlementDebtors = Array.from(summaries.values())
     .filter(s => s.balance < 0)
-    .map(s => ({ ...s })) // Clone the object
+    .map(s => ({ ...s }))
     .sort((a, b) => a.balance - b.balance);
     
   const settlementCreditors = Array.from(summaries.values())
     .filter(s => s.balance > 0)
-    .map(s => ({ ...s })) // Clone the object
+    .map(s => ({ ...s }))
     .sort((a, b) => b.balance - a.balance);
 
   let debtorIndex = 0;
@@ -160,20 +165,20 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     const creditor = settlementCreditors[creditorIndex];
     const amountToSettle = Math.min(-debtor.balance, creditor.balance);
 
-    if (amountToSettle > 0.5) { // Avoid creating tiny, meaningless settlements
+    if (amountToSettle > 0.5) { 
       settlements.push({
         id: `${debtor.id}_${creditor.id}`,
         from: debtor.name,
         to: creditor.name,
         amount: Math.round(amountToSettle),
-        paid: false,
+        paid: false, // This will be merged with existing state later
       });
     }
 
     debtor.balance += amountToSettle;
     creditor.balance -= amountToSettle;
 
-    if (Math.abs(debtor.balance) < 1) { // Use a small threshold for floating point inaccuracies
+    if (Math.abs(debtor.balance) < 1) {
       debtorIndex++;
     }
     if (Math.abs(creditor.balance) < 1) {
