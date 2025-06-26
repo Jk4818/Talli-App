@@ -1,61 +1,69 @@
 "use client";
 
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
+import useEmblaCarousel, { type EmblaCarouselType } from 'embla-carousel-react';
 import ItemAssignmentCard from './ItemAssignmentCard';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { setCurrentAssignmentIndex } from '@/lib/redux/slices/sessionSlice';
+import { Button } from '../ui/button';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
-  const [api, setApi] = React.useState<CarouselApi>();
 
   const itemsWithCost = items.filter(item => item.cost > 0);
-  
   const currentItem = itemsWithCost[currentAssignmentIndex];
   const isCurrentItemAssigned = currentItem?.assignees.length > 0;
   const isLastSlide = currentAssignmentIndex === itemsWithCost.length - 1;
 
-  React.useEffect(() => {
-    if (!api) return;
-    
-    const handleSelect = () => {
-      const selectedSnap = api.selectedScrollSnap();
-      if (currentAssignmentIndex !== selectedSnap) {
-        dispatch(setCurrentAssignmentIndex(selectedSnap));
-      }
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: false, 
+    keyboard: { active: false },
+  });
+  
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    const onSelect = (api: EmblaCarouselType) => {
+      dispatch(setCurrentAssignmentIndex(api.selectedScrollSnap()));
+      setCanScrollPrev(api.canScrollPrev());
+      setCanScrollNext(api.canScrollNext());
     };
 
-    api.on("select", handleSelect);
-    api.on("reInit", handleSelect);
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+
+    onSelect(emblaApi);
 
     return () => {
-      api.off("select", handleSelect);
-      api.off("reInit", handleSelect);
+      emblaApi.off('select', onSelect);
+      emblaApi.off('reInit', onSelect);
     };
-  }, [api, dispatch, currentAssignmentIndex]);
+  }, [emblaApi, dispatch]);
 
-  // Re-initialize the carousel with updated draggable option when assignment status changes
-  React.useEffect(() => {
-    if (!api) return;
-    api.reInit({
-        loop: false,
-        keyboard: false,
-        draggable: isCurrentItemAssigned,
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.reInit({
+      loop: false,
+      keyboard: { active: false },
+      draggable: isCurrentItemAssigned,
     });
-  }, [api, isCurrentItemAssigned]);
+  }, [emblaApi, isCurrentItemAssigned]);
 
-  // Sync Redux state with carousel's internal state in case they diverge
-  React.useEffect(() => {
-    if (api && api.selectedScrollSnap() !== currentAssignmentIndex) {
-        api.scrollTo(currentAssignmentIndex, true); // true for instant scroll
+  useEffect(() => {
+    if (emblaApi && emblaApi.selectedScrollSnap() !== currentAssignmentIndex) {
+      emblaApi.scrollTo(currentAssignmentIndex, true);
     }
-  }, [api, currentAssignmentIndex]);
-
+  }, [emblaApi, currentAssignmentIndex]);
 
   if (itemsWithCost.length === 0) {
     return (
@@ -71,25 +79,41 @@ export default function Step2Assignment() {
 
   return (
     <div className="flex justify-center items-center py-8">
-      <Carousel 
-        setApi={setApi}
-        className="w-full max-w-md"
-        opts={{ 
-            loop: false, 
-            keyboard: false,
-            draggable: isCurrentItemAssigned,
-        }}
-      >
-        <CarouselContent>
-          {itemsWithCost.map((item, index) => (
-            <CarouselItem key={item.id}>
-              <ItemAssignmentCard item={item} itemNumber={index + 1} totalItems={itemsWithCost.length} />
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <CarouselPrevious />
-        { !isLastSlide && <CarouselNext disabled={!isCurrentItemAssigned} /> }
-      </Carousel>
+      <div className="relative w-full max-w-md">
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex" style={{ marginLeft: '-1rem' }}>
+            {itemsWithCost.map((item, index) => (
+              <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
+                <ItemAssignmentCard item={item} itemNumber={index + 1} totalItems={itemsWithCost.length} />
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <Button
+            variant="outline"
+            size="icon"
+            className="absolute h-8 w-8 rounded-full -left-12 top-1/2 -translate-y-1/2"
+            onClick={scrollPrev}
+            disabled={!canScrollPrev}
+        >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Previous slide</span>
+        </Button>
+
+        { !isLastSlide && (
+            <Button
+                variant="outline"
+                size="icon"
+                className="absolute h-8 w-8 rounded-full -right-12 top-1/2 -translate-y-1/2"
+                onClick={scrollNext}
+                disabled={!canScrollNext || !isCurrentItemAssigned}
+            >
+                <ArrowRight className="h-4 w-4" />
+                <span className="sr-only">Next slide</span>
+            </Button>
+        )}
+      </div>
     </div>
   );
 }
