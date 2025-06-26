@@ -22,12 +22,12 @@ function isEmailOnAllowlist(email: string | null): boolean {
     return false;
   }
   // Read the allowlist from environment variables.
-  const allowlistString = process.env.SIGNUP_ALLOWLIST || '';
+  const allowlistString = process.env.EMAIL_ALLOWLIST || '';
   const allowlist = allowlistString.split(',').map(e => e.trim().toLowerCase());
 
   // If the allowlist is empty, deny all signups for security.
   if (allowlist.length === 0 || (allowlist.length === 1 && allowlist[0] === '')) {
-    console.warn("SIGNUP_ALLOWLIST is not configured. All signups are disabled.");
+    console.warn("EMAIL_ALLOWLIST is not configured. All signups are disabled.");
     return false;
   }
   
