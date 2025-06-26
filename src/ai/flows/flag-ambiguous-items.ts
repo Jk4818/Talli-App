@@ -1,14 +1,16 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit tool to flag potentially ambiguous items extracted from receipts for manual review.
+ * @fileOverview This file defines a Genkit flow to flag potentially ambiguous items extracted from receipts for manual review.
  *
- * - flagAmbiguousItemsTool - A tool that takes a list of items and flags those that seem unusual or incorrect.
+ * - flagAmbiguousItems - A flow that takes a list of items and flags those that seem unusual or incorrect.
+ * - FlagAmbiguousItemsInput - The input type for the flagAmbiguousItems function.
+ * - FlagAmbiguousItemsOutput - The return type for the flagAmbiguousItems function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { assertAuth } from '../auth';
+import { assertAuth, type AuthUser } from '../auth';
 
 const ItemSchema = z.object({
   name: z.string().describe('The name of the item.'),
@@ -23,10 +25,22 @@ const FlaggedItemSchema = z.object({
     .describe('Whether the item is potentially ambiguous or incorrect.'),
 });
 
-const FlagAmbiguousItemsInputSchema = z.array(ItemSchema);
+const FlagAmbiguousItemsInputSchema = z.object({
+    items: z.array(ItemSchema).describe("The list of items to analyze."),
+    user: z.object({
+        email: z.string().nullable(),
+        email_verified: z.boolean(),
+    }).nullable(),
+});
+export type FlagAmbiguousItemsInput = z.infer<typeof FlagAmbiguousItemsInputSchema>;
 
 const FlagAmbiguousItemsOutputSchema = z.array(FlaggedItemSchema);
+export type FlagAmbiguousItemsOutput = z.infer<typeof FlagAmbiguousItemsOutputSchema>;
 
+
+export async function flagAmbiguousItems(input: FlagAmbiguousItemsInput): Promise<FlagAmbiguousItemsOutput> {
+  return flagAmbiguousItemsFlow(input);
+}
 
 const flaggingPrompt = ai.definePrompt({
   name: 'flagAmbiguousItemsPrompt',
@@ -40,22 +54,21 @@ const flaggingPrompt = ai.definePrompt({
   For each item in the list, set the isAmbiguous field to true if you suspect it is incorrect or unusual; otherwise, set it to false.
 
   Input:
-  {{#each this}}
+  {{#each items}}
   - Name: {{this.name}}, Cost: {{this.cost}}
   {{/each}}`,
 });
 
-export const flagAmbiguousItemsTool = ai.defineTool(
+const flagAmbiguousItemsFlow = ai.defineFlow(
   {
-    name: 'flagAmbiguousItems',
-    description: 'Analyzes a list of receipt items and returns the same list with an "isAmbiguous" flag set for each. This should be used to flag items for manual review.',
+    name: 'flagAmbiguousItemsFlow',
     inputSchema: FlagAmbiguousItemsInputSchema,
     outputSchema: FlagAmbiguousItemsOutputSchema,
   },
-  async (items, context) => {
-    assertAuth(context.auth);
-    // This tool is backed by an LLM prompt to perform the analysis.
-    const { output } = await flaggingPrompt(items);
+  async (input) => {
+    assertAuth(input.user);
+    // This flow is backed by an LLM prompt to perform the analysis.
+    const { output } = await flaggingPrompt(input);
     return output!;
   }
 );
