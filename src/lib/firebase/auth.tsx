@@ -5,10 +5,12 @@ import { onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, sig
 import { auth } from './client';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { checkBetaStatus } from '@/ai/flows/check-beta-status';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isBetaUser: boolean | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -18,17 +20,50 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isBetaUser, setIsBetaUser] = useState<boolean | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      if (user) {
+        // User is logged in, check their beta status.
+        try {
+          const { isBetaUser } = await checkBetaStatus();
+          setIsBetaUser(isBetaUser);
+        } catch (error) {
+          console.error("Failed to check beta status:", error);
+          setIsBetaUser(false); // Default to not beta user on error
+        }
+      } else {
+        // User is logged out.
+        setIsBetaUser(false);
+      }
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Effect for showing toasts based on beta status
+  useEffect(() => {
+    if (isBetaUser === null) return; // Do nothing while loading
+
+    if (isBetaUser === true) {
+      toast({
+        title: 'Beta Access Granted!',
+        description: 'You have full access to all AI-powered features.',
+      });
+    } else if (isBetaUser === false && user) { // Only show for logged-in non-beta users
+      toast({
+        title: 'Welcome to Splitzy!',
+        description: 'AI features are in a limited beta. You can still use the app manually or try the demo.',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBetaUser]);
+
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -50,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      setIsBetaUser(false); // Reset on sign out
       router.push('/');
       toast({
         title: 'Signed Out',
@@ -68,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     loading,
+    isBetaUser,
     signInWithGoogle,
     signOut,
   };

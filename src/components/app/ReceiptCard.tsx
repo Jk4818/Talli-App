@@ -17,9 +17,11 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/firebase/auth';
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
+  const { isBetaUser } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
@@ -80,10 +82,26 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                 </Button>
               )}
               {receipt.status === 'unprocessed' && (
-                <Button onClick={handleScanReceipt}>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Scan with AI
-                </Button>
+                isBetaUser ? (
+                  <Button onClick={handleScanReceipt}>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Scan with AI
+                  </Button>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0}>
+                        <Button disabled>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Scan with AI
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>This feature is only available for beta users.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )
               )}
               {receipt.status === 'processing' && (
                 <Button disabled>

@@ -304,6 +304,9 @@ const sessionSlice = createSlice({
         const { receiptId } = action.payload;
         const receipt = state.receipts.find(r => r.id === receiptId);
         if (receipt) {
+          // Remove any existing items associated with this receipt before adding new ones
+          state.items = state.items.filter(item => item.receiptId !== receiptId);
+
           const serviceChargeTotal = action.payload.serviceCharges.reduce((sum, sc) => sum + sc.amount, 0);
           
           receipt.discounts = action.payload.discounts.map((d, i) => ({...d, id: `d_${receiptId}_${i}`, amount: Math.round(d.amount * 100)}));
@@ -331,7 +334,12 @@ const sessionSlice = createSlice({
         if (receipt) {
           receipt.status = 'failed';
         }
-        state.error = action.payload as string;
+        const errorMessage = action.payload as string;
+        if (errorMessage.includes('You are not authorized')) {
+          state.error = 'This feature is only available for beta users.';
+        } else {
+          state.error = errorMessage;
+        }
       });
   }
 });
