@@ -21,8 +21,6 @@ export default function PolicyPage() {
     }));
   }, []);
 
-  const MotionDiv = motion.div;
-
   return (
     <div className="flex flex-col min-h-dvh bg-secondary/50">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -51,28 +49,28 @@ export default function PolicyPage() {
               </p>
             </div>
             
-            <MotionDiv
+            <motion.div
               className="space-y-8 text-lg text-foreground/80"
               variants={staggerContainer(0.1, 0.1)}
               initial="hidden"
               animate="show"
             >
-              <MotionDiv variants={fadeInUp}>
+              <motion.div variants={fadeInUp}>
                 <p>
                   Welcome to Splitzy. We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application.
                 </p>
-              </MotionDiv>
+              </motion.div>
               
-              <MotionDiv variants={fadeInUp} className="space-y-3">
+              <motion.div variants={fadeInUp} className="space-y-3">
                 <h3 className="font-headline text-2xl font-semibold text-foreground">Information We Collect</h3>
                 <p>We may collect information about you in a variety of ways. The information we may collect on the Service includes:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Personal Data:</strong> Personally identifiable information, such as your name and email address, that you voluntarily give to us when you register with the Service.</li>
-                  <li><strong>User Content:</strong> We collect the images of receipts you upload to the Service. These images are processed by our AI to extract transaction data but are not stored long-term on our primary servers after processing.</li>
+                  <li><strong>User Content:</strong> We collect the images of receipts you upload to the Service. These images are processed by our AI to provide the core functionality of the app but are not stored long-term on our primary servers after processing.</li>
                 </ul>
-              </MotionDiv>
+              </motion.div>
 
-              <MotionDiv variants={fadeInUp} className="space-y-3">
+              <motion.div variants={fadeInUp} className="space-y-3">
                 <h3 className="font-headline text-2xl font-semibold text-foreground">How We Use Your Information</h3>
                 <p>Having accurate information permits us to provide you with a smooth, efficient, and customized experience. Specifically, we may use information collected about you via the Service to:</p>
                 <ul className="list-disc pl-6 space-y-2">
@@ -81,32 +79,32 @@ export default function PolicyPage() {
                   <li>Email you regarding your account or order.</li>
                   <li>Monitor and analyze usage and trends to improve your experience with the Service.</li>
                 </ul>
-              </MotionDiv>
+              </motion.div>
               
-              <MotionDiv variants={fadeInUp}>
+              <motion.div variants={fadeInUp}>
                 <h3 className="font-headline text-2xl font-semibold text-foreground mb-3">Data Security</h3>
                 <p>We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that despite our efforts, no security measures are perfect or impenetrable, and no method of data transmission can be guaranteed against any interception or other type of misuse.</p>
-              </MotionDiv>
+              </motion.div>
               
-              <MotionDiv variants={fadeInUp}>
+              <motion.div variants={fadeInUp}>
                 <h3 className="font-headline text-2xl font-semibold text-foreground mb-3">Third-Party Services</h3>
                 <p>We use Firebase for authentication and Google AI for receipt processing. These services have their own privacy policies, and we encourage you to review them.</p>
-              </MotionDiv>
+              </motion.div>
 
-              <MotionDiv variants={fadeInUp}>
+              <motion.div variants={fadeInUp}>
                 <h3 className="font-headline text-2xl font-semibold text-foreground mb-3">Changes to This Policy</h3>
                 <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes.</p>
-              </MotionDiv>
+              </motion.div>
               
-              <MotionDiv variants={fadeInUp}>
+              <motion.div variants={fadeInUp}>
                 <h3 className="font-headline text-2xl font-semibold text-foreground mb-3">Contact Us</h3>
                 <p>If you have questions or comments about this Privacy Policy, please contact us at support@splitzy.app.</p>
-              </MotionDiv>
+              </motion.div>
 
-            </MotionDiv>
+            </motion.div>
           </div>
         </div>
-      </main>
+      </motion.main>
       <footer className="border-t py-6">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 text-center text-sm text-muted-foreground md:flex-row">
             <Logo />
