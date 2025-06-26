@@ -111,6 +111,16 @@ const sessionSlice = createSlice({
             item.assignees = item.assignees.filter(id => id !== action.payload.participantId);
         }
     },
+    toggleAllAssignees: (state, action: PayloadAction<{ itemId: string; assignAll: boolean }>) => {
+      const item = state.items.find(i => i.id === action.payload.itemId);
+      if (item) {
+        if (action.payload.assignAll) {
+          item.assignees = state.participants.map(p => p.id);
+        } else {
+          item.assignees = [];
+        }
+      }
+    },
     setGlobalCurrency: (state, action: PayloadAction<string>) => {
       state.globalCurrency = action.payload;
     }
@@ -164,6 +174,7 @@ export const {
   removeItem,
   assignItemToUser,
   unassignItemFromUser,
+  toggleAllAssignees,
   setGlobalCurrency
 } = sessionSlice.actions;
 
