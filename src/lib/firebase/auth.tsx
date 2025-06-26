@@ -5,12 +5,11 @@ import { onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, sig
 import { auth } from './client';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { checkBetaStatus, type CheckBetaStatusInput } from '@/ai/flows/check-beta-status';
+import { isUserOnAllowlist } from '@/ai/auth';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  isBetaUser: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -20,51 +19,40 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isBetaUser, setIsBetaUser] = useState<boolean>(false);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        // User is logged in, check their beta status.
-        try {
-          const { isBetaUser: hasBetaAccess } = await checkBetaStatus({ 
-            user: { email: user.email, email_verified: user.emailVerified }
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true);
+      if (currentUser) {
+        // User has successfully signed in. Now, verify if they are on our invite list.
+        const isAllowed = isUserOnAllowlist({ 
+          email: currentUser.email, 
+          email_verified: currentUser.emailVerified 
+        });
+
+        if (isAllowed) {
+          // User is on the list, set the user state and grant access.
+          setUser(currentUser);
+        } else {
+          // User is not on the list. Show a message and sign them out immediately.
+          toast({
+            variant: 'destructive',
+            title: 'Access Denied',
+            description: 'This account is not on the invite list. Please contact support.',
           });
-          setIsBetaUser(hasBetaAccess);
-        } catch (error) {
-          console.error("Failed to check beta status:", error);
-          setIsBetaUser(false); // Default to not beta user on error
+          await firebaseSignOut(auth); // This will re-trigger onAuthStateChanged with user=null
         }
       } else {
-        // User is logged out.
-        setIsBetaUser(false);
+        // User is signed out or was never signed in.
+        setUser(null);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
-
-  // Effect for showing toasts based on beta status
-  useEffect(() => {
-    if (loading) return; // Do nothing while loading
-
-    if (isBetaUser === true) {
-      toast({
-        title: 'Beta Access Granted!',
-        description: 'You have full access to all AI-powered features.',
-      });
-    } else if (user) { // Only show for logged-in non-beta users
-      toast({
-        title: 'Welcome!',
-        description: 'AI features are in a limited beta. To request access, please contact support.',
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBetaUser, loading, user]);
+  }, [toast]);
 
 
   const signInWithGoogle = async () => {
@@ -72,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener will handle the user state update and redirection
+      // The onAuthStateChanged listener will handle verification and state changes.
     } catch (error) {
       console.error('Error signing in with Google:', error);
       toast({
@@ -105,7 +93,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     loading,
-    isBetaUser,
     signInWithGoogle,
     signOut,
   };
