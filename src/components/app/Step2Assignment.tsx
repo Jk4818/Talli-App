@@ -14,7 +14,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Progress } from '../ui/progress';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -162,35 +161,28 @@ export default function Step2Assignment() {
                     </CardHeader>
                     <CardContent>
                         <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Item</TableHead>
-                                        <TableHead>Issue</TableHead>
-                                        <TableHead className="text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {itemsRequiringAttention.map(({ item, index, issue }) => {
-                                        const receipt = receipts.find(r => r.id === item.receiptId);
-                                        const currency = receipt?.currency || globalCurrency;
-                                        return (
-                                            <TableRow key={item.id}>
-                                                <TableCell>
-                                                    <div className="font-medium">{item.name}</div>
-                                                    <div className="text-sm text-muted-foreground">
+                            <div className="divide-y divide-border">
+                                {itemsRequiringAttention.map(({ item, index, issue }) => {
+                                    const receipt = receipts.find(r => r.id === item.receiptId);
+                                    const currency = receipt?.currency || globalCurrency;
+                                    return (
+                                        <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-x-4 gap-y-2">
+                                            <div className="flex-1 space-y-1">
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <p className="font-medium leading-snug">{item.name}</p>
+                                                    <p className="text-sm text-muted-foreground whitespace-nowrap">
                                                         {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-destructive font-medium">{issue}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button variant="outline" size="sm" onClick={() => handleJumpToItem(index)}>Go to Item</Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
+                                                    </p>
+                                                </div>
+                                                <p className="text-sm text-destructive font-medium">{issue}</p>
+                                            </div>
+                                            <Button variant="outline" size="sm" onClick={() => handleJumpToItem(index)} className="w-full shrink-0 sm:w-auto">
+                                                Go to Item
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
