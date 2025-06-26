@@ -16,8 +16,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     }
   }, [user, loading, router]);
 
-  // While the auth state is loading, show a skeleton screen.
-  // This prevents a flash of the login page for already authenticated users.
+  // While the auth state is loading, or if there's no user (and redirection is imminent),
+  // show a skeleton screen. This prevents a flash of the login page or app content.
   if (loading || !user) {
     return (
         <div className="flex flex-col min-h-dvh bg-secondary/50">

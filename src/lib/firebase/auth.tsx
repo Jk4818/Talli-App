@@ -33,11 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
+      setLoading(true);
       await signInWithPopup(auth, provider);
-      toast({
-        title: 'Signed In',
-        description: 'Welcome back!',
-      });
+      // The onAuthStateChanged listener will handle the user state update and redirection
     } catch (error) {
       console.error('Error signing in with Google:', error);
       toast({
@@ -45,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Sign-in Failed',
         description: 'Could not sign in with Google. Please try again.',
       });
+      setLoading(false);
     }
   };
 
@@ -73,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = (): AuthContextType => {

@@ -52,7 +52,7 @@ export function AppHeader() {
   };
 
   const handleStepClick = (targetStep: number) => {
-    if (canNavigateTo(targetStep)) {
+    if (canNavigateTo(targetStep) || targetStep === currentStep) {
       dispatch(setStep(targetStep));
     }
   };
@@ -70,10 +70,10 @@ export function AppHeader() {
                 <li className="relative">
                     <button
                         onClick={() => handleStepClick(step.id)}
-                        disabled={!canNavigateTo(step.id)}
+                        disabled={!canNavigateTo(step.id) && step.id > currentStep}
                         className={cn(
                             "text-left disabled:cursor-not-allowed",
-                            canNavigateTo(step.id) && "transition-opacity hover:opacity-75"
+                            (canNavigateTo(step.id) || step.id <= currentStep) && "transition-opacity hover:opacity-75"
                         )}
                         aria-label={`Go to step ${step.id}: ${step.name}`}
                     >

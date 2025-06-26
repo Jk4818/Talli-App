@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowRight, BarChart, Users, UploadCloud, Divide, Menu } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import Image from 'next/image';
-import ImportButton from '@/components/app/ImportButton';
 import {
   Sheet,
   SheetContent,
@@ -65,15 +64,19 @@ export default function Home() {
               </>
             ) : (
               <>
-                <Button variant="ghost" asChild>
-                  <Link href="/login">Sign In</Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/login">
-                    Sign Up
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                {!loading && (
+                  <>
+                    <Button variant="ghost" asChild>
+                      <Link href="/login">Sign In</Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/login">
+                        Sign Up
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </>
             )}
           </nav>
@@ -87,7 +90,7 @@ export default function Home() {
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right">
+              <SheetContent side="left">
                 <SheetHeader>
                   <Logo />
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
@@ -107,12 +110,14 @@ export default function Home() {
                   {user ? (
                       <UserNav />
                   ) : (
-                    <Button asChild size="lg" className="w-full">
-                      <Link href="/login">
-                        Sign In / Sign Up
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
+                    !loading && (
+                      <Button asChild size="lg" className="w-full">
+                        <Link href="/login">
+                          Start Splitting
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    )
                   )}
                 </div>
               </SheetContent>

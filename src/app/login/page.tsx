@@ -24,10 +24,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     // If user is logged in, redirect to the main app
-    if (user) {
+    if (!loading && user) {
       router.push('/app');
     }
-  }, [user, router]);
+  }, [user, loading, router]);
   
   const handleSignIn = async () => {
     try {
@@ -35,8 +35,18 @@ export default function LoginPage() {
         // The useEffect hook will handle redirection on successful login
     } catch (error) {
         console.error("Sign in failed:", error);
-        // Optionally, show a toast notification for the error
+        // The auth provider will show a toast on error
     }
+  }
+
+  // Render nothing or a loading spinner while checking auth state
+  // to prevent a flash of the login form for already-logged-in users.
+  if (loading || user) {
+      return (
+          <div className="flex min-h-dvh flex-col items-center justify-center bg-secondary/50 p-4">
+              <p>Loading...</p>
+          </div>
+      );
   }
 
   return (
@@ -46,8 +56,8 @@ export default function LoginPage() {
             <div className="mx-auto mb-4">
                 <Logo />
             </div>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Sign in to continue to Splitzy.</CardDescription>
+          <CardTitle className="text-2xl">Welcome to Splitzy</CardTitle>
+          <CardDescription>Sign in with Google to continue.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button 
