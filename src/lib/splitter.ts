@@ -1,3 +1,4 @@
+
 import { SessionState, Participant, Receipt, SplitSummary, ParticipantSummary, Settlement, Item } from './types';
 
 // Distributes a total amount into N parts as evenly as possible (in cents)
@@ -32,6 +33,8 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   let totalServiceCharge = 0;
 
   receipts.forEach(receipt => {
+    if (!receipt) return;
+
     const rate = (receipt.currency !== globalCurrency && receipt.exchangeRate) ? receipt.exchangeRate : 1;
 
     // Create a temporary, converted version of the receipt data
@@ -42,15 +45,15 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     const convertedReceiptSubtotal = convertedItems.reduce((sum, item) => sum + item.cost, 0);
     totalItemCost += convertedReceiptSubtotal;
     
-    const totalConvertedDiscounts = receipt.discounts.reduce((sum, d) => sum + Math.round(d.amount * rate), 0);
+    const totalConvertedDiscounts = (receipt.discounts || []).reduce((sum, d) => sum + Math.round(d.amount * rate), 0);
     totalDiscounts += totalConvertedDiscounts;
 
     const subtotalAfterDiscounts = convertedReceiptSubtotal - totalConvertedDiscounts;
     
     let convertedServiceChargeAmount = 0;
-    if (receipt.serviceCharge.type === 'fixed') {
+    if (receipt.serviceCharge?.type === 'fixed') {
       convertedServiceChargeAmount = Math.round(receipt.serviceCharge.value * rate);
-    } else if (receipt.serviceCharge.type === 'percentage') {
+    } else if (receipt.serviceCharge?.type === 'percentage') {
       convertedServiceChargeAmount = Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
     }
     totalServiceCharge += convertedServiceChargeAmount;

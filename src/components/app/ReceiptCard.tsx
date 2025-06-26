@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -17,17 +18,20 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
+  const serviceCharge = receipt.serviceCharge || { type: 'fixed', value: 0 };
+  const discounts = receipt.discounts || [];
+
 
   const subtotal = items
     .filter(i => i.receiptId === receipt.id)
     .reduce((acc, item) => acc + item.cost, 0);
 
-  const totalDiscounts = receipt.discounts.reduce((acc, d) => acc + d.amount, 0);
+  const totalDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
   const subtotalAfterDiscounts = subtotal - totalDiscounts;
 
-  const serviceChargeAmount = receipt.serviceCharge.type === 'fixed'
-    ? receipt.serviceCharge.value
-    : Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
+  const serviceChargeAmount = serviceCharge.type === 'fixed'
+    ? serviceCharge.value
+    : Math.round(subtotalAfterDiscounts * (serviceCharge.value / 100));
   
   const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
 
@@ -36,7 +40,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   };
 
   const handleUpdateServiceCharge = (updates: Partial<ServiceCharge>) => {
-    dispatch(updateServiceCharge({ receiptId: receipt.id, serviceCharge: { ...receipt.serviceCharge, ...updates } }));
+    dispatch(updateServiceCharge({ receiptId: receipt.id, serviceCharge: { ...serviceCharge, ...updates } }));
   };
 
   const formatCurrency = (amount: number, currencyCode: string) => {
@@ -107,7 +111,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
           <AccordionItem value="discounts">
             <AccordionTrigger>Discounts ({formatCurrency(totalDiscounts, receipt.currency)})</AccordionTrigger>
             <AccordionContent className="space-y-2 pt-2">
-              {receipt.discounts.map(discount => (
+              {discounts.map(discount => (
                 <div key={discount.id} className="flex items-center gap-2">
                   <Input 
                     placeholder="Discount name"
@@ -138,7 +142,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
             <AccordionContent className="pt-4">
               <div className="flex items-center gap-6">
                 <RadioGroup 
-                  value={receipt.serviceCharge.type} 
+                  value={serviceCharge.type} 
                   onValueChange={(type: 'fixed' | 'percentage') => handleUpdateServiceCharge({ type })}
                   className="flex items-center gap-4"
                 >
@@ -154,9 +158,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                 <Input
                   type="number"
                   step="0.01"
-                  defaultValue={receipt.serviceCharge.type === 'fixed' ? receipt.serviceCharge.value / 100 : receipt.serviceCharge.value}
+                  defaultValue={serviceCharge.type === 'fixed' ? serviceCharge.value / 100 : serviceCharge.value}
                   onBlur={(e) => handleUpdateServiceCharge({ 
-                    value: receipt.serviceCharge.type === 'fixed' 
+                    value: serviceCharge.type === 'fixed' 
                       ? Math.round(parseFloat(e.target.value) * 100) || 0
                       : parseFloat(e.target.value) || 0
                   })}
