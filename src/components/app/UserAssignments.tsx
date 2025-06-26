@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { assignItemToUser, unassignItemFromUser, toggleAllAssignees, setItemSplitMode, setPercentageAssignment, setExactAssignment } from '@/lib/redux/slices/sessionSlice';
@@ -26,6 +27,24 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
   const receipt = receipts.find(r => r.id === item?.receiptId);
   const assignees = item?.assignees || [];
   const splitMode = item?.splitMode || 'equal';
+
+  const [exactAmountStrings, setExactAmountStrings] = useState<{ [key: string]: string }>({});
+
+  // Initialize local state when item changes, so inputs are populated from Redux
+  useEffect(() => {
+    const initialStrings: { [key: string]: string } = {};
+    if (item?.splitMode === 'exact' && item.exactAssignments) {
+        // Populate local state from Redux store
+        for (const pId in item.exactAssignments) {
+            const amount = item.exactAssignments[pId];
+            if (amount !== undefined && amount > 0) {
+                initialStrings[pId] = (amount / 100).toFixed(2);
+            }
+        }
+    }
+    setExactAmountStrings(initialStrings);
+  }, [item?.id, item?.splitMode]);
+
 
   const handleAssignmentChange = (participantId: string, checked: boolean) => {
     if (checked) {
@@ -57,16 +76,26 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
     }
   }
   
-  const handleExactAmountChange = (participantId: string, value: string) => {
-    if (value === '') {
-      dispatch(setExactAssignment({ itemId, participantId, amount: 0 }));
-      return;
+  const handleLocalExactAmountChange = (participantId: string, value: string) => {
+    // This regex allows for a valid currency format (e.g., 123.45) to be typed.
+    if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
+        setExactAmountStrings(prev => ({
+            ...prev,
+            [participantId]: value
+        }));
     }
-    const amountInCents = Math.round(parseFloat(value.replace(/[^0-9.]/g, '')) * 100);
-    if (!isNaN(amountInCents) && amountInCents >= 0) {
-      dispatch(setExactAssignment({ itemId, participantId, amount: amountInCents }));
+  };
+
+  const handleExactAmountBlur = (participantId: string) => {
+    const valueStr = exactAmountStrings[participantId] || '';
+    const amountInCents = valueStr ? Math.round(parseFloat(valueStr) * 100) : 0;
+    
+    if (!isNaN(amountInCents)) {
+        // Dispatch the final, parsed value to the Redux store
+        dispatch(setExactAssignment({ itemId, participantId, amount: amountInCents }));
     }
-  }
+  };
+
 
   const totalPercentage = useMemo(() => {
     if (!item || !item.percentageAssignments) return 0;
@@ -188,10 +217,11 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
                         {splitMode === 'exact' && isChecked && (
                             <div className="relative w-24">
                                 <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={item?.exactAssignments[p.id] !== undefined ? (item.exactAssignments[p.id] / 100).toFixed(2) : ''}
-                                    onChange={e => handleExactAmountChange(p.id, e.target.value)}
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={exactAmountStrings[p.id] || ''}
+                                    onChange={e => handleLocalExactAmountChange(p.id, e.target.value)}
+                                    onBlur={() => handleExactAmountBlur(p.id)}
                                     className="pl-4 text-right"
                                     placeholder="0.00"
                                 />
