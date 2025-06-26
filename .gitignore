@@ -6,43 +6,26 @@
 .pnp.js
 .yarn/install-state.gz
 
-# Testing
-/coverage
+# Local Environment Variables
+.env.local
 
-# Next.js
-/.next/
+# Frameworks
+.next/
 /out/
 
-# Production
+# Build artifacts
 /build
 
-# Misc
-.DS_Store
-*.pem
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
 
-# Local Env Files
-# For local development, create a .env.local file and add your secret keys there.
-# This file is ignored by git to prevent secrets from being committed.
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Log files
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Editor directories and files
-.idea
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Misc
+.DS_Store
+*.pem
