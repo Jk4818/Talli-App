@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/tool
 import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge, Settlement } from '@/lib/types';
 import { MOCK_DATA } from '@/lib/mock-data';
 import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
+import type { AuthUser } from '@/ai/auth';
 
 const initialState: SessionState = {
   step: 1,
@@ -35,16 +36,16 @@ export const addReceiptFromFile = createAsyncThunk(
 );
 
 
-// This thunk now takes a receipt ID and its data URI to process.
+// This thunk now takes a receipt ID, its data URI, and the user to process.
 export const processReceipt = createAsyncThunk(
   'session/processReceipt',
-  async ({ receiptId, imageDataUri }: { receiptId: string; imageDataUri: string; }, { rejectWithValue }) => {
+  async ({ receiptId, imageDataUri, user }: { receiptId: string; imageDataUri: string; user: AuthUser | null }, { rejectWithValue }) => {
     try {
-      const extractedData = await extractReceiptData({ receiptDataUri: imageDataUri });
-
+      const extractedData = await extractReceiptData({ receiptDataUri: imageDataUri, user });
       return { receiptId, ...extractedData };
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred during AI processing.');
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during AI processing.';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -334,12 +335,7 @@ const sessionSlice = createSlice({
         if (receipt) {
           receipt.status = 'failed';
         }
-        const errorMessage = action.payload as string;
-        if (errorMessage.includes('You are not authorized')) {
-          state.error = 'This feature is only available for beta users.';
-        } else {
-          state.error = errorMessage;
-        }
+        state.error = action.payload as string;
       });
   }
 });

@@ -3,30 +3,40 @@
  * @fileOverview A simple flow to check if the current user has beta access.
  *
  * - checkBetaStatus - A function that returns the user's beta status.
+ * - CheckBetaStatusInput - The input type for the checkBetaStatus function.
  * - CheckBetaStatusOutput - The return type for the checkBetaStatus function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { isUserOnAllowlist } from '@/ai/auth';
+import { isUserOnAllowlist, type AuthUser } from '@/ai/auth';
+
+const CheckBetaStatusInputSchema = z.object({
+  user: z.object({
+    email: z.string().nullable(),
+    email_verified: z.boolean(),
+  }).nullable(),
+});
+export type CheckBetaStatusInput = z.infer<typeof CheckBetaStatusInputSchema>;
+
 
 const CheckBetaStatusOutputSchema = z.object({
   isBetaUser: z.boolean(),
 });
 export type CheckBetaStatusOutput = z.infer<typeof CheckBetaStatusOutputSchema>;
 
-export async function checkBetaStatus(): Promise<CheckBetaStatusOutput> {
-  return checkBetaStatusFlow({}); // Pass empty object instead of undefined
+export async function checkBetaStatus(input: CheckBetaStatusInput): Promise<CheckBetaStatusOutput> {
+  return checkBetaStatusFlow(input);
 }
 
 const checkBetaStatusFlow = ai.defineFlow(
   {
     name: 'checkBetaStatusFlow',
-    inputSchema: z.object({}), // Use an empty object schema for no input
+    inputSchema: CheckBetaStatusInputSchema,
     outputSchema: CheckBetaStatusOutputSchema,
   },
-  async (_, auth) => {
-    const isBetaUser = isUserOnAllowlist(auth);
+  async (input) => {
+    const isBetaUser = isUserOnAllowlist(input.user);
     return { isBetaUser };
   }
 );

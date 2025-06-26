@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { assertAuth } from '@/ai/auth';
+import { assertAuth, type AuthUser } from '@/ai/auth';
 
 const ExtractReceiptDataInputSchema = z.object({
   receiptDataUri: z
@@ -18,6 +18,10 @@ const ExtractReceiptDataInputSchema = z.object({
     .describe(
       "A photo of a receipt, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
+  user: z.object({
+    email: z.string().nullable(),
+    email_verified: z.boolean(),
+  }).nullable(),
 });
 export type ExtractReceiptDataInput = z.infer<typeof ExtractReceiptDataInputSchema>;
 
@@ -74,8 +78,8 @@ const extractReceiptDataFlow = ai.defineFlow(
     inputSchema: ExtractReceiptDataInputSchema,
     outputSchema: ExtractReceiptDataOutputSchema,
   },
-  async (input, auth) => {
-    assertAuth(auth);
+  async (input) => {
+    assertAuth(input.user);
     const {output} = await extractReceiptDataPrompt(input);
     return output!;
   }

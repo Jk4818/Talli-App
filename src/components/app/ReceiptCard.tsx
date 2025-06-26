@@ -21,7 +21,7 @@ import { useAuth } from '@/lib/firebase/auth';
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
-  const { isBetaUser } = useAuth();
+  const { user, isBetaUser } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
@@ -42,8 +42,12 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
 
   const handleScanReceipt = () => {
-    if (receipt.imageDataUri) {
-      dispatch(processReceipt({ receiptId: receipt.id, imageDataUri: receipt.imageDataUri }));
+    if (receipt.imageDataUri && user) {
+      dispatch(processReceipt({ 
+        receiptId: receipt.id, 
+        imageDataUri: receipt.imageDataUri,
+        user: { email: user.email, email_verified: user.emailVerified }
+      }));
     }
   };
 
