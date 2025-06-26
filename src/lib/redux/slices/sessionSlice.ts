@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction, createAction } from '@reduxjs/toolkit';
 import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge, Settlement } from '@/lib/types';
 import { MOCK_DATA } from '@/lib/mock-data';
 import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
@@ -50,21 +50,13 @@ export const processReceipt = createAsyncThunk(
   }
 );
 
+export const loadDemoData = createAction('session/loadDemoData');
+
 
 const sessionSlice = createSlice({
   name: 'session',
   initialState,
   reducers: {
-    loadDemoData: {
-      reducer: (state) => {
-        const demoState = { ...MOCK_DATA, status: 'succeeded', error: null, isDemoSession: true };
-        const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'processed' as const}));
-        return { ...initialState, ...demoState, receipts: processedDemoReceipts, settlements: [] };
-      },
-      prepare: () => {
-        return { payload: undefined }; // This explicitly defines an action creator that takes no arguments.
-      },
-    },
     restoreSession: (state, action: PayloadAction<Partial<SessionState>>) => {
       const importedData = action.payload;
     
@@ -286,6 +278,11 @@ const sessionSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(loadDemoData, (state) => {
+        const demoState = { ...MOCK_DATA, status: 'succeeded' as const, error: null, isDemoSession: true };
+        const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'processed' as const}));
+        return { ...initialState, ...demoState, receipts: processedDemoReceipts, settlements: [] };
+      })
       .addCase(addReceiptFromFile.fulfilled, (state, action) => {
         const newReceipt: Receipt = {
           id: `receipt_${new Date().getTime()}`,
@@ -346,7 +343,6 @@ const sessionSlice = createSlice({
 });
 
 export const {
-  loadDemoData,
   restoreSession,
   resetSession,
   setStep,
