@@ -16,13 +16,13 @@ const CheckBetaStatusOutputSchema = z.object({
 export type CheckBetaStatusOutput = z.infer<typeof CheckBetaStatusOutputSchema>;
 
 export async function checkBetaStatus(): Promise<CheckBetaStatusOutput> {
-  return checkBetaStatusFlow(undefined); // No input needed
+  return checkBetaStatusFlow({}); // Pass empty object instead of undefined
 }
 
 const checkBetaStatusFlow = ai.defineFlow(
   {
     name: 'checkBetaStatusFlow',
-    inputSchema: z.undefined(),
+    inputSchema: z.object({}), // Use an empty object schema for no input
     outputSchema: CheckBetaStatusOutputSchema,
   },
   async (_, auth) => {
