@@ -10,28 +10,26 @@ import { AlertCircle } from 'lucide-react';
 import { setCurrentAssignmentIndex } from '@/lib/redux/slices/sessionSlice';
 
 export default function Step2Assignment() {
-  const { items } = useSelector((state: RootState) => state.session);
+  const { items, currentAssignmentIndex } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const [api, setApi] = React.useState<CarouselApi>();
-  const [current, setCurrent] = React.useState(0);
-  const [canScrollNext, setCanScrollNext] = React.useState(true);
 
   const itemsWithCost = items.filter(item => item.cost > 0);
   
-  const currentItem = itemsWithCost[current];
+  const currentItem = itemsWithCost[currentAssignmentIndex];
   const isCurrentItemAssigned = currentItem?.assignees.length > 0;
+  const isLastSlide = currentAssignmentIndex === itemsWithCost.length - 1;
 
   React.useEffect(() => {
     if (!api) return;
     
     const handleSelect = () => {
       const selectedSnap = api.selectedScrollSnap();
-      setCurrent(selectedSnap);
-      dispatch(setCurrentAssignmentIndex(selectedSnap));
-      setCanScrollNext(api.canScrollNext());
+      if (currentAssignmentIndex !== selectedSnap) {
+        dispatch(setCurrentAssignmentIndex(selectedSnap));
+      }
     };
 
-    handleSelect(); // Initial set
     api.on("select", handleSelect);
     api.on("reInit", handleSelect);
 
@@ -39,7 +37,24 @@ export default function Step2Assignment() {
       api.off("select", handleSelect);
       api.off("reInit", handleSelect);
     };
-  }, [api, dispatch]);
+  }, [api, dispatch, currentAssignmentIndex]);
+
+  // Re-initialize the carousel with updated draggable option when assignment status changes
+  React.useEffect(() => {
+    if (!api) return;
+    api.reInit({
+        ...api.options(),
+        draggable: isCurrentItemAssigned,
+    });
+  }, [api, isCurrentItemAssigned]);
+
+  // Sync Redux state with carousel's internal state in case they diverge
+  React.useEffect(() => {
+    if (api && api.selectedScrollSnap() !== currentAssignmentIndex) {
+        api.scrollTo(currentAssignmentIndex, true); // true for instant scroll
+    }
+  }, [api, currentAssignmentIndex]);
+
 
   if (itemsWithCost.length === 0) {
     return (
@@ -58,8 +73,11 @@ export default function Step2Assignment() {
       <Carousel 
         setApi={setApi}
         className="w-full max-w-md"
-        opts={{ loop: false, keyboard: false }}
-        disableDrag={true}
+        opts={{ 
+            loop: false, 
+            keyboard: false,
+            draggable: isCurrentItemAssigned,
+        }}
       >
         <CarouselContent>
           {itemsWithCost.map((item, index) => (
@@ -69,7 +87,7 @@ export default function Step2Assignment() {
           ))}
         </CarouselContent>
         <CarouselPrevious />
-        {canScrollNext && <CarouselNext disabled={!isCurrentItemAssigned} />}
+        { !isLastSlide && <CarouselNext disabled={!isCurrentItemAssigned} /> }
       </Carousel>
     </div>
   );
