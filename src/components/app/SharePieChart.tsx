@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
@@ -29,50 +29,58 @@ export default function SharePieChart({ summary }: SharePieChartProps) {
     return acc;
   }, {} as ChartConfig);
 
+  const legendData = chartData.map((entry, index) => ({
+    name: entry.name,
+    color: COLORS[index % COLORS.length],
+  }));
+
   const totalAmount = summary.total;
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-                <Tooltip
-                    cursor={false}
-                    content={<ChartTooltipContent 
-                        formatter={(value) => (Number(value) / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
-                        nameKey="name"
-                    />}
-                />
-                <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    innerRadius={60}
-                    paddingAngle={2}
-                    dataKey="value"
-                >
-                    {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                </Pie>
-                <Legend content={({ payload }) => (
-                    <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-4">
-                        {payload?.map((entry, index) => (
-                            <li key={`item-${index}`} className="flex items-center gap-1.5">
-                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                                {entry.value}
-                            </li>
+    <ChartContainer config={chartConfig} className="w-full flex flex-col items-center">
+        <div className="relative w-full h-48">
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Tooltip
+                        cursor={false}
+                        content={<ChartTooltipContent 
+                            formatter={(value) => (Number(value) / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
+                            nameKey="name"
+                        />}
+                    />
+                    <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        innerRadius={60}
+                        paddingAngle={2}
+                        dataKey="value"
+                    >
+                        {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
-                    </ul>
-                )} />
-            </PieChart>
-        </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -translate-y-4">
-            <p className="text-sm text-muted-foreground">Total Bill</p>
-            <p className="text-3xl font-bold font-headline">
-                {(totalAmount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
-            </p>
+                    </Pie>
+                </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <p className="text-sm text-muted-foreground">Total Bill</p>
+                <p className="text-3xl font-bold font-headline">
+                    {(totalAmount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
+                </p>
+            </div>
+        </div>
+        
+        <div className="mt-4">
+            <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                {legendData.map((entry, index) => (
+                    <li key={`item-${index}`} className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                        {entry.name}
+                    </li>
+                ))}
+            </ul>
         </div>
     </ChartContainer>
   );
