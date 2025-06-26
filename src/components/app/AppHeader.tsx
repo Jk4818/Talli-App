@@ -58,7 +58,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <Logo />
         <nav aria-label="Progress">
           <ol role="list" className="flex items-center">
