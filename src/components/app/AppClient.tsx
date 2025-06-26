@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { loadDemoData, resetSession, setStep } from '@/lib/redux/slices/sessionSlice';
@@ -35,7 +35,27 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   };
   
   const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
-  const isStep2Complete = items.every(item => item.cost === 0 || item.assignees.length > 0);
+  
+  const isStep2Complete = useMemo(() => {
+    return items.every(item => {
+      if (item.cost === 0) return true;
+      if (item.assignees.length === 0) return false;
+
+      if (item.splitMode === 'percentage') {
+        if (!item.percentageAssignments) return false;
+        const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments[pid] || 0), 0);
+        return totalPercentage === 100;
+      }
+  
+      if (item.splitMode === 'exact') {
+        if (!item.exactAssignments) return false;
+        const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments[pid] || 0), 0);
+        return totalExact === item.cost;
+      }
+      
+      return true; // 'equal' split is always valid if assignees exist.
+    });
+  }, [items]);
 
   const renderStep = () => {
     switch (step) {

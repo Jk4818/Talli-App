@@ -27,15 +27,32 @@ export default function Step2Assignment() {
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
-  const unassignedItems = useMemo(() => {
+  const itemsRequiringAttention = useMemo(() => {
     return itemsWithCost
-        .map((item, index) => ({ item, index }))
-        .filter(({ item }) => item.assignees.length === 0);
+        .map((item, index) => {
+            let issue: string | null = null;
+            if (item.assignees.length === 0) {
+                issue = "Unassigned";
+            } else if (item.splitMode === 'percentage') {
+                const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
+                if (totalPercentage !== 100) {
+                    issue = `Percentages total to ${totalPercentage}%, not 100%.`;
+                }
+            } else if (item.splitMode === 'exact') {
+                const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments?.[pid] || 0), 0);
+                if (totalExact !== item.cost) {
+                    issue = "Exact amounts don't add up to item total.";
+                }
+            }
+            return { item, index, issue };
+        })
+        .filter((data): data is { item: typeof data.item; index: number; issue: string } => data.issue !== null);
   }, [itemsWithCost]);
 
   const assignedItemsCount = useMemo(() => {
-    return itemsWithCost.length - unassignedItems.length;
-  }, [itemsWithCost.length, unassignedItems.length]);
+    return itemsWithCost.length - itemsRequiringAttention.length;
+  }, [itemsWithCost.length, itemsRequiringAttention.length]);
+
 
   const handleJumpToItem = (index: number) => {
     emblaApi?.scrollTo(index);
@@ -123,18 +140,18 @@ export default function Step2Assignment() {
             </div>
         </div>
 
-        {unassignedItems.length > 0 && (
+        {itemsRequiringAttention.length > 0 && (
             <Card className="max-w-xl mx-auto border-amber-500/50 bg-amber-50/20 dark:bg-amber-950/20">
                 <CardHeader className='flex-row items-center gap-4 space-y-0'>
                     <ListTodo className="w-6 h-6 text-amber-600 dark:text-amber-500"/>
                     <div>
-                        <CardTitle className="text-amber-700 dark:text-amber-400">Unassigned Items</CardTitle>
+                        <CardTitle className="text-amber-700 dark:text-amber-400">Items Requiring Attention</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <p className='text-sm text-muted-foreground mb-4'>Click an item to jump to it and assign it to someone.</p>
+                    <p className='text-sm text-muted-foreground mb-4'>Click an item to jump to it and resolve the assignment issue.</p>
                     <div className="flex flex-wrap gap-2">
-                        {unassignedItems.map(({ item, index }) => {
+                        {itemsRequiringAttention.map(({ item, index, issue }) => {
                              const receipt = receipts.find(r => r.id === item.receiptId);
                              const currency = receipt?.currency || globalCurrency;
                              return (
@@ -150,11 +167,13 @@ export default function Step2Assignment() {
                                                 <span className='text-xs text-muted-foreground'>
                                                     {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
                                                 </span>
+                                                <span className='text-xs text-destructive truncate'>{issue}</span>
                                             </div>
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <p>{item.name}</p>
+                                        <p className="text-destructive">{issue}</p>
                                     </TooltipContent>
                                 </Tooltip>
                             )
