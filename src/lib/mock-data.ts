@@ -20,6 +20,7 @@ export const MOCK_DATA: SessionState = {
       currency: 'GBP',
       discounts: [{ id: 'd_1', name: '20% Off Mains', amount: 1160 }],
       serviceCharge: { type: 'percentage', value: 12.5 },
+      status: 'processed',
     },
     {
       id: 'r_2',
@@ -28,6 +29,7 @@ export const MOCK_DATA: SessionState = {
       currency: 'GBP',
       discounts: [],
       serviceCharge: { type: 'fixed', value: 0 },
+      status: 'processed',
     },
   ],
   items: [
