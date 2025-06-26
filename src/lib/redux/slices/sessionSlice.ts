@@ -12,6 +12,7 @@ const initialState: SessionState = {
   globalCurrency: 'USD',
   status: 'idle',
   error: null,
+  isDemoSession: false,
   currentAssignmentIndex: 0,
 };
 
@@ -42,7 +43,7 @@ const sessionSlice = createSlice({
   initialState,
   reducers: {
     loadDemoData: (state) => {
-      const demoState = { ...MOCK_DATA, status: 'succeeded', error: null };
+      const demoState = { ...MOCK_DATA, status: 'succeeded', error: null, isDemoSession: true };
       return { ...initialState, ...demoState, settlements: [] }; // Reset settlements for demo
     },
     restoreSession: (state, action: PayloadAction<Partial<SessionState>>) => {
@@ -85,6 +86,7 @@ const sessionSlice = createSlice({
         step: importedData.step || 1,
         status: 'succeeded',
         error: null,
+        isDemoSession: false,
       };
     },
     resetSession: () => initialState,

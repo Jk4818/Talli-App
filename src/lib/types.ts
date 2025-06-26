@@ -70,5 +70,6 @@ export interface SessionState {
   globalCurrency: string;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
+  isDemoSession: boolean;
   currentAssignmentIndex: number;
 }

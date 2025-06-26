@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo } from 'react';
@@ -13,14 +14,21 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 export function AppClient({ isDemo }: { isDemo: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
-  const { step, participants, items, receipts } = useSelector((state: RootState) => state.session);
+  const { step, participants, items, receipts, isDemoSession } = useSelector((state: RootState) => state.session);
 
   useEffect(() => {
-    dispatch(resetSession());
     if (isDemo) {
+      // If we are on the demo page, always load the demo data.
       dispatch(loadDemoData());
+    } else {
+      // If we are on the main app page, only reset the session
+      // if the currently loaded session is the demo one.
+      // This prevents wiping an imported or active session.
+      if (isDemoSession) {
+        dispatch(resetSession());
+      }
     }
-  }, [dispatch, isDemo]);
+  }, [dispatch, isDemo, isDemoSession]);
 
   const handleNext = () => {
     if (step < 3) {
