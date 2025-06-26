@@ -28,6 +28,14 @@ export const fadeInUp: Variants = {
       duration: 0.5,
     },
   },
+  exit: {
+    y: 20,
+    opacity: 0,
+    transition: {
+      duration: 0.3,
+      ease: 'easeOut',
+    },
+  },
 };
 
 export const fadeIn: Variants = {
@@ -37,6 +45,13 @@ export const fadeIn: Variants = {
         transition: {
             duration: 0.5,
             ease: "easeOut"
+        }
+    },
+    exit: {
+        opacity: 0,
+        transition: {
+            duration: 0.3,
+            ease: "easeOut",
         }
     }
 };
@@ -50,5 +65,13 @@ export const pageTransition: Variants = {
       duration: 0.4,
       ease: 'easeOut',
     },
+  },
+  exit: {
+    opacity: 0,
+    y: 15,
+    transition: {
+      duration: 0.3,
+      ease: 'easeIn',
+    }
   },
 };
