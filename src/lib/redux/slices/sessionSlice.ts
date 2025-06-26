@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge } from '@/lib/types';
+import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge, Settlement } from '@/lib/types';
 import { MOCK_DATA } from '@/lib/mock-data';
 import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 import { flagAmbiguousItems } from '@/ai/flows/flag-ambiguous-items';
@@ -9,6 +9,7 @@ const initialState: SessionState = {
   participants: [],
   receipts: [],
   items: [],
+  settlements: [],
   globalCurrency: 'USD',
   status: 'idle',
   error: null,
@@ -49,7 +50,8 @@ const sessionSlice = createSlice({
   initialState,
   reducers: {
     loadDemoData: (state) => {
-      return { ...MOCK_DATA, status: 'succeeded', error: null };
+      const demoState = { ...MOCK_DATA, status: 'succeeded', error: null };
+      return { ...initialState, ...demoState, settlements: [] }; // Reset settlements for demo
     },
     resetSession: () => initialState,
     setStep: (state, action: PayloadAction<number>) => {
@@ -151,7 +153,16 @@ const sessionSlice = createSlice({
     },
     setCurrentAssignmentIndex: (state, action: PayloadAction<number>) => {
       state.currentAssignmentIndex = action.payload;
-    }
+    },
+    setSettlements: (state, action: PayloadAction<Settlement[]>) => {
+      state.settlements = action.payload;
+    },
+    toggleSettlementPaid: (state, action: PayloadAction<{ settlementId: string }>) => {
+      const settlement = state.settlements.find(s => s.id === action.payload.settlementId);
+      if (settlement) {
+          settlement.paid = !settlement.paid;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -209,6 +220,8 @@ export const {
   setItemSplitMode,
   setPercentageAssignment,
   setCurrentAssignmentIndex,
+  setSettlements,
+  toggleSettlementPaid,
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;

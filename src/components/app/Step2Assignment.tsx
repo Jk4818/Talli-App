@@ -10,6 +10,7 @@ import { AlertCircle, ArrowLeft, ArrowRight, ListTodo } from 'lucide-react';
 import { setCurrentAssignmentIndex } from '@/lib/redux/slices/sessionSlice';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Progress } from '../ui/progress';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -30,6 +31,10 @@ export default function Step2Assignment() {
         .map((item, index) => ({ item, index }))
         .filter(({ item }) => item.assignees.length === 0);
   }, [itemsWithCost]);
+
+  const assignedItemsCount = useMemo(() => {
+    return itemsWithCost.length - unassignedItems.length;
+  }, [itemsWithCost.length, unassignedItems.length]);
 
   const handleJumpToItem = (index: number) => {
     emblaApi?.scrollTo(index);
@@ -74,6 +79,13 @@ export default function Step2Assignment() {
 
   return (
     <div className="space-y-8">
+        <div className="max-w-md mx-auto space-y-2">
+            <div className="flex justify-between text-sm font-medium text-muted-foreground">
+                <p>Assignment Progress</p>
+                <p>{assignedItemsCount} of {itemsWithCost.length} items assigned</p>
+            </div>
+            <Progress value={itemsWithCost.length > 0 ? (assignedItemsCount / itemsWithCost.length) * 100 : 100} />
+        </div>
         <div className="flex justify-center items-center">
             <div className="relative w-full max-w-md">
                 <div className="overflow-hidden" ref={emblaRef}>

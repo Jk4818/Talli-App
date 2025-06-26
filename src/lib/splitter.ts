@@ -1,24 +1,4 @@
-import { SessionState, Participant, Receipt } from './types';
-
-interface ParticipantSummary {
-  id: string;
-  name: string;
-  totalPaid: number;
-  totalShare: number;
-  balance: number;
-}
-
-interface Settlement {
-  from: string;
-  to: string;
-  amount: number;
-}
-
-interface SplitSummary {
-  participantSummaries: ParticipantSummary[];
-  settlements: Settlement[];
-  total: number;
-}
+import { SessionState, Participant, Receipt, SplitSummary, ParticipantSummary, Settlement } from './types';
 
 // Distributes a total amount into N parts as evenly as possible (in cents)
 const distributeCents = (total: number, n: number): number[] => {
@@ -33,9 +13,8 @@ const distributeCents = (total: number, n: number): number[] => {
 };
 
 export const calculateSplits = (session: SessionState): SplitSummary => {
-  const { participants, receipts, items, globalCurrency } = session;
+  const { participants, receipts, items } = session;
 
-  const participantMap = new Map<string, Participant>(participants.map(p => [p.id, p]));
   const summaries = new Map<string, ParticipantSummary>();
   participants.forEach(p => {
     summaries.set(p.id, {
@@ -48,14 +27,19 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   });
 
   let grandTotal = 0;
+  let totalItemCost = 0;
+  let totalDiscounts = 0;
+  let totalServiceCharge = 0;
 
   receipts.forEach(receipt => {
     const receiptItems = items.filter(i => i.receiptId === receipt.id);
     const receiptSubtotal = receiptItems.reduce((sum, item) => sum + item.cost, 0);
+    totalItemCost += receiptSubtotal;
 
-    // 1. Calculate receipt total with discounts and service charge
-    const totalDiscounts = receipt.discounts.reduce((sum, d) => sum + d.amount, 0);
-    const subtotalAfterDiscounts = receiptSubtotal - totalDiscounts;
+    const receiptDiscounts = receipt.discounts.reduce((sum, d) => sum + d.amount, 0);
+    totalDiscounts += receiptDiscounts;
+    
+    const subtotalAfterDiscounts = receiptSubtotal - receiptDiscounts;
 
     let serviceChargeAmount = 0;
     if (receipt.serviceCharge.type === 'fixed') {
@@ -63,11 +47,11 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     } else if (receipt.serviceCharge.type === 'percentage') {
       serviceChargeAmount = Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
     }
+    totalServiceCharge += serviceChargeAmount;
 
     const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
     grandTotal += receiptTotal;
 
-    // 2. Adjust item costs proportionally to match receipt total
     const adjustedItemCosts = new Map<string, number>();
     if (receiptSubtotal > 0) {
       let distributedTotal = 0;
@@ -77,7 +61,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         distributedTotal += adjustedCost;
       });
 
-      // Adjust for rounding errors
       let roundingDiff = receiptTotal - distributedTotal;
       for (const itemId of adjustedItemCosts.keys()) {
         if (roundingDiff === 0) break;
@@ -92,7 +75,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       }
     }
 
-    // 3. Distribute item costs to participants and update shares
     receiptItems.forEach(item => {
       const adjustedCost = adjustedItemCosts.get(item.id) || 0;
       if (adjustedCost > 0 && item.assignees.length > 0) {
@@ -111,7 +93,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
               distributedAmount += share;
             });
 
-            // Distribute rounding errors
             let remainder = adjustedCost - distributedAmount;
             for(const ps of participantShares) {
               if (remainder === 0) break;
@@ -147,7 +128,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       }
     });
 
-    // 4. Update what each person has paid
     if (receipt.payerId) {
       const payerSummary = summaries.get(receipt.payerId);
       if (payerSummary) {
@@ -156,12 +136,10 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     }
   });
 
-  // 5. Calculate final balances
   summaries.forEach(summary => {
     summary.balance = summary.totalPaid - summary.totalShare;
   });
 
-  // 6. Calculate settlements
   const settlements: Settlement[] = [];
   const debtors = Array.from(summaries.values()).filter(s => s.balance < 0).sort((a,b) => a.balance - b.balance);
   const creditors = Array.from(summaries.values()).filter(s => s.balance > 0).sort((a,b) => b.balance - a.balance);
@@ -174,11 +152,13 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     const creditor = creditors[creditorIndex];
     const amountToSettle = Math.min(-debtor.balance, creditor.balance);
 
-    if (amountToSettle > 0.5) { // Avoid tiny settlements from rounding
+    if (amountToSettle > 0.5) {
         settlements.push({
+            id: `${debtor.id}_${creditor.id}`,
             from: debtor.name,
             to: creditor.name,
-            amount: Math.round(amountToSettle)
+            amount: Math.round(amountToSettle),
+            paid: false,
         });
     }
 
@@ -197,6 +177,9 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   return {
     participantSummaries: Array.from(summaries.values()),
     settlements,
-    total: grandTotal
+    total: grandTotal,
+    totalItemCost,
+    totalDiscounts,
+    totalServiceCharge,
   };
 };

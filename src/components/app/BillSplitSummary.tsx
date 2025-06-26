@@ -5,19 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 import { cn } from '@/lib/utils';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { SplitSummary } from '@/lib/types';
 
 interface BillSplitSummaryProps {
-  summary: {
-    participantSummaries: {
-      id: string;
-      name: string;
-      totalPaid: number;
-      totalShare: number;
-      balance: number;
-    }[];
-    total: number;
-  };
+  summary: SplitSummary;
 }
 
 export default function BillSplitSummary({ summary }: BillSplitSummaryProps) {
@@ -41,9 +32,14 @@ export default function BillSplitSummary({ summary }: BillSplitSummaryProps) {
                         <TableCell className="font-medium">{p.name}</TableCell>
                         <TableCell className="text-right">{formatCurrency(p.totalShare)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(p.totalPaid)}</TableCell>
-                        <TableCell className={cn("text-right font-semibold flex justify-end items-center gap-1", p.balance < 0 ? 'text-destructive' : 'text-green-600')}>
-                            {p.balance < 0 ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />}
-                            {formatCurrency(Math.abs(p.balance))}
+                        <TableCell className="text-right font-semibold">
+                            {Math.abs(p.balance) < 1 ? (
+                                <span className='text-muted-foreground'>{formatCurrency(0)}</span>
+                            ) : p.balance > 0 ? (
+                                <span className="text-green-600">{formatCurrency(p.balance)} is owed</span>
+                            ) : (
+                                <span className="text-destructive">{formatCurrency(Math.abs(p.balance))} owes</span>
+                            )}
                         </TableCell>
                     </TableRow>
                 ))}

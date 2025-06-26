@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { calculateSplits } from '@/lib/splitter';
@@ -8,20 +8,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import BillSplitSummary from './BillSplitSummary';
 import SharePieChart from './SharePieChart';
 import { Button } from '../ui/button';
-import { resetSession } from '@/lib/redux/slices/sessionSlice';
-import { HandCoins, Scale, RefreshCw } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { resetSession, setSettlements, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
+import { HandCoins, Scale, RefreshCw, Calculator } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
 
   const summary = useMemo(() => {
     if (sessionState.participants.length > 0 && sessionState.items.length > 0) {
       return calculateSplits(sessionState);
     }
-    return { participantSummaries: [], settlements: [], total: 0 };
+    return { 
+      participantSummaries: [], 
+      settlements: [], 
+      total: 0, 
+      totalItemCost: 0, 
+      totalDiscounts: 0, 
+      totalServiceCharge: 0 
+    };
   }, [sessionState]);
+
+  useEffect(() => {
+    if (summary.settlements.length > 0) {
+      dispatch(setSettlements(summary.settlements));
+    }
+  }, [summary.settlements, dispatch]);
+
+  const { settlements } = sessionState;
 
   const handleStartNew = () => {
     dispatch(resetSession());
@@ -36,6 +55,12 @@ export default function Step3Summary() {
     })
   };
 
+  const handleTogglePaid = (settlementId: string) => {
+    dispatch(toggleSettlementPaid({ settlementId }));
+  };
+
+  const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: sessionState.globalCurrency });
+
   return (
     <div className="space-y-8">
         <div className="flex justify-end gap-2">
@@ -48,7 +73,7 @@ export default function Step3Summary() {
                 <CardHeader className='flex-row items-center gap-4 space-y-0'>
                     <Scale className="w-8 h-8 text-primary" />
                     <div>
-                        <CardTitle>Bill Breakdown</CardTitle>
+                        <CardTitle>Participant Balances</CardTitle>
                         <CardDescription>Final shares, payments, and balances for each participant.</CardDescription>
                     </div>
                 </CardHeader>
@@ -59,26 +84,50 @@ export default function Step3Summary() {
 
             <Card>
                 <CardHeader className='flex-row items-center gap-4 space-y-0'>
+                    <Calculator className="w-8 h-8 text-primary" />
+                    <div>
+                        <CardTitle>Overall Bill Calculation</CardTitle>
+                        <CardDescription>A summary of the entire bill across all receipts.</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span>Original Items Subtotal</span> <span className="font-medium">{formatCurrency(summary.totalItemCost)}</span></div>
+                    {summary.totalDiscounts > 0 && <div className="flex justify-between text-destructive"><span>Discounts</span> <span className="font-medium">- {formatCurrency(summary.totalDiscounts)}</span></div>}
+                    <div className="flex justify-between border-t pt-2 mt-2"><span>Subtotal</span> <span className="font-medium">{formatCurrency(summary.totalItemCost - summary.totalDiscounts)}</span></div>
+                    {summary.totalServiceCharge > 0 && <div className="flex justify-between"><span>Service Charges & Tips</span> <span className="font-medium">+ {formatCurrency(summary.totalServiceCharge)}</span></div>}
+                    <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2"><span>Grand Total</span> <span>{formatCurrency(summary.total)}</span></div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className='flex-row items-center gap-4 space-y-0'>
                     <HandCoins className="w-8 h-8 text-primary" />
                     <div>
                         <CardTitle>Settlement Plan</CardTitle>
-                        <CardDescription>The simplest way to settle up.</CardDescription>
+                        <CardDescription>The simplest way to settle up. Mark transactions as paid.</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
                 <ul className="space-y-3">
-                    {summary.settlements.length > 0 ? summary.settlements.map((s, i) => (
-                    <li key={i} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
-                        <div className="font-medium">{s.from}</div>
-                        <div className="flex items-center gap-2 text-primary font-semibold">
-                        <span>&rarr;</span>
-                        <span>
-                            {(s.amount / 100).toLocaleString(undefined, { style: 'currency', currency: sessionState.globalCurrency })}
-                        </span>
-                        <span>&rarr;</span>
-                        </div>
-                        <div className="font-medium">{s.to}</div>
-                    </li>
+                    {settlements.length > 0 ? settlements.map((s) => (
+                      <li key={s.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
+                          <div className={cn("flex-1", s.paid && "line-through text-muted-foreground")}>
+                            <span className="font-medium">{s.from}</span>
+                            <span className="text-muted-foreground"> should pay </span>
+                            <span className="font-medium">{s.to}</span>
+                          </div>
+                          <span className={cn("font-semibold text-primary mx-4", s.paid && "line-through text-muted-foreground")}>
+                              {formatCurrency(s.amount)}
+                          </span>
+                          <div className="flex items-center space-x-2">
+                              <Label htmlFor={`paid-${s.id}`} className={cn("text-sm", s.paid ? 'text-muted-foreground' : 'text-foreground')}>Paid</Label>
+                              <Switch
+                                  id={`paid-${s.id}`}
+                                  checked={s.paid}
+                                  onCheckedChange={() => handleTogglePaid(s.id)}
+                              />
+                          </div>
+                      </li>
                     )) : (
                         <p className="text-center text-muted-foreground py-4">All settled up!</p>
                     )}

@@ -34,11 +34,37 @@ export interface Receipt {
   currency: string;
 }
 
+export interface Settlement {
+  id: string;
+  from: string;
+  to: string;
+  amount: number;
+  paid: boolean;
+}
+
+export interface ParticipantSummary {
+  id: string;
+  name: string;
+  totalPaid: number;
+  totalShare: number;
+  balance: number;
+}
+
+export interface SplitSummary {
+  participantSummaries: ParticipantSummary[];
+  settlements: Settlement[];
+  total: number;
+  totalItemCost: number;
+  totalDiscounts: number;
+  totalServiceCharge: number;
+}
+
 export interface SessionState {
   step: number; // 1, 2, or 3
   participants: Participant[];
   receipts: Receipt[];
   items: Item[];
+  settlements: Settlement[];
   globalCurrency: string;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
