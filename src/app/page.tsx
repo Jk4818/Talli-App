@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/firebase/auth';
 import { UserNav } from '@/components/auth/UserNav';
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeInUp, fadeIn } from '@/lib/animations';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -133,16 +135,21 @@ export default function Home() {
         </div>
       </header>
       <main className="flex-1">
-        <section className="container mx-auto px-4 py-16 text-center lg:py-28">
-          <h1 className="font-headline text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+        <motion.section 
+          className="container mx-auto px-4 py-16 text-center lg:py-28"
+          variants={staggerContainer(0.3, 0.2)}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.h1 variants={fadeInUp} className="font-headline text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             Stop arguing over the bill.
             <br />
             <span className="text-primary">Split it with AI.</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+          </motion.h1>
+          <motion.p variants={fadeInUp} className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
             Splitzy makes group expenses simple. Upload a receipt, assign items, and we'll tell you exactly who owes what. Fair, fast, and free.
-          </p>
-          <div className="mt-8 flex justify-center gap-4">
+          </motion.p>
+          <motion.div variants={fadeInUp} className="mt-8 flex justify-center gap-4">
             <Button size="lg" asChild>
               <Link href={user ? "/app" : "/signup"}>
                 Start Splitting
@@ -152,20 +159,26 @@ export default function Home() {
             <Button size="lg" variant="outline" asChild>
               <Link href="/demo">Try a Live Demo</Link>
             </Button>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
         <section className="bg-secondary/50 py-16 lg:py-24">
           <div className="container mx-auto px-4">
-            <div className="grid items-center gap-12 lg:grid-cols-2">
-              <div className="space-y-4">
+            <motion.div 
+              className="grid items-center gap-12 lg:grid-cols-2"
+              variants={staggerContainer(0.2, 0.1)}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.5 }}
+            >
+              <motion.div variants={fadeInUp} className="space-y-4">
                 <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm font-medium text-primary">How It Works</div>
                 <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">From Receipt to Resolution in 3 Steps</h2>
                 <p className="text-muted-foreground">
                   Splitting a bill has never been easier. Our streamlined process saves you time and prevents awkward "who had what" conversations.
                 </p>
-              </div>
-              <div className="relative">
+              </motion.div>
+              <motion.div variants={fadeIn}>
                 <Image 
                   src="https://placehold.co/1200x800.png" 
                   alt="Friends laughing and looking at a phone to split a restaurant bill with the Splitzy app."
@@ -174,23 +187,31 @@ export default function Home() {
                   height={800}
                   className="rounded-xl shadow-2xl"
                 />
-              </div>
-            </div>
-            <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+              </motion.div>
+            </motion.div>
+            <motion.div 
+              className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4"
+              variants={staggerContainer(0.2, 0.3)}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.2 }}
+            >
               {features.map((feature) => (
-                <Card key={feature.title} className="text-center">
-                  <CardHeader>
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                      {feature.icon}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <CardTitle className="font-headline text-xl">{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardContent>
-                </Card>
+                <motion.div variants={fadeInUp} key={feature.title}>
+                  <Card className="text-center h-full">
+                    <CardHeader>
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                        {feature.icon}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <CardTitle className="font-headline text-xl">{feature.title}</CardTitle>
+                      <CardDescription>{feature.description}</CardDescription>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
       </main>
