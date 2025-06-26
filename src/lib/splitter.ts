@@ -141,38 +141,45 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   });
 
   const settlements: Settlement[] = [];
-  const debtors = Array.from(summaries.values()).filter(s => s.balance < 0).sort((a,b) => a.balance - b.balance);
-  const creditors = Array.from(summaries.values()).filter(s => s.balance > 0).sort((a,b) => b.balance - a.balance);
+  // Clone summaries for settlement calculation to avoid mutating original balances
+  const settlementDebtors = Array.from(summaries.values())
+    .filter(s => s.balance < 0)
+    .map(s => ({ ...s })) // Clone the object
+    .sort((a, b) => a.balance - b.balance);
+    
+  const settlementCreditors = Array.from(summaries.values())
+    .filter(s => s.balance > 0)
+    .map(s => ({ ...s })) // Clone the object
+    .sort((a, b) => b.balance - a.balance);
 
   let debtorIndex = 0;
   let creditorIndex = 0;
 
-  while(debtorIndex < debtors.length && creditorIndex < creditors.length) {
-    const debtor = debtors[debtorIndex];
-    const creditor = creditors[creditorIndex];
+  while (debtorIndex < settlementDebtors.length && creditorIndex < settlementCreditors.length) {
+    const debtor = settlementDebtors[debtorIndex];
+    const creditor = settlementCreditors[creditorIndex];
     const amountToSettle = Math.min(-debtor.balance, creditor.balance);
 
-    if (amountToSettle > 0.5) {
-        settlements.push({
-            id: `${debtor.id}_${creditor.id}`,
-            from: debtor.name,
-            to: creditor.name,
-            amount: Math.round(amountToSettle),
-            paid: false,
-        });
+    if (amountToSettle > 0.5) { // Avoid creating tiny, meaningless settlements
+      settlements.push({
+        id: `${debtor.id}_${creditor.id}`,
+        from: debtor.name,
+        to: creditor.name,
+        amount: Math.round(amountToSettle),
+        paid: false,
+      });
     }
 
     debtor.balance += amountToSettle;
     creditor.balance -= amountToSettle;
 
-    if (Math.abs(debtor.balance) < 1) {
-        debtorIndex++;
+    if (Math.abs(debtor.balance) < 1) { // Use a small threshold for floating point inaccuracies
+      debtorIndex++;
     }
     if (Math.abs(creditor.balance) < 1) {
-        creditorIndex++;
+      creditorIndex++;
     }
   }
-
 
   return {
     participantSummaries: Array.from(summaries.values()),

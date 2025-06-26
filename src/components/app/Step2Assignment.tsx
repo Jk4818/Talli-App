@@ -87,41 +87,43 @@ export default function Step2Assignment() {
             </div>
             <Progress value={itemsWithCost.length > 0 ? (assignedItemsCount / itemsWithCost.length) * 100 : 100} />
         </div>
-        <div className="flex justify-center items-center">
-            <div className="relative w-full max-w-md">
-                <div className="overflow-hidden" ref={emblaRef}>
-                    <div className="flex" style={{ marginLeft: '-1rem' }}>
-                        {itemsWithCost.map((item, index) => (
-                        <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
-                            <ItemAssignmentCard item={item} itemNumber={index + 1} totalItems={itemsWithCost.length} />
+        <TooltipProvider>
+            <div className="flex justify-center items-center">
+                <div className="relative w-full max-w-md">
+                    <div className="overflow-hidden" ref={emblaRef}>
+                        <div className="flex" style={{ marginLeft: '-1rem' }}>
+                            {itemsWithCost.map((item, index) => (
+                            <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
+                                <ItemAssignmentCard item={item} itemNumber={index + 1} totalItems={itemsWithCost.length} />
+                            </div>
+                            ))}
                         </div>
-                        ))}
                     </div>
-                </div>
-                
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute h-8 w-8 rounded-full -left-12 top-1/2 -translate-y-1/2"
-                    onClick={scrollPrev}
-                    disabled={!canScrollPrev}
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="sr-only">Previous slide</span>
-                </Button>
+                    
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="absolute h-8 w-8 rounded-full -left-12 top-1/2 -translate-y-1/2"
+                        onClick={scrollPrev}
+                        disabled={!canScrollPrev}
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="sr-only">Previous slide</span>
+                    </Button>
 
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute h-8 w-8 rounded-full -right-12 top-1/2 -translate-y-1/2"
-                    onClick={scrollNext}
-                    disabled={!canScrollNext}
-                >
-                    <ArrowRight className="h-4 w-4" />
-                    <span className="sr-only">Next slide</span>
-                </Button>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="absolute h-8 w-8 rounded-full -right-12 top-1/2 -translate-y-1/2"
+                        onClick={scrollNext}
+                        disabled={!canScrollNext}
+                    >
+                        <ArrowRight className="h-4 w-4" />
+                        <span className="sr-only">Next slide</span>
+                    </Button>
+                </div>
             </div>
-        </div>
+        </TooltipProvider>
 
         {unassignedItems.length > 0 && (
             <Card className="max-w-xl mx-auto border-amber-500/50 bg-amber-50/20 dark:bg-amber-950/20">

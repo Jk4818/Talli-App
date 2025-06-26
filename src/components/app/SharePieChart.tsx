@@ -32,14 +32,8 @@ export default function SharePieChart({ summary }: SharePieChartProps) {
   const totalAmount = summary.total;
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[200px] w-full aspect-square relative">
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <p className="text-sm text-muted-foreground">Total Bill</p>
-            <p className="text-3xl font-bold font-headline">
-                {(totalAmount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
-            </p>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
+    <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
             <PieChart>
                 <Tooltip
                     cursor={false}
@@ -53,8 +47,8 @@ export default function SharePieChart({ summary }: SharePieChartProps) {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={100}
-                    innerRadius={70}
+                    outerRadius={80}
+                    innerRadius={60}
                     paddingAngle={2}
                     dataKey="value"
                 >
@@ -62,9 +56,24 @@ export default function SharePieChart({ summary }: SharePieChartProps) {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                 </Pie>
-                <Legend />
+                <Legend content={({ payload }) => (
+                    <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-4">
+                        {payload?.map((entry, index) => (
+                            <li key={`item-${index}`} className="flex items-center gap-1.5">
+                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                {entry.value}
+                            </li>
+                        ))}
+                    </ul>
+                )} />
             </PieChart>
         </ResponsiveContainer>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -translate-y-2">
+            <p className="text-sm text-muted-foreground">Total Bill</p>
+            <p className="text-3xl font-bold font-headline">
+                {(totalAmount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
+            </p>
+        </div>
     </ChartContainer>
   );
 }

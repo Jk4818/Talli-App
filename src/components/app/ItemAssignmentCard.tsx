@@ -11,7 +11,7 @@ import { Button } from '../ui/button';
 import { Pencil } from 'lucide-react';
 import ItemEditDialog from './ItemEditDialog';
 import { updateItem } from '@/lib/redux/slices/sessionSlice';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface ItemAssignmentCardProps {
   item: Item;
@@ -35,16 +35,14 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems }: Ite
         <CardHeader>
           <div className="flex justify-between items-start gap-4">
               <div className='flex-1 min-w-0'>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <CardTitle className="text-2xl font-headline truncate cursor-default">{item.name}</CardTitle>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{item.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <CardTitle className="text-2xl font-headline truncate cursor-default">{item.name}</CardTitle>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{item.name}</p>
+                  </TooltipContent>
+                </Tooltip>
                   <CardDescription>
                       From: {receipt?.name || 'Unknown Receipt'}
                   </CardDescription>
