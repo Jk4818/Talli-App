@@ -14,6 +14,7 @@ export default function Step2Assignment() {
   const dispatch = useDispatch<AppDispatch>();
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
+  const [canScrollNext, setCanScrollNext] = React.useState(true);
 
   const itemsWithCost = items.filter(item => item.cost > 0);
   
@@ -27,13 +28,16 @@ export default function Step2Assignment() {
       const selectedSnap = api.selectedScrollSnap();
       setCurrent(selectedSnap);
       dispatch(setCurrentAssignmentIndex(selectedSnap));
+      setCanScrollNext(api.canScrollNext());
     };
 
     handleSelect(); // Initial set
     api.on("select", handleSelect);
+    api.on("reInit", handleSelect);
 
     return () => {
       api.off("select", handleSelect);
+      api.off("reInit", handleSelect);
     };
   }, [api, dispatch]);
 
@@ -64,7 +68,7 @@ export default function Step2Assignment() {
           ))}
         </CarouselContent>
         <CarouselPrevious />
-        <CarouselNext disabled={!isCurrentItemAssigned} />
+        {canScrollNext && <CarouselNext disabled={!isCurrentItemAssigned} />}
       </Carousel>
     </div>
   );
