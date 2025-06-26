@@ -45,8 +45,47 @@ const sessionSlice = createSlice({
       const demoState = { ...MOCK_DATA, status: 'succeeded', error: null };
       return { ...initialState, ...demoState, settlements: [] }; // Reset settlements for demo
     },
-    restoreSession: (state, action: PayloadAction<SessionState>) => {
-      return { ...action.payload, status: 'succeeded', error: null };
+    restoreSession: (state, action: PayloadAction<Partial<SessionState>>) => {
+      const importedData = action.payload;
+    
+      // Provide default values for every item to ensure backward compatibility.
+      const sanitizedItems = (importedData.items || []).map((item): Item => ({
+        id: `item_${Date.now()}_${Math.random()}`, // fallback id
+        receiptId: '',
+        name: 'New Item',
+        cost: 0,
+        isAmbiguous: false,
+        assignees: [],
+        splitMode: 'equal',
+        percentageAssignments: {},
+        exactAssignments: {},
+        ...item, // Overwrite defaults with imported values
+      }));
+    
+      // Provide default values for every receipt.
+      const sanitizedReceipts = (importedData.receipts || []).map((receipt): Receipt => ({
+        id: `receipt_${Date.now()}_${Math.random()}`, // fallback id
+        name: 'New Receipt',
+        payerId: null,
+        discounts: [],
+        serviceCharge: { type: 'fixed', value: 0 },
+        currency: 'USD',
+        ...receipt, // Overwrite defaults with imported values
+      }));
+    
+      // Merge the sanitized data with the initial state to cover top-level fields.
+      return {
+        ...initialState,
+        ...importedData,
+        items: sanitizedItems,
+        receipts: sanitizedReceipts,
+        participants: importedData.participants || [],
+        settlements: [], // Always start with fresh settlements on import
+        globalCurrency: importedData.globalCurrency || initialState.globalCurrency,
+        step: importedData.step || 1,
+        status: 'succeeded',
+        error: null,
+      };
     },
     resetSession: () => initialState,
     setStep: (state, action: PayloadAction<number>) => {

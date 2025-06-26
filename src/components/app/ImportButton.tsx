@@ -28,7 +28,7 @@ export default function ImportButton({ children, ...props }: ButtonProps) {
         if (typeof text !== 'string') {
           throw new Error('Failed to read file content.');
         }
-        const data = JSON.parse(text) as SessionState;
+        const data = JSON.parse(text) as Partial<SessionState>;
 
         // Basic validation to ensure it's a valid session file
         if (data && typeof data === 'object' && 'participants' in data && 'items' in data && 'receipts' in data) {
