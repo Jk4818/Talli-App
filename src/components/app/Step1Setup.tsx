@@ -4,17 +4,27 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { FilePlus2, ReceiptText, Users } from 'lucide-react';
-import { processReceipt, setGlobalCurrency } from '@/lib/redux/slices/sessionSlice';
+import { FilePlus2, ReceiptText, Users, RefreshCw } from 'lucide-react';
+import { processReceipt, setGlobalCurrency, resetSession } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
 import ImportButton from './ImportButton';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function Step1Setup() {
-  const { receipts, status, error, globalCurrency } = useSelector((state: RootState) => state.session);
+  const { participants, receipts, items, status, error, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -43,6 +53,16 @@ export default function Step1Setup() {
   const handleGlobalCurrencyChange = (currency: string) => {
     dispatch(setGlobalCurrency(currency));
   };
+
+  const handleResetSession = () => {
+    dispatch(resetSession());
+    toast({
+      title: 'New Session Started',
+      description: 'Your previous session data has been cleared.',
+    });
+  };
+  
+  const isSessionActive = participants.length > 0 || receipts.length > 0 || items.length > 0;
 
   return (
     <div className="space-y-8">
@@ -85,6 +105,29 @@ export default function Step1Setup() {
                 </Select>
               </div>
               <div className="flex items-center gap-2">
+                {isSessionActive && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        <RefreshCw className="mr-2 h-4 w-4" /> Reset
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete all participants, receipts, and item assignments from the current session. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleResetSession}>
+                          Yes, Reset Session
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
                 <ImportButton variant="outline" size="sm" />
                 <input
                   type="file"
