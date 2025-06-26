@@ -59,9 +59,8 @@ const sessionSlice = createSlice({
   reducers: {
     restoreSession: (state, action: PayloadAction<Partial<SessionState>>) => {
       const importedData = action.payload;
-    
-      const sanitizedItems = (importedData.items || []).map((item): Item => ({
-        // Spread defaults first to ensure all keys exist
+
+      const itemDefaults: Omit<Item, 'id'> = {
         receiptId: '',
         name: 'New Item',
         cost: 0,
@@ -70,23 +69,26 @@ const sessionSlice = createSlice({
         splitMode: 'equal',
         percentageAssignments: {},
         exactAssignments: {},
-        // Then spread the imported item, overwriting defaults with saved data
+      };
+    
+      const sanitizedItems = (importedData.items || []).map((item): Item => ({
+        ...itemDefaults,
         ...item,
-        // Finally, overwrite the ID to ensure it's unique for this session
         id: `item_${Date.now()}_${Math.random()}`,
       }));
-    
-      const sanitizedReceipts = (importedData.receipts || []).map((receipt): Receipt => ({
-        // Spread defaults first
+
+      const receiptDefaults: Omit<Receipt, 'id'> = {
         name: 'New Receipt',
         payerId: null,
         discounts: [],
         serviceCharge: { type: 'fixed', value: 0 },
         currency: 'USD',
         status: 'unprocessed',
-        // Then spread the imported receipt
+      };
+    
+      const sanitizedReceipts = (importedData.receipts || []).map((receipt): Receipt => ({
+        ...receiptDefaults,
         ...receipt,
-        // Finally, overwrite the ID
         id: `receipt_${Date.now()}_${Math.random()}`,
       }));
     
