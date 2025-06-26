@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, BarChart, Users, UploadCloud, Divide, Menu } from 'lucide-react';
 import { Logo } from '@/components/Logo';
@@ -8,8 +8,11 @@ import ImportButton from '@/components/app/ImportButton';
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 export default function Home() {
   const features = [
@@ -65,21 +68,26 @@ export default function Home() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right">
-                <nav className="flex flex-col gap-8 pt-10 text-center">
-                  <div className="flex justify-center">
-                    <Logo />
-                  </div>
-                  <Link href="/demo" className="text-lg font-medium text-foreground hover:text-primary">
-                      Demo
-                  </Link>
-                  <ImportButton variant="link" className="text-lg font-medium h-auto p-0 text-foreground hover:text-primary hover:no-underline justify-center w-full" />
-                  <Button asChild size="lg">
-                    <Link href="/app">
-                      Start Splitting
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                <SheetHeader>
+                  <Logo />
+                </SheetHeader>
+                <Separator className="my-4" />
+                <nav className="flex flex-col gap-2">
+                    <Link href="/demo" className={cn(buttonVariants({ variant: 'ghost' }), 'justify-start')}>
+                        Demo
                     </Link>
-                  </Button>
+                    <ImportButton variant="ghost" className="justify-start">
+                      Import Session
+                    </ImportButton>
                 </nav>
+                <div className="absolute bottom-6 left-6 right-6">
+                    <Button asChild size="lg" className="w-full">
+                      <Link href="/app">
+                        Start Splitting
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                </div>
               </SheetContent>
             </Sheet>
           </div>
