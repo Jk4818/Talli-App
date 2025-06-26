@@ -72,7 +72,7 @@ export default function ItemListEditor() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className='flex items-center gap-4'>
                   <ListOrdered className="w-8 h-8 text-primary" />
                   <div>
@@ -80,12 +80,12 @@ export default function ItemListEditor() {
                       <CardDescription>Review and edit all items from your receipts.</CardDescription>
                   </div>
               </div>
-              <div className='flex gap-2 items-center'>
+              <div className='flex gap-2 items-center w-full sm:w-auto'>
                   <Input
                       placeholder="Search items..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="max-w-sm"
+                      className="flex-grow sm:max-w-sm"
                   />
                   <Button onClick={handleAddNewItem} disabled={receipts.length === 0}>
                       Add Item
