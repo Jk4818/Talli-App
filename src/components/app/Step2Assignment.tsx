@@ -58,7 +58,8 @@ export default function Step2Assignment() {
       <Carousel 
         setApi={setApi}
         className="w-full max-w-md"
-        opts={{ loop: false, draggable: false }}
+        opts={{ loop: false, keyboard: false }}
+        disableDrag={true}
       >
         <CarouselContent>
           {itemsWithCost.map((item, index) => (
