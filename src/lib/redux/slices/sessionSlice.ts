@@ -61,7 +61,7 @@ const sessionSlice = createSlice({
       const importedData = action.payload;
     
       const sanitizedItems = (importedData.items || []).map((item): Item => ({
-        id: `item_${Date.now()}_${Math.random()}`,
+        // Start with safe defaults
         receiptId: '',
         name: 'New Item',
         cost: 0,
@@ -70,18 +70,24 @@ const sessionSlice = createSlice({
         splitMode: 'equal',
         percentageAssignments: {},
         exactAssignments: {},
+        // Spread the imported item's properties, overwriting the defaults
         ...item,
+        // Finally, overwrite the ID with a new, unique one for this session
+        id: `item_${Date.now()}_${Math.random()}`,
       }));
     
       const sanitizedReceipts = (importedData.receipts || []).map((receipt): Receipt => ({
-        id: `receipt_${Date.now()}_${Math.random()}`,
+        // Start with safe defaults
         name: 'New Receipt',
         payerId: null,
         discounts: [],
         serviceCharge: { type: 'fixed', value: 0 },
         currency: 'USD',
         status: 'unprocessed',
+        // Spread the imported receipt's properties, overwriting the defaults
         ...receipt,
+        // Finally, overwrite the ID with a new, unique one for this session
+        id: `receipt_${Date.now()}_${Math.random()}`,
       }));
     
       return {
