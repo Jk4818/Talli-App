@@ -11,7 +11,7 @@ import Step3Summary from './Step3Summary';
 import { AppHeader } from './AppHeader';
 import { Button } from '../ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { AccessibleTooltip } from '../ui/accessible-tooltip';
 
 export function AppClient({ isDemo }: { isDemo: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -117,20 +117,15 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    {/* The span wrapper is crucial for the tooltip to work on a disabled button */}
-                    <span tabIndex={0}>
-                      <Button disabled className="pointer-events-none">
-                        Assign Items
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{step1TooltipMessage}</p>
-                  </TooltipContent>
-                </Tooltip>
+                <AccessibleTooltip content={<p>{step1TooltipMessage}</p>}>
+                  {/* The span wrapper is crucial for the tooltip to work on a disabled button */}
+                  <span tabIndex={0}>
+                    <Button disabled className="pointer-events-none">
+                      Assign Items
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </span>
+                </AccessibleTooltip>
               )
             )}
             {step === 2 && (

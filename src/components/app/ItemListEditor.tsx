@@ -12,7 +12,7 @@ import { Trash2, AlertTriangle, ArrowUpDown, ListOrdered, Pencil } from 'lucide-
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
 import { Item } from '@/lib/types';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { AccessibleTooltip } from '../ui/accessible-tooltip';
 
 export default function ItemListEditor() {
   const { items, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -132,16 +132,9 @@ export default function ItemListEditor() {
                           </div>
                         </TableCell>
                         <TableCell className='font-medium'>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div className="max-w-[250px] truncate">{item.name}</div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{item.name}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <AccessibleTooltip content={<p>{item.name}</p>}>
+                            <div className="max-w-[250px] truncate">{item.name}</div>
+                          </AccessibleTooltip>
                         </TableCell>
                         <TableCell>
                           {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}

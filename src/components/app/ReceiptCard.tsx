@@ -15,7 +15,7 @@ import { Button } from '../ui/button';
 import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/firebase/auth';
 
@@ -92,19 +92,22 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                     Scan with AI
                   </Button>
                 ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span tabIndex={0}>
-                        <Button disabled>
-                          <Sparkles className="mr-2 h-4 w-4" />
-                          Scan with AI
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>AI scanning is available for beta users only. Please contact support to request access.</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <AccessibleTooltip
+                    content={
+                      <p>
+                        AI scanning is available for beta users only.
+                        <br />
+                        Please contact support to request access.
+                      </p>
+                    }
+                  >
+                    <span tabIndex={0}>
+                      <Button disabled>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Scan with AI
+                      </Button>
+                    </span>
+                  </AccessibleTooltip>
                 )
               )}
               {receipt.status === 'processing' && (
@@ -135,14 +138,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                   <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 mb-1">
                       Payer
                       {!receipt.payerId && receipt.status === 'processed' && (
-                          <Tooltip>
-                              <TooltipTrigger>
-                                  <AlertCircle className="h-4 w-4 text-destructive" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                  <p>This receipt needs a payer.</p>
-                              </TooltipContent>
-                          </Tooltip>
+                          <AccessibleTooltip content={<p>This receipt needs a payer.</p>}>
+                              <AlertCircle className="h-4 w-4 text-destructive" />
+                          </AccessibleTooltip>
                       )}
                   </Label>
                   <Select onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined}>
