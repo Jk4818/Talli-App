@@ -144,23 +144,25 @@ const sessionSlice = createSlice({
         const item = state.items.find(i => i.id === action.payload.itemId);
         if (item && !item.assignees.includes(action.payload.participantId)) {
             item.assignees.push(action.payload.participantId);
+            // For percentage mode, it's better to reset because the total needs to be 100%.
             if (item.splitMode === 'percentage') {
               item.percentageAssignments = {};
             }
-            if (item.splitMode === 'exact') {
-              item.exactAssignments = {};
-            }
+            // For exact mode, we just add the user. Their value will be 0 by default.
         }
     },
     unassignItemFromUser: (state, action: PayloadAction<{ itemId: string; participantId: string }>) => {
         const item = state.items.find(i => i.id === action.payload.itemId);
         if (item) {
-            item.assignees = item.assignees.filter(id => id !== action.payload.participantId);
+            const participantId = action.payload.participantId;
+            item.assignees = item.assignees.filter(id => id !== participantId);
+            
+            // Also reset percentages when a user is removed
             if (item.splitMode === 'percentage') {
-              delete item.percentageAssignments[action.payload.participantId];
+                item.percentageAssignments = {};
             }
-            if (item.splitMode === 'exact') {
-              delete item.exactAssignments[action.payload.participantId];
+            if (item.splitMode === 'exact' && item.exactAssignments) {
+              delete item.exactAssignments[participantId];
             }
         }
     },

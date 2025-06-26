@@ -30,20 +30,19 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
 
   const [exactAmountStrings, setExactAmountStrings] = useState<{ [key: string]: string }>({});
 
-  // Initialize local state when item changes, so inputs are populated from Redux
+  // Synchronize local input state with Redux state whenever the item changes
   useEffect(() => {
     const initialStrings: { [key: string]: string } = {};
-    if (item?.splitMode === 'exact' && item.exactAssignments) {
-        // Populate local state from Redux store
-        for (const pId in item.exactAssignments) {
+    if (item?.splitMode === 'exact' && item.assignees && item.exactAssignments) {
+        // Ensure local state is synced for all current assignees
+        item.assignees.forEach(pId => {
             const amount = item.exactAssignments[pId];
-            if (amount !== undefined && amount > 0) {
-                initialStrings[pId] = (amount / 100).toFixed(2);
-            }
-        }
+            // Set the string value for the input, defaulting to an empty string
+            initialStrings[pId] = amount ? (amount / 100).toFixed(2) : '';
+        });
     }
     setExactAmountStrings(initialStrings);
-  }, [item?.id, item?.splitMode]);
+  }, [item]); // Depend on the whole item object to catch changes in assignees/assignments
 
 
   const handleAssignmentChange = (participantId: string, checked: boolean) => {
@@ -90,8 +89,8 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
     const valueStr = exactAmountStrings[participantId] || '';
     const amountInCents = valueStr ? Math.round(parseFloat(valueStr) * 100) : 0;
     
-    if (!isNaN(amountInCents)) {
-        // Dispatch the final, parsed value to the Redux store
+    // Dispatch the final, parsed value to the Redux store, but only if it's different
+    if (!isNaN(amountInCents) && item?.exactAssignments[participantId] !== amountInCents) {
         dispatch(setExactAssignment({ itemId, participantId, amount: amountInCents }));
     }
   };
