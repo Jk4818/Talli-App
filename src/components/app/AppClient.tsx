@@ -11,6 +11,7 @@ import Step3Summary from './Step3Summary';
 import { AppHeader } from './AppHeader';
 import { Button } from '../ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 export function AppClient({ isDemo }: { isDemo: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -44,6 +45,20 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   
   const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
   
+  const step1TooltipMessage = useMemo(() => {
+    if (isStep1Complete) return '';
+    if (participants.length === 0) {
+        return 'Please add at least one participant to continue.';
+    }
+    if (receipts.length === 0) {
+        return 'Please upload at least one receipt to continue.';
+    }
+    if (receipts.some(r => r.payerId === null)) {
+        return 'A payer must be assigned to every receipt.';
+    }
+    return 'Please complete all setup steps to continue.';
+  }, [isStep1Complete, participants.length, receipts]);
+
   const isStep2Complete = useMemo(() => {
     return items.every(item => {
       if (item.cost === 0) return true;
@@ -96,10 +111,27 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
           </div>
           <div>
             {step === 1 && (
-              <Button onClick={handleNext} disabled={!isStep1Complete}>
-                Assign Items
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              isStep1Complete ? (
+                <Button onClick={handleNext}>
+                  Assign Items
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {/* The span wrapper is crucial for the tooltip to work on a disabled button */}
+                    <span tabIndex={0}>
+                      <Button disabled className="pointer-events-none">
+                        Assign Items
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{step1TooltipMessage}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )
             )}
             {step === 2 && (
               <Button onClick={handleNext} disabled={!isStep2Complete}>

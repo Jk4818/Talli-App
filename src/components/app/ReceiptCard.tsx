@@ -15,6 +15,8 @@ import { Button } from '../ui/button';
 import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { cn } from '@/lib/utils';
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -108,9 +110,26 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Payer</Label>
+                  <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 mb-1">
+                      Payer
+                      {!receipt.payerId && receipt.status === 'processed' && (
+                          <Tooltip>
+                              <TooltipTrigger>
+                                  <AlertCircle className="h-4 w-4 text-destructive" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                  <p>This receipt needs a payer.</p>
+                              </TooltipContent>
+                          </Tooltip>
+                      )}
+                  </Label>
                   <Select onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined}>
-                    <SelectTrigger><SelectValue placeholder="Select a payer" /></SelectTrigger>
+                    <SelectTrigger 
+                      id={`payer-${receipt.id}`}
+                      className={cn(!receipt.payerId && receipt.status === 'processed' && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive")}
+                    >
+                      <SelectValue placeholder="Select a payer" />
+                    </SelectTrigger>
                     <SelectContent>
                       {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                     </SelectContent>
