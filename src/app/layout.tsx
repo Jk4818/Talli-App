@@ -3,6 +3,7 @@ import './globals.css';
 import { ReduxProvider } from '@/lib/redux/provider';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { AuthProvider } from '@/lib/firebase/auth';
 
 export const metadata: Metadata = {
   title: 'Splitzy - Effortless Bill Splitting',
@@ -23,12 +24,14 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <ReduxProvider>
-          <TooltipProvider>
-            {children}
-            <Toaster />
-          </TooltipProvider>
-        </ReduxProvider>
+        <AuthProvider>
+          <ReduxProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster />
+            </TooltipProvider>
+          </ReduxProvider>
+        </AuthProvider>
       </body>
     </html>
   );

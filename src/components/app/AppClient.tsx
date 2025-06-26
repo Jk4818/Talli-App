@@ -19,17 +19,17 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
 
   useEffect(() => {
     if (isDemo) {
-      // If we are on the demo page, always load the demo data.
       dispatch(loadDemoData());
     } else {
-      // If we are on the main app page, only reset the session
-      // if the currently loaded session is the demo one.
-      // This prevents wiping an imported or active session.
+      // On the main app, if we are in a demo session, reset it.
+      // This happens if a user navigates from /demo to /app.
       if (isDemoSession) {
         dispatch(resetSession());
       }
     }
-  }, [dispatch, isDemo, isDemoSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, isDemo]);
+
 
   const handleNext = () => {
     if (step < 3) {

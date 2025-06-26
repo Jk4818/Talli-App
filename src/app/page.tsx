@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,8 +16,12 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/firebase/auth';
+import { UserNav } from '@/components/auth/UserNav';
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
   const features = [
     {
       icon: <UploadCloud className="h-8 w-8 text-primary" />,
@@ -50,13 +56,26 @@ export default function Home() {
             <Button variant="ghost" asChild>
               <Link href="/demo">Demo</Link>
             </Button>
-            <ImportButton variant="ghost" />
-            <Button asChild>
-              <Link href="/app">
-                Split Now
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/app">Go to App</Link>
+                </Button>
+                <UserNav />
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/login">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/login">
+                    Sign Up
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </>
+            )}
           </nav>
 
           {/* Mobile Navigation */}
@@ -75,20 +94,26 @@ export default function Home() {
                 </SheetHeader>
                 <Separator className="my-4" />
                 <nav className="flex flex-col gap-2">
-                    <Link href="/demo" className={cn(buttonVariants({ variant: 'ghost' }), 'justify-start')}>
-                        Demo
+                  <Link href="/demo" className={cn(buttonVariants({ variant: 'ghost' }), 'justify-start')}>
+                    Demo
+                  </Link>
+                  {user && (
+                    <Link href="/app" className={cn(buttonVariants({ variant: 'ghost' }), 'justify-start')}>
+                      Go to App
                     </Link>
-                    <ImportButton variant="ghost" className="justify-start">
-                      Import Session
-                    </ImportButton>
+                  )}
                 </nav>
                 <div className="absolute bottom-6 left-6 right-6">
+                  {user ? (
+                      <UserNav />
+                  ) : (
                     <Button asChild size="lg" className="w-full">
-                      <Link href="/app">
-                        Start Splitting
+                      <Link href="/login">
+                        Sign In / Sign Up
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
@@ -107,7 +132,7 @@ export default function Home() {
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Button size="lg" asChild>
-              <Link href="/app">
+              <Link href={user ? "/app" : "/login"}>
                 Start Splitting
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>

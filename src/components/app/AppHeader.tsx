@@ -7,6 +7,7 @@ import { Logo } from '../Logo';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 import React, { useMemo } from 'react';
+import { UserNav } from '../auth/UserNav';
 
 const steps = [
     { id: 1, name: 'Setup', description: 'Add participants & receipts' },
@@ -59,8 +60,10 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <Logo />
-        <nav aria-label="Progress">
+        <div className="flex-1">
+          <Logo />
+        </div>
+        <nav aria-label="Progress" className="hidden sm:block">
           <ol role="list" className="flex items-center">
             {steps.map((step, stepIdx) => (
               <React.Fragment key={step.name}>
@@ -127,6 +130,9 @@ export function AppHeader() {
             ))}
           </ol>
         </nav>
+        <div className="flex-1 flex justify-end">
+            <UserNav />
+        </div>
       </div>
     </header>
   );
