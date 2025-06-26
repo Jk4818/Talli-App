@@ -94,7 +94,7 @@ export default function Step1Setup() {
                 <CardDescription>Upload and manage your receipts.</CardDescription>
               </div>
             </div>
-            <div className="flex w-full sm:w-auto flex-wrap items-center justify-between sm:justify-end gap-2">
+            <div className="flex w-full flex-wrap items-center justify-between gap-y-2 sm:w-auto sm:justify-end sm:gap-x-4">
               <div className="flex items-center gap-2">
                 <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
                 <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
@@ -110,7 +110,7 @@ export default function Step1Setup() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 {isSessionActive && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
