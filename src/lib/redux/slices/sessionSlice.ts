@@ -55,10 +55,15 @@ const sessionSlice = createSlice({
   name: 'session',
   initialState,
   reducers: {
-    loadDemoData: (state, action: PayloadAction<void>) => {
-      const demoState = { ...MOCK_DATA, status: 'succeeded', error: null, isDemoSession: true };
-      const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'processed' as const}));
-      return { ...initialState, ...demoState, receipts: processedDemoReceipts, settlements: [] };
+    loadDemoData: {
+      reducer: (state) => {
+        const demoState = { ...MOCK_DATA, status: 'succeeded', error: null, isDemoSession: true };
+        const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'processed' as const}));
+        return { ...initialState, ...demoState, receipts: processedDemoReceipts, settlements: [] };
+      },
+      prepare: () => {
+        return { payload: undefined }; // This explicitly defines an action creator that takes no arguments.
+      },
     },
     restoreSession: (state, action: PayloadAction<Partial<SessionState>>) => {
       const importedData = action.payload;
