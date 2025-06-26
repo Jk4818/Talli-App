@@ -4,7 +4,7 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
-import useEmblaCarousel, { type EmblaCarouselType } from 'embla-carousel-react';
+import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import ItemAssignmentCard from './ItemAssignmentCard';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, ArrowLeft, ArrowRight, ListTodo } from 'lucide-react';
@@ -62,7 +62,8 @@ export default function Step2Assignment() {
   useEffect(() => {
     if (!emblaApi) return;
 
-    const onSelect = (api: EmblaCarouselType) => {
+    const onSelect = (api: UseEmblaCarouselType[1]) => {
+      if (!api) return;
       dispatch(setCurrentAssignmentIndex(api.selectedScrollSnap()));
       setCanScrollPrev(api.canScrollPrev());
       setCanScrollNext(api.canScrollNext());
@@ -73,8 +74,8 @@ export default function Step2Assignment() {
     onSelect(emblaApi);
 
     return () => {
-      emblaApi.off('select', onSelect);
-      emblaApi.off('reInit', onSelect);
+      emblaApi?.off('select', onSelect);
+      emblaApi?.off('reInit', onSelect);
     };
   }, [emblaApi, dispatch]);
 
