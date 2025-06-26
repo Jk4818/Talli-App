@@ -57,21 +57,19 @@ export const fadeIn: Variants = {
 };
 
 export const pageTransition: Variants = {
-  hidden: { opacity: 0, y: 15 },
+  hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    y: 0,
     transition: {
       duration: 0.4,
-      ease: 'easeOut',
+      ease: 'easeInOut',
     },
   },
   exit: {
     opacity: 0,
-    y: -15,
     transition: {
-      duration: 0.3,
-      ease: 'easeIn',
+      duration: 0.4,
+      ease: 'easeInOut',
     }
   },
 };
