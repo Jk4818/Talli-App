@@ -43,7 +43,8 @@ export default function Step2Assignment() {
   React.useEffect(() => {
     if (!api) return;
     api.reInit({
-        ...api.options(),
+        loop: false,
+        keyboard: false,
         draggable: isCurrentItemAssigned,
     });
   }, [api, isCurrentItemAssigned]);
