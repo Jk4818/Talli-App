@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useEffect } from 'react';
@@ -138,23 +137,41 @@ export default function Step3Summary() {
                 <CardContent>
                 <ul className="space-y-3">
                     {settlements.length > 0 ? settlements.map((s) => (
-                      <li key={s.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
-                          <div className={cn("flex-1", s.paid && "line-through text-muted-foreground")}>
-                            <span className="font-medium">{s.from}</span>
-                            <span className="text-muted-foreground"> should pay </span>
-                            <span className="font-medium">{s.to}</span>
-                          </div>
-                          <span className={cn("font-semibold text-primary mx-4", s.paid && "line-through text-muted-foreground")}>
-                              {formatCurrency(s.amount)}
+                      <li
+                        key={s.id}
+                        className="flex flex-col gap-2 rounded-md bg-secondary/50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className={cn(s.paid && 'text-muted-foreground')}>
+                          <span className="font-medium">{s.from}</span>
+                          <span> should pay </span>
+                          <span className="font-medium">{s.to}</span>
+                        </div>
+                        <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
+                          <span
+                            className={cn(
+                              'font-semibold text-primary',
+                              s.paid && 'text-muted-foreground line-through'
+                            )}
+                          >
+                            {formatCurrency(s.amount)}
                           </span>
                           <div className="flex items-center space-x-2">
-                              <Label htmlFor={`paid-${s.id}`} className={cn("text-sm", s.paid ? 'text-muted-foreground' : 'text-foreground')}>Paid</Label>
-                              <Switch
-                                  id={`paid-${s.id}`}
-                                  checked={s.paid}
-                                  onCheckedChange={() => handleTogglePaid(s.id)}
-                              />
+                            <Label
+                              htmlFor={`paid-${s.id}`}
+                              className={cn(
+                                'text-sm',
+                                s.paid ? 'text-muted-foreground' : 'text-foreground'
+                              )}
+                            >
+                              Paid
+                            </Label>
+                            <Switch
+                              id={`paid-${s.id}`}
+                              checked={s.paid}
+                              onCheckedChange={() => handleTogglePaid(s.id)}
+                            />
                           </div>
+                        </div>
                       </li>
                     )) : (
                         <p className="text-center text-muted-foreground py-4">All settled up!</p>
