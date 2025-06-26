@@ -27,8 +27,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
         dispatch(resetSession());
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, isDemo]);
+  }, [dispatch, isDemo, isDemoSession]);
 
 
   const handleNext = () => {
