@@ -163,7 +163,7 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Tabs value={splitMode} onValueChange={handleModeChange} className="w-auto">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="equal">Equal</TabsTrigger>

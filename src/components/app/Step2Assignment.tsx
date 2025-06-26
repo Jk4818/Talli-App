@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
@@ -119,7 +120,7 @@ export default function Step2Assignment() {
                 <Button
                     variant="outline"
                     size="icon"
-                    className="absolute h-8 w-8 rounded-full -left-12 top-1/2 -translate-y-1/2"
+                    className="absolute h-8 w-8 rounded-full -left-2 sm:-left-12 top-1/2 -translate-y-1/2 z-10"
                     onClick={scrollPrev}
                     disabled={!canScrollPrev}
                 >
@@ -130,7 +131,7 @@ export default function Step2Assignment() {
                 <Button
                     variant="outline"
                     size="icon"
-                    className="absolute h-8 w-8 rounded-full -right-12 top-1/2 -translate-y-1/2"
+                    className="absolute h-8 w-8 rounded-full -right-2 sm:-right-12 top-1/2 -translate-y-1/2 z-10"
                     onClick={scrollNext}
                     disabled={!canScrollNext}
                 >

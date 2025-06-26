@@ -64,7 +64,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
       <ReceiptImageViewer receipt={receipt} isOpen={isViewerOpen} onOpenChange={setIsViewerOpen} />
       <Card className='bg-card/50'>
         <CardHeader>
-          <div className="flex justify-between items-start gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap justify-between items-center sm:items-start gap-2">
             <Input 
               defaultValue={receipt.name}
               onBlur={(e) => handleUpdateReceipt({ name: e.target.value })}

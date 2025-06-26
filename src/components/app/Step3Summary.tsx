@@ -91,7 +91,7 @@ export default function Step3Summary() {
   // for the list, as it contains the correct `paid` status.
   return (
     <div className="space-y-8">
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export Session</Button>
             <Button onClick={handleStartNew}><RefreshCw className="mr-2 h-4 w-4" /> Start New Session</Button>
         </div>

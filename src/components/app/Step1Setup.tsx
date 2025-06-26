@@ -1,3 +1,4 @@
+
 import React from 'react';
 import ParticipantManager from './ParticipantManager';
 import { useSelector, useDispatch } from 'react-redux';
@@ -93,7 +94,7 @@ export default function Step1Setup() {
                 <CardDescription>Upload and manage your receipts.</CardDescription>
               </div>
             </div>
-            <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-2">
+            <div className="flex w-full sm:w-auto flex-wrap items-center justify-between sm:justify-end gap-2">
               <div className="flex items-center gap-2">
                 <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
                 <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
