@@ -24,6 +24,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeInUp } from '@/lib/animations';
 
 export default function Step1Setup() {
   const { participants, receipts, items, error, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -71,8 +73,13 @@ export default function Step1Setup() {
   const isSessionActive = participants.length > 0 || receipts.length > 0 || items.length > 0;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-end gap-2">
+    <motion.div 
+      className="space-y-8"
+      variants={staggerContainer(0.2, 0.1)}
+      initial="hidden"
+      animate="show"
+    >
+      <motion.div variants={fadeInUp} className="flex flex-wrap items-center justify-end gap-2">
         <ImportButton variant="outline">
           <Upload className="mr-2 h-4 w-4" /> Import Session
         </ImportButton>
@@ -99,9 +106,9 @@ export default function Step1Setup() {
             </AlertDialogContent>
           </AlertDialog>
         )}
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-1">
           <CardHeader className="flex flex-row items-center gap-4 space-y-0">
             <Users className="w-8 h-8 text-primary" />
@@ -167,9 +174,11 @@ export default function Step1Setup() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
-      <ItemListEditor />
-    </div>
+      <motion.div variants={fadeInUp}>
+        <ItemListEditor />
+      </motion.div>
+    </motion.div>
   );
 }

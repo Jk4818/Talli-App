@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useEffect } from 'react';
@@ -15,6 +16,8 @@ import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import type { SessionState } from '@/lib/types';
 import SharePieChart from './SharePieChart';
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeInUp } from '@/lib/animations';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
@@ -103,12 +106,17 @@ export default function Step3Summary() {
   // For rendering, we use `calculatedSummary` for display values and `settlements` from the store
   // for the list, as it contains the correct `paid` status.
   return (
-    <div className="space-y-8">
-        <div className="flex flex-wrap justify-end gap-2">
+    <motion.div 
+      className="space-y-8"
+      variants={staggerContainer(0.2, 0.1)}
+      initial="hidden"
+      animate="show"
+    >
+        <motion.div variants={fadeInUp} className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export Session</Button>
             <Button onClick={handleStartNew}><RefreshCw className="mr-2 h-4 w-4" /> Start New Session</Button>
-        </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        </motion.div>
+      <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
             <Card>
                 <CardHeader className='flex-row items-center gap-4 space-y-0'>
@@ -205,7 +213,7 @@ export default function Step3Summary() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
