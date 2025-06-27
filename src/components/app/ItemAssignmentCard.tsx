@@ -25,7 +25,7 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems }: Ite
   const receipt = receipts.find(r => r.id === item.receiptId);
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleSave = (updates: { name: string, cost: number }) => {
+  const handleSave = (updates: { name: string; cost: number; receiptId: string }) => {
     dispatch(updateItem({ id: item.id, ...updates }));
   };
 
@@ -62,6 +62,7 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems }: Ite
       </Card>
       <ItemEditDialog
         item={item}
+        receipts={receipts}
         isOpen={isEditing}
         onOpenChange={setIsEditing}
         onSave={handleSave}
