@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { SplitSummary, Participant } from '@/lib/types';
-import { Lightbulb, Scale, ShieldCheck, Sparkles, Info } from 'lucide-react';
+import { Lightbulb, Scale, Sparkles, Info } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,9 +71,9 @@ export default function SmartSummaryCard({ summary, participants }: SmartSummary
         return `All payers are within ±${maxDeviationPercent.toFixed(1)}% of an equal share. Nicely balanced!`;
     }, [summary, participants]);
 
-    const confidenceLevel = "We're 97% confident this split is correct, based on receipt scanning and item assignment.";
-    
-    const roundingExplanation = "The final total is penny-perfect. To achieve this, rounding differences from splitting items are distributed automatically. For example, when a $10 item is split three ways, two people pay $3.33 and one pays $3.34. The app ensures this is done fairly across all splits.";
+    const pennyPerfectText = summary.roundingOccurred
+      ? "To ensure totals were exact, minor rounding differences were automatically distributed across some shared items. This keeps the final bill penny-perfect."
+      : "All items were split perfectly without any need for rounding adjustments. Your math was easy this time!";
 
     const fairnessInfoDescription = (
       <div className="space-y-4 text-left pt-2">
@@ -83,13 +83,6 @@ export default function SmartSummaryCard({ summary, participants }: SmartSummary
           <li><strong>Measure deviation:</strong> Then, for each person, we see how far their actual share is from that average.</li>
           <li><strong>Show the max:</strong> The percentage you see is the largest deviation we found. A lower number means a more even split!</li>
         </ol>
-      </div>
-    );
-    
-    const confidenceInfoDescription = (
-      <div className="space-y-4 text-left pt-2">
-        <p>This is a representative score indicating the AI's confidence in correctly extracting data from your receipts.</p>
-        <p className="text-sm">In a real-world scenario, this would be based on factors like the quality of the receipt image and the clarity of its text. A higher score indicates greater confidence in the automated scan.</p>
       </div>
     );
 
@@ -120,24 +113,8 @@ export default function SmartSummaryCard({ summary, participants }: SmartSummary
                           }
                         />
                     </SmartSummaryItem>
-                    <SmartSummaryItem icon={<ShieldCheck className="h-5 w-5" />}>
-                        <strong>Split Confidence:</strong> {confidenceLevel}{' '}
-                        <InfoDialog
-                          title="Split Confidence Score"
-                          description={confidenceInfoDescription}
-                          trigger={
-                            <Button
-                                variant="link"
-                                className="p-0 m-0 h-4 w-4 inline-flex align-middle"
-                                aria-label="More information about split confidence"
-                            >
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          }
-                        />
-                    </SmartSummaryItem>
                      <SmartSummaryItem icon={<Sparkles className="h-5 w-5" />}>
-                        <strong>Penny Perfect:</strong> {roundingExplanation}
+                        <strong>Penny Perfect:</strong> {pennyPerfectText}
                     </SmartSummaryItem>
                 </ul>
             </CardContent>

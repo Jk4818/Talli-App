@@ -47,7 +47,8 @@ export default function Step3Summary() {
         total: 0,
         totalItemCost: 0,
         totalDiscounts: 0,
-        totalServiceCharge: 0
+        totalServiceCharge: 0,
+        roundingOccurred: false,
       };
     }
     // The calculation function is pure and derives its results from the session state.

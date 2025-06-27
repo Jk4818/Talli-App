@@ -32,6 +32,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   let totalItemCost = 0;
   let totalDiscounts = 0;
   let totalServiceCharge = 0;
+  let roundingOccurred = false;
 
   receipts.forEach(receipt => {
     if (!receipt) return;
@@ -78,6 +79,8 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         });
 
         let roundingDiff = receiptTotalInGlobal - distributedTotal;
+        if (roundingDiff !== 0) roundingOccurred = true;
+
         for (const itemId of adjustedItemCosts.keys()) {
             if (roundingDiff === 0) break;
             const currentCost = adjustedItemCosts.get(itemId)!;
@@ -121,6 +124,8 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
             // Distribute rounding errors for both total and service charge
             let remainder = adjustedCost - distributedAmount;
             let serviceRemainder = itemServiceChargeShare - distributedServiceCharge;
+            if (remainder !== 0 || serviceRemainder !== 0) roundingOccurred = true;
+
 
             for(const ps of participantShares) {
               if (remainder === 0 && serviceRemainder === 0) break;
@@ -165,6 +170,8 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     
             let remainder = adjustedCost - distributedAmount;
             let serviceRemainder = itemServiceChargeShare - distributedServiceCharge;
+            if (remainder !== 0 || serviceRemainder !== 0) roundingOccurred = true;
+
 
             for (const s of participantShares) {
                 if (remainder === 0 && serviceRemainder === 0) break;
@@ -193,6 +200,12 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         }
         
         if (fallbackToEqual) {
+          if (adjustedCost % item.assignees.length !== 0) {
+            roundingOccurred = true;
+          }
+          if (itemServiceChargeShare % item.assignees.length !== 0) {
+            roundingOccurred = true;
+          }
           const shares = distributeCents(adjustedCost, item.assignees.length);
           const serviceChargeShares = distributeCents(itemServiceChargeShare, item.assignees.length);
           item.assignees.forEach((pid, index) => {
@@ -258,5 +271,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     totalItemCost,
     totalDiscounts,
     totalServiceCharge,
+    roundingOccurred,
   };
 };
