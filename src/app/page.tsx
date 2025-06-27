@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -32,24 +33,24 @@ export default function Home() {
 
   const features = [
     {
-      icon: <UploadCloud className="h-8 w-8 text-primary" />,
-      title: 'AI-Powered Scan',
-      description: 'Snap a photo of your receipt and let our AI extract every item and price in seconds. No more manual entry.',
+      emoji: '📸',
+      title: 'Snap & Scan',
+      description: 'Forget typing. Just snap a photo of your receipt and our AI will digitize every item and price in seconds.',
     },
     {
-      icon: <Users className="h-8 w-8 text-primary" />,
-      title: 'Easy Assignments',
-      description: 'Intuitively assign items to one or more people. Splitzy handles the math, even for shared items.',
+      emoji: '🙋‍♀️',
+      title: 'Drag, Drop, Done',
+      description: 'Assigning items is a breeze. Drag items to friends, split shared dishes, and watch the math solve itself. "Who had the wagyu?" Solved.',
     },
     {
-      icon: <Divide className="h-8 w-8 text-primary" />,
-      title: 'Fair Settlement',
-      description: 'Get a clear summary of who owes whom. Our penny-perfect calculations ensure everyone pays their exact share.',
+      emoji: '💸',
+      title: 'Settle Up Simply',
+      description: 'No more awkward IOUs. Get a simple, clear breakdown of who owes whom. Settle up in seconds and stay friends.',
     },
     {
-      icon: <BarChart className="h-8 w-8 text-primary" />,
-      title: 'Insightful Summary',
-      description: 'Visualize the spending breakdown with charts and detailed summaries for full transparency.',
+      emoji: '📊',
+      title: 'Visualize-a-bill-ity',
+      description: "Get a bird's-eye view of the spending. Cool charts show who spent what, making everything transparent and fair.",
     },
   ];
 
@@ -62,7 +63,7 @@ export default function Home() {
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-2 md:flex">
              <Link href="/demo" className={buttonVariants({ variant: 'outline' })}>
-                Demo
+                Live Demo
               </Link>
               {user && (
                 <Link href="/app" className={buttonVariants({ variant: 'ghost' })}>
@@ -108,7 +109,7 @@ export default function Home() {
                 <Separator className="my-4" />
                 <nav className="flex flex-col gap-2">
                   <Link href="/demo" className={cn(buttonVariants({ variant: 'ghost' }), 'justify-start')}>
-                    Demo
+                    Live Demo
                   </Link>
                   {user && (
                     <Link href="/app" className={cn(buttonVariants({ variant: 'ghost' }), 'justify-start')}>
@@ -212,7 +213,7 @@ export default function Home() {
                   <Card className="text-center h-full">
                     <CardHeader>
                       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                        {feature.icon}
+                        <span className="text-3xl">{feature.emoji}</span>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-2">
