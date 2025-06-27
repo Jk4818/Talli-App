@@ -92,16 +92,15 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
 
               item.assignees.forEach(pid => {
                   const percentage = item.percentageAssignments[pid] || 0;
-                  if (((item.cost * percentage) / 100) % 1 !== 0) {
-                      roundingOccurred = true;
-                  }
                   const share = Math.round((item.cost * percentage) / 100);
                   distributedAmount += share;
                   calculatedShares.push({ id: pid, share });
               });
 
               let remainder = item.cost - distributedAmount;
-              if (remainder !== 0) roundingOccurred = true;
+              if (remainder !== 0) {
+                roundingOccurred = true;
+              }
 
               let i = 0;
               while(remainder !== 0) {
@@ -155,8 +154,9 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     if (receipt.serviceCharge?.type === 'fixed') {
         localServiceCharge = receipt.serviceCharge.value;
     } else if (receipt.serviceCharge?.type === 'percentage') {
-        localServiceCharge = Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
-        if (subtotalAfterDiscounts * (receipt.serviceCharge.value / 100) !== localServiceCharge) {
+        const exactServiceCharge = subtotalAfterDiscounts * (receipt.serviceCharge.value / 100);
+        localServiceCharge = Math.round(exactServiceCharge);
+        if (exactServiceCharge !== localServiceCharge) {
             roundingOccurred = true;
         }
     }
