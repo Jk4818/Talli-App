@@ -51,6 +51,7 @@ export interface ParticipantSummary {
   name: string;
   totalPaid: number;
   totalShare: number;
+  totalServiceChargeShare: number;
   balance: number;
 }
 

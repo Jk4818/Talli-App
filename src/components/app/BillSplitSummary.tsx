@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -58,8 +59,12 @@ const ParticipantCard = ({ participant, currency }: { participant: ParticipantSu
                 <Separator className="my-3" />
                 <div className="text-sm space-y-1">
                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">Their Share</span>
+                        <span className="text-muted-foreground">Total Share</span>
                         <span className="font-mono">{formatCurrency(participant.totalShare)}</span>
+                    </div>
+                    <div className="flex justify-between pl-4">
+                        <span className="text-muted-foreground text-xs">incl. Service Charge</span>
+                        <span className="font-mono text-xs">{formatCurrency(participant.totalServiceChargeShare)}</span>
                     </div>
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">They Paid</span>
