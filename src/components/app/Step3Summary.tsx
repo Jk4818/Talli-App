@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import SmartSummaryCard from './SmartSummaryCard';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
@@ -243,7 +244,7 @@ export default function Step3Summary() {
                 </CardContent>
             </Card>
         </div>
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-8">
           <Card>
             <CardHeader className='pt-6'>
               <CardTitle>Total Shares</CardTitle>
@@ -253,6 +254,7 @@ export default function Step3Summary() {
                 <SharePieChart summary={calculatedSummary} />
             </CardContent>
           </Card>
+          <SmartSummaryCard summary={calculatedSummary} participants={participants} />
         </div>
       </motion.div>
       <motion.div variants={fadeInUp}>
