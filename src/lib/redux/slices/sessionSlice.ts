@@ -104,11 +104,11 @@ const sessionSlice = createSlice({
       };
     },
     resetSession: (state) => {
-      // Preserve the demo status while resetting everything else
-      const isDemo = state.isDemoSession;
+      // Resetting returns to the initial, non-demo state.
+      // The demo page is responsible for re-initializing demo mode.
       return {
         ...initialState,
-        isDemoSession: isDemo,
+        isDemoSession: false,
       };
     },
     addManualReceipt: (state) => {
