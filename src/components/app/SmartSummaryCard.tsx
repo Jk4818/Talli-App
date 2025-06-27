@@ -215,6 +215,26 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
         return Math.round(averageConfidence);
     }, [receipts]);
 
+    const aiConfidenceDialogDescription = (
+      <>
+        <p>This is the average confidence score from all AI-scanned receipts in this session. A lower score suggests you should double-check the extracted data. Here's the breakdown:</p>
+        <div className="space-y-3 rounded-md border p-3 bg-muted/50 mt-4">
+          {receipts
+            .filter(r => r.overallConfidence !== undefined && r.status === 'processed')
+            .map((r, index, arr) => (
+              <React.Fragment key={r.id}>
+                <div className="flex justify-between items-center">
+                  <span className="truncate pr-4">{r.name}</span>
+                  <span className="font-mono font-semibold">{r.overallConfidence}%</span>
+                </div>
+                {index < arr.length - 1 && <Separator />}
+              </React.Fragment>
+            ))
+          }
+        </div>
+      </>
+    );
+
     return (
         <Card>
             <CardHeader className='flex-row items-center gap-4 space-y-0'>
@@ -228,7 +248,21 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                 <ul className="space-y-6">
                     {aiConfidence !== null && (
                         <SmartSummaryItem icon={<Bot className="h-5 w-5" />}>
-                            <p className="font-semibold text-foreground">AI Confidence</p>
+                            <div className="flex items-center gap-1.5">
+                                <p className="font-semibold text-foreground">AI Confidence</p>
+                                <InfoDialog
+                                    title="AI Confidence Breakdown"
+                                    description={aiConfidenceDialogDescription}
+                                    trigger={
+                                        <button
+                                            className="p-0 m-0 h-4 w-4 inline-flex items-center justify-center align-middle"
+                                            aria-label="More information about AI confidence"
+                                        >
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </button>
+                                    }
+                                />
+                            </div>
                             <p className="text-muted-foreground">
                                 On average, the AI was <span className="font-medium text-foreground">{aiConfidence}%</span> confident in its receipt scans.
                             </p>

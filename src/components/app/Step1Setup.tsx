@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles, Plus } from 'lucide-react';
+import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles, Plus, AlertCircle } from 'lucide-react';
 import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt, restoreSession } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
@@ -36,6 +36,8 @@ import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { useRouter } from 'next/navigation';
 import type { SessionState } from '@/lib/types';
 
+const MAX_RECEIPTS = 3;
+
 export default function Step1Setup() {
   const session = useSelector((state: RootState) => state.session);
   const { participants, receipts, items, error, globalCurrency, isDemoSession } = session;
@@ -46,6 +48,9 @@ export default function Step1Setup() {
   
   const receiptFileInputRef = React.useRef<HTMLInputElement>(null);
   const sessionImportInputRef = React.useRef<HTMLInputElement>(null);
+
+  const isReceiptLimitReached = receipts.length >= MAX_RECEIPTS;
+  const receiptLimitMessage = `You can add a maximum of ${MAX_RECEIPTS} receipts per session.`;
 
   const hasOrphanedItems = React.useMemo(() => {
     const receiptIds = new Set(receipts.map(r => r.id));
@@ -78,6 +83,14 @@ export default function Step1Setup() {
   }, [error, toast]);
 
   const handleReceiptFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (isReceiptLimitReached) {
+      toast({
+        variant: 'destructive',
+        title: 'Receipt Limit Reached',
+        description: receiptLimitMessage,
+      });
+      return;
+    }
     const file = event.target.files?.[0];
     if (file) {
       dispatch(addReceiptFromFile({file, isDemo: isDemoSession}));
@@ -104,6 +117,14 @@ export default function Step1Setup() {
   };
 
   const handleAddManually = () => {
+    if (isReceiptLimitReached) {
+      toast({
+        variant: 'destructive',
+        title: 'Receipt Limit Reached',
+        description: receiptLimitMessage,
+      });
+      return;
+    }
     dispatch(addManualReceipt());
     toast({
         title: 'Manual Receipt Added',
@@ -266,17 +287,17 @@ export default function Step1Setup() {
                 <div className="sm:hidden">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button size="sm">
+                            <Button size="sm" disabled={isReceiptLimitReached}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleAddManually}>
+                            <DropdownMenuItem onClick={handleAddManually} disabled={isReceiptLimitReached}>
                                 <FilePlus2 className="mr-2 h-4 w-4" />
                                 <span>Add Manually</span>
                             </DropdownMenuItem>
-                             <DropdownMenuItem onClick={handleUploadClick}>
+                             <DropdownMenuItem onClick={handleUploadClick} disabled={isReceiptLimitReached}>
                                 <Sparkles className="mr-2 h-4 w-4" />
                                 <span>Upload Receipt</span>
                             </DropdownMenuItem>
@@ -285,18 +306,33 @@ export default function Step1Setup() {
                 </div>
                 {/* Desktop Buttons */}
                 <div className="hidden sm:flex flex-1 items-center gap-2">
-                    <Button onClick={handleAddManually} size="sm" variant='outline' className="flex-1">
-                        <FilePlus2 className="mr-2 h-4 w-4" />
-                        Add Manually
-                    </Button>
-                    <Button onClick={handleUploadClick} size="sm" className="flex-1">
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Upload Receipt
-                    </Button>
+                    <AccessibleTooltip content={<p>{receiptLimitMessage}</p>}>
+                      <span tabIndex={0} className="flex-1">
+                        <Button onClick={handleAddManually} size="sm" variant='outline' className="w-full" disabled={isReceiptLimitReached}>
+                            <FilePlus2 className="mr-2 h-4 w-4" />
+                            Add Manually
+                        </Button>
+                      </span>
+                    </AccessibleTooltip>
+                     <AccessibleTooltip content={<p>{receiptLimitMessage}</p>}>
+                      <span tabIndex={0} className="flex-1">
+                        <Button onClick={handleUploadClick} size="sm" className="w-full" disabled={isReceiptLimitReached}>
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Upload Receipt
+                        </Button>
+                      </span>
+                    </AccessibleTooltip>
                 </div>
               </div>
           </div>
           <CardContent>
+            {isReceiptLimitReached && (
+              <Alert variant="default" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Receipt Limit Reached</AlertTitle>
+                  <AlertDescription>{receiptLimitMessage}</AlertDescription>
+              </Alert>
+            )}
             {receipts.length > 0 ? (
               <div className="space-y-4">
                 {receipts.map(receipt => (
