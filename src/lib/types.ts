@@ -71,6 +71,10 @@ export interface SplitSummary {
     name: string;
     cost: number;
     assigneesCount: number;
+    adjustments: {
+        participantName: string;
+        amount: number; // in cents, e.g. +1 or -1
+    }[];
   }[];
 }
 

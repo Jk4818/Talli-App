@@ -139,6 +139,16 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                             <span className='text-muted-foreground'>Split between:</span>
                                             <span className="font-mono">{item.assigneesCount} people</span>
                                         </div>
+                                        {item.adjustments.map((adj, adjIndex) => (
+                                            <div key={adjIndex} className="flex justify-between text-xs pl-4">
+                                                <span className='text-muted-foreground'>
+                                                    → {adj.participantName} paid
+                                                </span>
+                                                <span className="font-mono">
+                                                    {formatCurrency(Math.abs(adj.amount))} {adj.amount > 0 ? 'more' : 'less'}
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </React.Fragment>
                             ))

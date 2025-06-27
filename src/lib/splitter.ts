@@ -70,6 +70,8 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   let totalItemCost = 0;
   let totalDiscounts = 0;
   let totalServiceCharge = 0;
+  const participantIdToName = new Map(participants.map(p => [p.id, p.name]));
+
 
   // Calculate each participant's total share from all receipts
   receipts.forEach(receipt => {
@@ -86,6 +88,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       const itemShares = new Map<string, number>();
       let fallbackToEqual = item.splitMode === 'equal';
       let itemCausedRounding = false;
+      const adjustments: { participantName: string, amount: number }[] = [];
       
       if (item.splitMode === 'percentage') {
           const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
@@ -109,7 +112,16 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
               let i = 0;
               while(remainder !== 0) {
                   const direction = remainder > 0 ? 1 : -1;
+                  const pidToAdjust = calculatedShares[i % calculatedShares.length].id;
                   calculatedShares[i % calculatedShares.length].share += direction;
+                  
+                  const name = participantIdToName.get(pidToAdjust)!;
+                  const existingAdjustment = adjustments.find(a => a.participantName === name);
+                  if (existingAdjustment) {
+                      existingAdjustment.amount += direction;
+                  } else {
+                      adjustments.push({ participantName: name, amount: direction });
+                  }
                   remainder -= direction;
                   i++;
               }
@@ -139,6 +151,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
             let share = baseShare;
             if (remainder > 0) {
                 share += 1;
+                adjustments.push({ participantName: participantIdToName.get(id)!, amount: 1 });
                 remainder--;
             }
             itemShares.set(id, share);
@@ -149,7 +162,8 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         roundedItems.push({
             name: item.name,
             cost: item.cost,
-            assigneesCount: item.assignees.length
+            assigneesCount: item.assignees.length,
+            adjustments: adjustments,
         });
       }
 
