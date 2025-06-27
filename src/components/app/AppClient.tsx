@@ -96,7 +96,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <>
       <div className="flex-1 p-4 md:p-8">
         <AnimatePresence mode="wait">
           {renderStep()}
@@ -140,6 +140,6 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
           </div>
         </div>
       </footer>
-    </div>
+    </>
   );
 }
