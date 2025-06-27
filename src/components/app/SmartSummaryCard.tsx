@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -6,11 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { SplitSummary, Participant } from '@/lib/types';
 import { Lightbulb, Scale, ShieldCheck, Sparkles, Info } from 'lucide-react';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
-
-interface SmartSummaryCardProps {
-    summary: SplitSummary;
-    participants: Participant[];
-}
 
 const SmartSummaryItem = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => (
     <li className="flex items-start gap-4">
@@ -43,7 +37,7 @@ export default function SmartSummaryCard({ summary, participants }: SmartSummary
 
     const confidenceLevel = "We're 97% confident this split is correct, based on receipt scanning and item assignment.";
     
-    const roundingExplanation = "To ensure the final bill is exact, tiny rounding differences (often just a single cent) are automatically distributed among the participants of a split. This guarantees the total is always penny-perfect.";
+    const roundingExplanation = "The final total is penny-perfect. To achieve this, rounding differences from splitting items are distributed automatically. For example, when a $10 item is split three ways, two people pay $3.33 and one pays $3.34. The app ensures this is done fairly across all splits.";
 
     const fairnessInfo = (
         <div className="space-y-2 text-left">
@@ -71,24 +65,28 @@ export default function SmartSummaryCard({ summary, participants }: SmartSummary
             <CardContent>
                 <ul className="space-y-5">
                     <SmartSummaryItem icon={<Scale className="h-5 w-5" />}>
-                        <span>
-                            <strong>Fairness Check:</strong> {fairnessMetric}{' '}
-                            <AccessibleTooltip content={fairnessInfo}>
-                                <span className="inline-flex cursor-help" aria-label="More information about fairness check">
-                                    <Info className="inline-block h-4 w-4 align-text-bottom text-muted-foreground" />
-                                </span>
-                            </AccessibleTooltip>
-                        </span>
+                        <strong>Fairness Check:</strong> {fairnessMetric}{' '}
+                        <AccessibleTooltip content={fairnessInfo}>
+                            <button
+                                type="button"
+                                className="p-0 m-0 bg-transparent border-none inline-flex align-middle cursor-help"
+                                aria-label="More information about fairness check"
+                            >
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                        </AccessibleTooltip>
                     </SmartSummaryItem>
                     <SmartSummaryItem icon={<ShieldCheck className="h-5 w-5" />}>
-                         <span>
-                            <strong>Split Confidence:</strong> {confidenceLevel}{' '}
-                            <AccessibleTooltip content={confidenceInfo}>
-                                <span className="inline-flex cursor-help" aria-label="More information about split confidence">
-                                    <Info className="inline-block h-4 w-4 align-text-bottom text-muted-foreground" />
-                                </span>
-                            </AccessibleTooltip>
-                        </span>
+                        <strong>Split Confidence:</strong> {confidenceLevel}{' '}
+                        <AccessibleTooltip content={confidenceInfo}>
+                            <button
+                                type="button"
+                                className="p-0 m-0 bg-transparent border-none inline-flex align-middle cursor-help"
+                                aria-label="More information about split confidence"
+                            >
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                        </AccessibleTooltip>
                     </SmartSummaryItem>
                      <SmartSummaryItem icon={<Sparkles className="h-5 w-5" />}>
                         <strong>Penny Perfect:</strong> {roundingExplanation}
