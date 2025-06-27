@@ -137,7 +137,7 @@ export default function ItemSplitDiagram() {
         </div>
       </CardHeader>
       <CardContent>
-        <div ref={containerRef} className="relative w-full min-h-[300px]">
+        <div ref={containerRef} className="relative w-full min-h-[400px]">
           <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
             <AnimatePresence>
               {nodes.itemNodes.map(itemNode =>
@@ -159,7 +159,7 @@ export default function ItemSplitDiagram() {
                       strokeWidth={2}
                       initial={{ opacity: 0, pathLength: 0 }}
                       animate={{ 
-                        opacity: lineIsHighlighted ? 1 : 0.3,
+                        opacity: lineIsHighlighted ? 1 : (highlightedId ? 0.1 : 0.3),
                         pathLength: 1,
                         stroke: lineIsHighlighted ? 'hsl(var(--primary))' : 'hsl(var(--border))'
                       }}
@@ -171,9 +171,9 @@ export default function ItemSplitDiagram() {
               )}
             </AnimatePresence>
           </svg>
-           <div className="flex justify-between items-start gap-8">
-            <div className="w-2/5 space-y-2 relative" style={{ zIndex: 1 }}>{nodes.participantNodes.map(renderNode)}</div>
-            <div className="w-3/5 space-y-2 relative" style={{ zIndex: 1 }}>{nodes.itemNodes.map(renderNode)}</div>
+           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-8">
+            <div className="w-full md:w-2/5 space-y-2">{nodes.participantNodes.map(renderNode)}</div>
+            <div className="w-full md:w-3/5 space-y-2">{nodes.itemNodes.map(renderNode)}</div>
           </div>
         </div>
       </CardContent>
