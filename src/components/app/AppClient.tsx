@@ -17,12 +17,13 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   const { step, participants, items, receipts, isDemoSession } = useSelector((state: RootState) => state.session);
 
   useEffect(() => {
-    // In demo mode, only load the demo data if the session isn't already a demo.
-    // This prevents the demo data from reloading every time, e.g., after a reset.
-    if (isDemo && !isDemoSession) {
+    // When in demo mode, always load the demo data when this component mounts.
+    // This ensures that navigating to the demo page always shows a fresh demo.
+    // Resetting the session will clear the data, but navigating away and back will reload it.
+    if (isDemo) {
       dispatch(loadDemoData());
     }
-  }, [dispatch, isDemo, isDemoSession]);
+  }, [dispatch, isDemo]);
 
 
   const handleNext = () => {
