@@ -5,8 +5,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle } from 'lucide-react';
-import { addReceiptFromFile, setGlobalCurrency, resetSession } from '@/lib/redux/slices/sessionSlice';
+import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles } from 'lucide-react';
+import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
@@ -27,9 +27,10 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
+import { AccessibleTooltip } from '../ui/accessible-tooltip';
 
 export default function Step1Setup() {
-  const { participants, receipts, items, error, globalCurrency } = useSelector((state: RootState) => state.session);
+  const { participants, receipts, items, error, globalCurrency, isDemoSession } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -49,7 +50,7 @@ export default function Step1Setup() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      dispatch(addReceiptFromFile(file));
+      dispatch(addReceiptFromFile({file, isDemo: isDemoSession}));
     }
     // Reset file input to allow uploading the same file again
     if (fileInputRef.current) {
@@ -66,10 +67,18 @@ export default function Step1Setup() {
   };
 
   const handleResetSession = () => {
-    dispatch(resetSession());
+    dispatch(resetSession({ isDemo: isDemoSession }));
     toast({
       title: 'New Session Started',
       description: 'Your previous session data has been cleared.',
+    });
+  };
+
+  const handleAddManually = () => {
+    dispatch(addManualReceipt());
+    toast({
+        title: 'Manual Receipt Added',
+        description: 'A new blank receipt has been added. You can now add items to it below.',
     });
   };
   
@@ -84,9 +93,12 @@ export default function Step1Setup() {
       exit="exit"
     >
       <motion.div variants={fadeInUp} className="flex flex-wrap items-center justify-end gap-2">
-        <ImportButton variant="outline">
-          <Upload className="mr-2 h-4 w-4" /> Import Session
-        </ImportButton>
+        <AccessibleTooltip content={<p>Import a previously exported session from a JSON file.</p>}>
+          <ImportButton variant="outline">
+            <Upload className="mr-2 h-4 w-4" /> Import Session
+          </ImportButton>
+        </AccessibleTooltip>
+
         {isSessionActive && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -162,10 +174,18 @@ export default function Step1Setup() {
                 className="hidden"
                 accept="image/*"
               />
-              <Button onClick={handleUploadClick} size="sm" className="flex-1 sm:flex-none">
-                <FilePlus2 className="mr-2 h-4 w-4" />
-                Upload
-              </Button>
+              <AccessibleTooltip content={<p>Create a new receipt without an image and add items manually.</p>}>
+                  <Button onClick={handleAddManually} size="sm" className="flex-1 sm:flex-none">
+                    <FilePlus2 className="mr-2 h-4 w-4" />
+                    Add Manually
+                  </Button>
+               </AccessibleTooltip>
+               <AccessibleTooltip content={<p>Upload a receipt image. In real sessions, AI will scan it. In demo mode, you can add items manually.</p>}>
+                  <Button onClick={handleUploadClick} size="sm" className="flex-1 sm:flex-none">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Upload Receipt
+                  </Button>
+                </AccessibleTooltip>
             </div>
           </CardHeader>
           <CardContent>

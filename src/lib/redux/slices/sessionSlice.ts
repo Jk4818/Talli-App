@@ -17,10 +17,11 @@ const initialState: SessionState = {
   currentAssignmentIndex: 0,
 };
 
-// This thunk now just reads the file and creates a receipt "shell".
+// This thunk now reads the file and creates a receipt "shell".
+// The status of the shell depends on whether we are in a demo session.
 export const addReceiptFromFile = createAsyncThunk(
   'session/addReceiptFromFile',
-  async (file: File, { rejectWithValue }) => {
+  async ({ file, isDemo }: { file: File; isDemo: boolean }, { rejectWithValue }) => {
     try {
       const imageDataUri = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -28,7 +29,9 @@ export const addReceiptFromFile = createAsyncThunk(
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(file);
       });
-      return { name: file.name, imageDataUri };
+      // In demo mode, we bypass the AI scanning step by setting the status to 'processed'.
+      const status = isDemo ? 'processed' : 'unprocessed';
+      return { name: file.name, imageDataUri, status };
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Could not read file.');
     }
@@ -106,7 +109,27 @@ const sessionSlice = createSlice({
         isDemoSession: false,
       };
     },
-    resetSession: () => initialState,
+    resetSession: (state, action: PayloadAction<{ isDemo?: boolean } | undefined>) => {
+      const isDemo = action.payload?.isDemo ?? false;
+      // Preserve the demo status while resetting everything else
+      return {
+        ...initialState,
+        isDemoSession: isDemo,
+      };
+    },
+    addManualReceipt: (state) => {
+        const newReceipt: Receipt = {
+          id: `receipt_manual_${new Date().getTime()}`,
+          name: 'Manual Receipt',
+          imageDataUri: undefined,
+          status: 'processed',
+          payerId: null,
+          discounts: [],
+          serviceCharge: { type: 'fixed', value: 0 },
+          currency: state.globalCurrency,
+        };
+        state.receipts.push(newReceipt);
+    },
     setStep: (state, action: PayloadAction<number>) => {
       state.step = action.payload;
     },
@@ -301,7 +324,7 @@ const sessionSlice = createSlice({
           id: `receipt_${new Date().getTime()}`,
           name: action.payload.name,
           imageDataUri: action.payload.imageDataUri,
-          status: 'unprocessed',
+          status: action.payload.status as 'unprocessed' | 'processed',
           payerId: null,
           discounts: [],
           serviceCharge: { type: 'fixed', value: 0 },
@@ -381,6 +404,7 @@ export const {
   setCurrentAssignmentIndex,
   setSettlements,
   toggleSettlementPaid,
+  addManualReceipt,
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;
