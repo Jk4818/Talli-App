@@ -134,27 +134,36 @@ export default function ItemSplitDiagram() {
   }
 
   const renderNode = (node: Node) => (
-    <motion.div
+    <div
       ref={node.ref}
       key={node.id}
-      layout
-      onClick={() => handleNodeClick(node.id)}
       className={cn(
-        "relative z-10 flex items-center gap-3 rounded-lg border bg-card p-2 shadow-sm transition-all duration-300 cursor-pointer",
-        isHighlighted(node) ? 'bg-primary/10 border-primary scale-105 shadow-lg' : 'opacity-80 hover:opacity-100',
-        !highlightedId && 'opacity-100'
+        "relative",
+        // On mobile, both columns have lines coming from the left.
+        // On desktop, participants have lines from the right, items from the left.
+        node.type === 'participant' ? 'pl-4 md:pl-0 md:pr-4' : 'pl-4'
       )}
     >
-      {node.type === 'participant' && (
-        <Avatar className="h-8 w-8 text-xs">
-          <AvatarFallback>{getInitials(node.label)}</AvatarFallback>
-        </Avatar>
-      )}
-      <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{node.label}</p>
-          {node.secondaryLabel && <p className="text-xs text-muted-foreground">{node.secondaryLabel}</p>}
-      </div>
-    </motion.div>
+      <motion.div
+        layout
+        onClick={() => handleNodeClick(node.id)}
+        className={cn(
+          "relative z-10 flex items-center gap-3 rounded-lg border bg-card p-2 shadow-sm transition-all duration-300 cursor-pointer",
+          isHighlighted(node) ? 'bg-primary/10 border-primary scale-105 shadow-lg' : 'opacity-80 hover:opacity-100',
+          !highlightedId && 'opacity-100'
+        )}
+      >
+        {node.type === 'participant' && (
+          <Avatar className="h-8 w-8 text-xs">
+            <AvatarFallback>{getInitials(node.label)}</AvatarFallback>
+          </Avatar>
+        )}
+        <div className="flex-1 min-w-0">
+            <p className="font-medium truncate">{node.label}</p>
+            {node.secondaryLabel && <p className="text-xs text-muted-foreground">{node.secondaryLabel}</p>}
+        </div>
+      </motion.div>
+    </div>
   );
 
   return (
