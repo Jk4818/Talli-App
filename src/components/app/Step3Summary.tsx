@@ -8,7 +8,7 @@ import { calculateSplits } from '@/lib/splitter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import BillSplitSummary from './BillSplitSummary';
 import { Button } from '../ui/button';
-import { resetSession, setSettlements, toggleSettlementPaid, loadDemoData } from '@/lib/redux/slices/sessionSlice';
+import { resetSession, setSettlements, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
 import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ import ItemSplitDiagram from './ItemSplitDiagram';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
-  const { participants, items, receipts, settlements, globalCurrency, isDemoSession } = sessionState;
+  const { participants, items, receipts, settlements, globalCurrency } = sessionState;
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
 
@@ -59,19 +59,11 @@ export default function Step3Summary() {
 
 
   const handleReset = () => {
-    if (isDemoSession) {
-      dispatch(loadDemoData());
-      toast({
-        title: 'Demo Session Reset',
-        description: 'The demo data has been reloaded.',
-      });
-    } else {
-      dispatch(resetSession({ isDemo: false }));
-      toast({
-        title: 'New Session Started',
-        description: 'Your previous session data has been cleared.',
-      });
-    }
+    dispatch(resetSession());
+    toast({
+      title: 'Session Cleared',
+      description: 'All session data has been removed.',
+    });
   };
 
   const handleExport = () => {

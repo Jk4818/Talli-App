@@ -6,7 +6,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles } from 'lucide-react';
-import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt, restoreSession, loadDemoData } from '@/lib/redux/slices/sessionSlice';
+import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt, restoreSession } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
@@ -42,6 +42,20 @@ export default function Step1Setup() {
   const sessionImportInputRef = React.useRef<HTMLInputElement>(null);
 
   const hasAmbiguousItems = React.useMemo(() => items.some(item => item.isAmbiguous), [items]);
+  const hasConflictingReceipts = React.useMemo(() => {
+    return receipts.some(receipt => {
+      const receiptItems = items.filter(i => i.receiptId === receipt.id);
+      const subtotal = receiptItems.reduce((acc, item) => acc + item.cost, 0);
+      const totalDiscounts = (receipt.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+      const subtotalAfterDiscounts = subtotal - totalDiscounts;
+      const serviceCharge = receipt.serviceCharge || { type: 'fixed', value: 0 };
+      const serviceChargeAmount = serviceCharge.type === 'fixed'
+        ? serviceCharge.value
+        : Math.round(subtotalAfterDiscounts * (serviceCharge.value / 100));
+      const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
+      return receiptTotal < 0;
+    });
+  }, [receipts, items]);
 
   React.useEffect(() => {
     if (error) {
@@ -72,19 +86,11 @@ export default function Step1Setup() {
   };
 
   const handleResetSession = () => {
-    if (isDemoSession) {
-      dispatch(loadDemoData());
-      toast({
-        title: 'Demo Session Reset',
-        description: 'The demo data has been reloaded.',
-      });
-    } else {
-      dispatch(resetSession({ isDemo: false }));
-      toast({
-        title: 'New Session Started',
-        description: 'Your previous session data has been cleared.',
-      });
-    }
+    dispatch(resetSession());
+    toast({
+      title: 'Session Cleared',
+      description: 'All session data has been removed.',
+    });
   };
 
   const handleAddManually = () => {
@@ -170,7 +176,7 @@ export default function Step1Setup() {
       />
       <motion.div variants={fadeInUp} className="flex flex-wrap items-center justify-end gap-2">
         <AccessibleTooltip content={<p>Import a previously exported session from a JSON file.</p>}>
-          <Button variant="outline" onClick={handleImportClick}>
+           <Button variant="outline" onClick={handleImportClick}>
             <Upload className="mr-2 h-4 w-4" /> Import Session
           </Button>
         </AccessibleTooltip>
@@ -273,17 +279,22 @@ export default function Step1Setup() {
           </CardContent>
         </Card>
       </motion.div>
-
-      <motion.div variants={fadeInUp} className="space-y-4">
-        {hasAmbiguousItems && (
+      
+      {(hasAmbiguousItems || hasConflictingReceipts) && (
+        <motion.div variants={fadeInUp}>
             <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Action Required</AlertTitle>
                 <AlertDescription>
-                    Some items were flagged by the AI as ambiguous. Please review them in the list below and uncheck the "Ambiguous" toggle for each item to confirm they are correct. You cannot proceed until all ambiguous items are resolved.
+                    {hasConflictingReceipts && <p>At least one receipt has a negative total. Please resolve conflicts in the expanded receipt sections.</p>}
+                    {hasAmbiguousItems && <p>Some items were flagged as ambiguous. Please review them in the list below and uncheck the "Ambiguous" toggle to confirm they are correct.</p>}
+                    <p className='mt-2'>You cannot proceed until all issues are resolved.</p>
                 </AlertDescription>
             </Alert>
-        )}
+        </motion.div>
+      )}
+
+      <motion.div variants={fadeInUp} className="space-y-4">
         <ItemListEditor />
       </motion.div>
     </motion.div>

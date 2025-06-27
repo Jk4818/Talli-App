@@ -62,37 +62,30 @@ const sessionSlice = createSlice({
   reducers: {
     restoreSession: (state, action: PayloadAction<Partial<SessionState>>) => {
       const importedData = action.payload;
-
-      const itemDefaults: Omit<Item, 'id'> = {
-        receiptId: '',
-        name: 'New Item',
-        cost: 0,
-        isAmbiguous: false,
-        assignees: [],
-        splitMode: 'equal',
-        percentageAssignments: {},
-        exactAssignments: {},
-      };
-    
+      
       const sanitizedItems = (importedData.items || []).map((item, index): Item => ({
-        ...itemDefaults,
-        ...item,
         id: `item_${Date.now()}_${index}`,
+        receiptId: item.receiptId || '',
+        name: item.name || 'New Item',
+        cost: item.cost || 0,
+        isAmbiguous: item.isAmbiguous || false,
+        assignees: item.assignees || [],
+        splitMode: item.splitMode || 'equal',
+        percentageAssignments: item.percentageAssignments || {},
+        exactAssignments: item.exactAssignments || {},
       }));
 
-      const receiptDefaults: Omit<Receipt, 'id'> = {
-        name: 'New Receipt',
-        payerId: null,
-        discounts: [],
-        serviceCharge: { type: 'fixed', value: 0 },
-        currency: 'USD',
-        status: 'unprocessed',
-      };
-    
       const sanitizedReceipts = (importedData.receipts || []).map((receipt, index): Receipt => ({
-        ...receiptDefaults,
-        ...receipt,
         id: `receipt_${Date.now()}_${index}`,
+        name: receipt.name || 'New Receipt',
+        payerId: receipt.payerId || null,
+        discounts: receipt.discounts || [],
+        serviceCharge: receipt.serviceCharge || { type: 'fixed', value: 0 },
+        currency: receipt.currency || 'USD',
+        status: 'processed', // Always mark imported receipts as processed
+        imageDataUri: receipt.imageDataUri,
+        exchangeRate: receipt.exchangeRate,
+        error: receipt.error,
       }));
     
       return {
@@ -110,12 +103,11 @@ const sessionSlice = createSlice({
         currentAssignmentIndex: 0,
       };
     },
-    resetSession: (state, action: PayloadAction<{ isDemo?: boolean } | undefined>) => {
-      const isDemo = action.payload?.isDemo ?? false;
+    resetSession: (state) => {
       // Preserve the demo status while resetting everything else
       return {
         ...initialState,
-        isDemoSession: isDemo,
+        isDemoSession: state.isDemoSession,
       };
     },
     addManualReceipt: (state) => {

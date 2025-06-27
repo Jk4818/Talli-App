@@ -61,7 +61,7 @@ export default function ItemListEditor() {
     }
   };
 
-  const handleSaveItem = (updates: { name: string, cost: number }) => {
+  const handleSaveItem = (updates: { name: string, cost: number, receiptId: string }) => {
     if (editingItem) {
       dispatch(updateItem({ id: editingItem.id, ...updates }));
     }
@@ -165,6 +165,7 @@ export default function ItemListEditor() {
       </Card>
       <ItemEditDialog 
         item={editingItem}
+        receipts={receipts}
         isOpen={!!editingItem}
         onOpenChange={(open) => !open && setEditingItem(null)}
         onSave={handleSaveItem}
