@@ -176,17 +176,18 @@ export default function ItemSplitDiagram() {
                   
                   const lineIsHighlighted = isLineHighlighted(itemNode.id, participantId);
                   
-                  let start: Position, end: Position, pathData: string;
+                  // On desktop, connect from participant's right to item's left.
+                  // On mobile, connect from participant's left to item's left.
+                  const start = isMobile ? participantPos.left : participantPos.right;
+                  const end = itemPos.left;
+                  
+                  let pathData: string;
 
                   if (isMobile) {
-                    start = participantPos.left;
-                    end = itemPos.left;
-                    const curveOffset = 40; // How far out the C-curve bows
+                    const curveOffset = 40; // How far out the C-curve bows for vertical layout
                     pathData = `M ${start.x} ${start.y} C ${start.x - curveOffset} ${start.y}, ${end.x - curveOffset} ${end.y}, ${end.x} ${end.y}`;
                   } else {
-                    start = participantPos.right;
-                    end = itemPos.left;
-                    const curveOffset = 60; // How far out the S-curve bows
+                    const curveOffset = 60; // How far out the S-curve bows for horizontal layout
                     pathData = `M ${start.x} ${start.y} C ${start.x + curveOffset} ${start.y}, ${end.x - curveOffset} ${end.y}, ${end.x} ${end.y}`;
                   }
 
@@ -211,8 +212,8 @@ export default function ItemSplitDiagram() {
             </AnimatePresence>
           </svg>
            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-8">
-            <div className="w-full md:w-auto md:max-w-[360px] space-y-2">{nodes.participantNodes.map(renderNode)}</div>
-            <div className="w-full md:w-auto md:max-w-[420px] space-y-2">{nodes.itemNodes.map(renderNode)}</div>
+            <div className="w-full md:w-auto md:max-w-sm space-y-2">{nodes.participantNodes.map(renderNode)}</div>
+            <div className="w-full md:w-auto md:max-w-md space-y-2">{nodes.itemNodes.map(renderNode)}</div>
           </div>
         </div>
       </CardContent>
