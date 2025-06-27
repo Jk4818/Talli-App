@@ -67,6 +67,11 @@ export interface SplitSummary {
     participantName: string;
   };
   roundingOccurred: boolean;
+  roundedItems: {
+    name: string;
+    cost: number;
+    assigneesCount: number;
+  }[];
 }
 
 export interface SessionState {

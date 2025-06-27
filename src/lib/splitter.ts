@@ -48,6 +48,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       totalServiceCharge: 0,
       roundingAdjustment: undefined,
       roundingOccurred: false,
+      roundedItems: [],
     };
   }
   
@@ -65,6 +66,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   });
 
   let roundingOccurred = false;
+  const roundedItems: SplitSummary['roundedItems'] = [];
   let totalItemCost = 0;
   let totalDiscounts = 0;
   let totalServiceCharge = 0;
@@ -83,6 +85,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       
       const itemShares = new Map<string, number>();
       let fallbackToEqual = item.splitMode === 'equal';
+      let itemCausedRounding = false;
       
       if (item.splitMode === 'percentage') {
           const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
@@ -100,6 +103,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
               let remainder = item.cost - distributedAmount;
               if (remainder !== 0) {
                 roundingOccurred = true;
+                itemCausedRounding = true;
               }
 
               let i = 0;
@@ -127,6 +131,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       if (fallbackToEqual) {
         if (item.assignees.length > 0 && item.cost % item.assignees.length !== 0) {
             roundingOccurred = true;
+            itemCausedRounding = true;
         }
         const baseShare = Math.floor(item.cost / item.assignees.length);
         let remainder = item.cost % item.assignees.length;
@@ -137,6 +142,14 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
                 remainder--;
             }
             itemShares.set(id, share);
+        });
+      }
+
+      if (itemCausedRounding) {
+        roundedItems.push({
+            name: item.name,
+            cost: item.cost,
+            assigneesCount: item.assignees.length
         });
       }
 
@@ -213,7 +226,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   let roundingAdjustment: SplitSummary['roundingAdjustment'] | undefined = undefined;
 
   if (roundingDifference !== 0) {
-    roundingOccurred = true; // Final session-level rounding also counts.
     const payers = [...finalSummaries.values()].filter(s => s.totalPaid > 0).sort((a,b) => b.totalPaid - a.totalPaid);
     const personToAdjust = payers.length > 0 ? payers[0] : [...finalSummaries.values()][0];
 
@@ -268,5 +280,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     totalServiceCharge,
     roundingAdjustment,
     roundingOccurred,
+    roundedItems,
   };
 };
