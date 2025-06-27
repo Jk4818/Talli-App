@@ -129,7 +129,7 @@ export default function Step1Setup() {
         const data = JSON.parse(text) as Partial<SessionState>;
 
         if (data && typeof data === 'object' && 'participants' in data && 'items' in data && 'receipts' in data) {
-          dispatch(restoreSession({ ...data, isDemoSession }));
+          dispatch(restoreSession(data));
           toast({
             title: 'Session Imported',
             description: 'Your session has been successfully restored.',
