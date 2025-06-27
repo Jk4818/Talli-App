@@ -115,37 +115,40 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
     const pennyPerfectDialogDescription = React.useMemo(() => {
         if (!roundingOccurred) return null;
 
-        const introText = <p>This happens when splitting items or calculating percentage-based service charges where the cost doesn't divide perfectly into cents. The app handles these micro-adjustments automatically for you. The following items from your session required rounding:</p>;
+        const introText = <p>This happens when an item's cost doesn't divide perfectly into cents among the sharers. The app distributes these extra pennies one by one to ensure fairness. The following items from your session required this kind of adjustment:</p>;
 
         return (
             <>
                 {introText}
-                <ScrollArea className="mt-4 max-h-[200px] rounded-md border p-2 bg-muted/50">
+                <ScrollArea className="mt-4 max-h-[200px] rounded-md border bg-muted/50">
                     <div className="space-y-3 p-2">
                         {roundedItems.length > 0 ? (
                             roundedItems.map((item, index) => (
-                                <div key={index}>
-                                    <div className="flex justify-between font-semibold">
-                                        <span>Item:</span>
-                                        <span className="font-mono text-right">{item.name}</span>
+                                <React.Fragment key={index}>
+                                    {index > 0 && <Separator className="my-2 bg-border/50" />}
+                                    <div>
+                                        <div className="flex justify-between font-semibold">
+                                            <span>Item:</span>
+                                            <span className="font-mono text-right">{item.name}</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs pl-4">
+                                            <span className='text-muted-foreground'>Cost:</span>
+                                            <span className="font-mono">{formatCurrency(item.cost)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs pl-4">
+                                            <span className='text-muted-foreground'>Split between:</span>
+                                            <span className="font-mono">{item.assigneesCount} people</span>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between text-xs pl-4">
-                                        <span className='text-muted-foreground'>Cost:</span>
-                                        <span className="font-mono">{formatCurrency(item.cost)}</span>
-                                    </div>
-                                     <div className="flex justify-between text-xs pl-4">
-                                        <span className='text-muted-foreground'>Split between:</span>
-                                        <span className="font-mono">{item.assigneesCount} people</span>
-                                    </div>
-                                </div>
+                                </React.Fragment>
                             ))
                         ) : (
-                            <p className='text-xs text-muted-foreground'>Rounding was required for percentage-based service charges, not specific items.</p>
+                            <p className='text-xs text-muted-foreground text-center py-2'>Rounding was required for percentage-based service charges, not specific items.</p>
                         )}
                     </div>
                 </ScrollArea>
                 {roundingAdjustment && roundingAdjustment.amount !== 0 && (
-                    <p className='mt-4'>A final adjustment of <strong>{formatCurrency(roundingAdjustment.amount)}</strong> was applied to <strong>{roundingAdjustment.participantName}</strong> to make the grand total exact.</p>
+                     <p className='mt-4'>After all items were calculated, a final session-wide adjustment of <strong>{formatCurrency(Math.abs(roundingAdjustment.amount))}</strong> was {roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from'} <strong>{roundingAdjustment.participantName}'s</strong> share to make the grand total exact.</p>
                 )}
             </>
         );
