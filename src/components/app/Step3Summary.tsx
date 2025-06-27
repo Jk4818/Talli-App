@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -12,7 +11,7 @@ import { resetSession, toggleSettlementPaid } from '@/lib/redux/slices/sessionSl
 import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Switch } from '../ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '../ui/label';
 import type { SessionState } from '@/lib/types';
 import SharePieChart from './SharePieChart';
@@ -215,7 +214,7 @@ export default function Step3Summary() {
                                   {formatCurrency(s.amount)}
                                 </span>
                                 <div className="flex items-center space-x-2">
-                                  <Switch
+                                  <Checkbox
                                     id={`paid-${s.id}`}
                                     checked={isPaid}
                                     onCheckedChange={() => handleTogglePaid(s.id)}
@@ -224,7 +223,7 @@ export default function Step3Summary() {
                                   <Label
                                     htmlFor={`paid-${s.id}`}
                                     className={cn(
-                                      'text-sm font-medium',
+                                      'text-sm font-medium cursor-pointer',
                                       isPaid ? 'text-muted-foreground' : 'text-foreground'
                                     )}
                                   >

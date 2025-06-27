@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
@@ -34,7 +33,7 @@ export default function Step2Assignment() {
         .map((item, index) => {
             let issue: string | null = null;
             if (item.assignees.length === 0) {
-                issue = "Unassigned";
+                issue = "This item is unassigned.";
             } else if (item.splitMode === 'percentage') {
                 const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
                 if (totalPercentage !== 100) {
@@ -43,13 +42,22 @@ export default function Step2Assignment() {
             } else if (item.splitMode === 'exact') {
                 const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments?.[pid] || 0), 0);
                 if (totalExact !== item.cost) {
-                    issue = "Exact amounts don't add up to item total.";
+                    issue = "Exact amounts don't add up to the item total.";
                 }
             }
             return { item, index, issue };
         })
         .filter((data): data is { item: typeof data.item; index: number; issue: string } => data.issue !== null);
   }, [itemsWithCost]);
+  
+  const issueItems = useMemo(() => {
+    const issues = new Map<string, string>();
+    itemsRequiringAttention.forEach(({ item, issue }) => {
+        issues.set(item.id, issue);
+    });
+    return issues;
+  }, [itemsRequiringAttention]);
+
 
   const assignedItemsCount = useMemo(() => {
     return itemsWithCost.length - itemsRequiringAttention.length;
@@ -119,7 +127,13 @@ export default function Step2Assignment() {
                     <div className="flex" style={{ marginLeft: '-1rem' }}>
                         {itemsWithCost.map((item, index) => (
                         <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
-                            <ItemAssignmentCard item={item} itemNumber={index + 1} totalItems={itemsWithCost.length} />
+                            <ItemAssignmentCard 
+                              item={item} 
+                              itemNumber={index + 1} 
+                              totalItems={itemsWithCost.length} 
+                              hasIssue={issueItems.has(item.id)}
+                              issueText={issueItems.get(item.id)}
+                            />
                         </div>
                         ))}
                     </div>

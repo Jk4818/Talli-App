@@ -8,7 +8,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import UserAssignments from './UserAssignments';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Pencil } from 'lucide-react';
+import { Pencil, AlertCircle } from 'lucide-react';
 import ItemEditDialog from './ItemEditDialog';
 import { updateItem } from '@/lib/redux/slices/sessionSlice';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -17,9 +17,11 @@ interface ItemAssignmentCardProps {
   item: Item;
   itemNumber: number;
   totalItems: number;
+  hasIssue?: boolean;
+  issueText?: string;
 }
 
-export default function ItemAssignmentCard({ item, itemNumber, totalItems }: ItemAssignmentCardProps) {
+export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIssue, issueText }: ItemAssignmentCardProps) {
   const { receipts } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const receipt = receipts.find(r => r.id === item.receiptId);
@@ -35,9 +37,16 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems }: Ite
         <CardHeader>
           <div className="flex justify-between items-start gap-4">
               <div className='flex-1 min-w-0'>
-                <AccessibleTooltip content={<p>{item.name}</p>}>
-                  <CardTitle className="text-2xl font-headline truncate cursor-default">{item.name}</CardTitle>
-                </AccessibleTooltip>
+                <div className="flex items-center gap-2">
+                    {hasIssue && (
+                        <AccessibleTooltip content={<p>{issueText || 'This item needs attention.'}</p>}>
+                            <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+                        </AccessibleTooltip>
+                    )}
+                    <AccessibleTooltip content={<p>{item.name}</p>}>
+                      <CardTitle className="text-2xl font-headline truncate cursor-default">{item.name}</CardTitle>
+                    </AccessibleTooltip>
+                </div>
                   <CardDescription>
                       From: {receipt?.name || 'Unknown Receipt'}
                   </CardDescription>
