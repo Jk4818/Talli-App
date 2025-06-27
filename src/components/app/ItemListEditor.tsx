@@ -7,7 +7,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowUpDown, ListOrdered, Search, ListX, AlertCircle, Scale, SlidersHorizontal, Share2, Sparkles } from 'lucide-react';
+import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles } from 'lucide-react';
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
 import { Item } from '@/lib/types';
@@ -183,10 +183,12 @@ export default function ItemListEditor() {
                             <p className="font-mono text-xl font-bold text-foreground">
                                 {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
                             </p>
-                            <Badge variant="secondary" className="capitalize mt-1">
-                                {getSplitModeIcon(item.splitMode)}
-                                {item.splitMode}
-                            </Badge>
+                            {item.assignees.length > 0 && (
+                                <Badge variant="secondary" className="capitalize mt-1">
+                                    {getSplitModeIcon(item.splitMode)}
+                                    {item.splitMode}
+                                </Badge>
+                            )}
                         </div>
                     </div>
                     
@@ -207,8 +209,8 @@ export default function ItemListEditor() {
                                 )}
                             </div>
                         ) : (
-                            <span className="flex items-center gap-1.5 text-sm text-destructive font-medium">
-                                <AlertCircle className="h-4 w-4" /> Unassigned
+                            <span className="text-sm text-muted-foreground">
+                                No one assigned yet
                             </span>
                         )}
                     </div>
