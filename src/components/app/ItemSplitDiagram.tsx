@@ -212,8 +212,8 @@ export default function ItemSplitDiagram() {
             </AnimatePresence>
           </svg>
            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-8">
-            <div className="w-full md:w-auto md:max-w-sm space-y-2">{nodes.participantNodes.map(renderNode)}</div>
-            <div className="w-full md:w-auto md:max-w-md space-y-2">{nodes.itemNodes.map(renderNode)}</div>
+            <div className="w-full md:w-auto md:max-w-lg space-y-2">{nodes.participantNodes.map(renderNode)}</div>
+            <div className="w-full md:w-auto md:max-w-xl space-y-2">{nodes.itemNodes.map(renderNode)}</div>
           </div>
         </div>
       </CardContent>
