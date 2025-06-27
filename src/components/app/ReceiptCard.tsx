@@ -269,9 +269,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                 ))}
                             </div>
                         }>
-                            <button className="p-1 -mr-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
+                            <div role="button" aria-label="View confidence scores" className="p-1 -mr-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
                                 <Info className="h-4 w-4 text-muted-foreground" />
-                            </button>
+                            </div>
                         </AccessibleTooltip>
                       )}
                   </AccordionTrigger>
@@ -315,9 +315,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                     <div className="flex justify-between gap-4"><span>Service Charge:</span><span>{serviceCharge.confidence}%</span></div>
                                 </div>
                             }>
-                                <button className="p-1 -mr-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
+                                <div role="button" aria-label="View confidence score" className="p-1 -mr-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
                                     <Info className="h-4 w-4 text-muted-foreground" />
-                                </button>
+                                </div>
                             </AccessibleTooltip>
                         )}
                     </AccordionTrigger>
