@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Spline } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Node {
   id: string;
@@ -24,6 +25,11 @@ interface Position {
   y: number;
 }
 
+interface NodePositions {
+    entry: Position;
+    exit: Position;
+}
+
 const getInitials = (name: string) => {
   const names = name.split(' ');
   if (names.length > 1) {
@@ -35,8 +41,9 @@ const getInitials = (name: string) => {
 export default function ItemSplitDiagram() {
   const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [positions, setPositions] = useState<Record<string, Position>>({});
+  const [nodePositions, setNodePositions] = useState<Record<string, NodePositions>>({});
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
 
@@ -66,28 +73,53 @@ export default function ItemSplitDiagram() {
     const calculatePositions = () => {
       if (!containerRef.current) return;
       const containerRect = containerRef.current.getBoundingClientRect();
-      const newPositions: Record<string, Position> = {};
+      const newPositions: Record<string, NodePositions> = {};
 
       [...nodes.participantNodes, ...nodes.itemNodes].forEach(node => {
         if (node.ref.current) {
           const nodeRect = node.ref.current.getBoundingClientRect();
-          const x = nodeRect.left - containerRect.left + nodeRect.width / 2;
           const y = nodeRect.top - containerRect.top + nodeRect.height / 2;
-          newPositions[node.id] = { x, y };
+          
+          let entryPos: Position, exitPos: Position;
+
+          if (isMobile) {
+            // On mobile, both connect from the left edge
+            const x = nodeRect.left - containerRect.left;
+            entryPos = { x, y };
+            exitPos = { x, y };
+          } else {
+            // On desktop, participant exits right, item enters left
+            if (node.type === 'participant') {
+              entryPos = { x: nodeRect.left - containerRect.left, y };
+              exitPos = { x: nodeRect.right - containerRect.left, y };
+            } else { // item
+              entryPos = { x: nodeRect.left - containerRect.left, y };
+              exitPos = { x: nodeRect.right - containerRect.left, y };
+            }
+          }
+          newPositions[node.id] = { entry: entryPos, exit: exitPos };
         }
       });
-      setPositions(newPositions);
+      setNodePositions(newPositions);
     };
 
+    // Recalculate positions on resize or when mobile state changes
     calculatePositions();
-
+    const timer = setTimeout(calculatePositions, 100); // Recalc after initial render
     const resizeObserver = new ResizeObserver(calculatePositions);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
     
-    return () => resizeObserver.disconnect();
-  }, [nodes]);
+    return () => {
+        resizeObserver.disconnect();
+        clearTimeout(timer);
+    }
+  }, [nodes, isMobile]);
+
+  const handleNodeClick = (nodeId: string) => {
+    setHighlightedId(currentId => (currentId === nodeId ? null : nodeId));
+  };
 
   const isHighlighted = (node: Node) => {
     if (!highlightedId) return false;
@@ -98,8 +130,7 @@ export default function ItemSplitDiagram() {
   
   const isLineHighlighted = (itemNodeId: string, participantNodeId: string) => {
     if (!highlightedId) return false;
-    if (highlightedId === itemNodeId || highlightedId === participantNodeId) return true;
-    return false;
+    return highlightedId === itemNodeId || highlightedId === participantNodeId;
   }
 
   const renderNode = (node: Node) => (
@@ -107,10 +138,9 @@ export default function ItemSplitDiagram() {
       ref={node.ref}
       key={node.id}
       layout
-      onMouseEnter={() => setHighlightedId(node.id)}
-      onMouseLeave={() => setHighlightedId(null)}
+      onClick={() => handleNodeClick(node.id)}
       className={cn(
-        "relative flex items-center gap-3 rounded-lg border bg-card p-2 shadow-sm transition-all duration-300",
+        "relative z-10 flex items-center gap-3 rounded-lg border bg-card p-2 shadow-sm transition-all duration-300 cursor-pointer",
         isHighlighted(node) ? 'bg-primary/10 border-primary scale-105 shadow-lg' : 'opacity-80 hover:opacity-100',
         !highlightedId && 'opacity-100'
       )}
@@ -133,23 +163,38 @@ export default function ItemSplitDiagram() {
         <Spline className="w-8 h-8 text-primary" />
         <div>
           <CardTitle>Item Split Diagram</CardTitle>
-          <CardDescription>Visualize who shared which items. Hover to highlight connections.</CardDescription>
+          <CardDescription>Visualize who shared which items. Tap to highlight connections.</CardDescription>
         </div>
       </CardHeader>
       <CardContent>
-        <div ref={containerRef} className="relative w-full min-h-[400px]">
-          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
+        <div ref={containerRef} className="relative w-full min-h-[400px] isolate" onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setHighlightedId(null);
+          }
+        }}>
+          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: -1 }}>
             <AnimatePresence>
               {nodes.itemNodes.map(itemNode =>
                 itemNode.connections.map(participantId => {
-                  const itemPos = positions[itemNode.id];
-                  const participantPos = positions[participantId];
+                  const itemPos = nodePositions[itemNode.id];
+                  const participantPos = nodePositions[participantId];
 
                   if (!itemPos || !participantPos) return null;
                   
                   const lineIsHighlighted = isLineHighlighted(itemNode.id, participantId);
                   
-                  const pathData = `M ${participantPos.x} ${participantPos.y} C ${participantPos.x + 50} ${participantPos.y}, ${itemPos.x - 50} ${itemPos.y}, ${itemPos.x} ${itemPos.y}`;
+                  let pathData: string;
+                  if (isMobile) {
+                    const start = participantPos.entry; // left edge
+                    const end = itemPos.entry;       // left edge
+                    const curveOffset = -60; // How far left the curve bows
+                    pathData = `M ${start.x} ${start.y} C ${start.x + curveOffset} ${start.y}, ${end.x + curveOffset} ${end.y}, ${end.x} ${end.y}`;
+                  } else {
+                    const start = participantPos.exit; // right edge of participant
+                    const end = itemPos.entry;        // left edge of item
+                    const curveOffset = 60; // How far out the S-curve bows
+                    pathData = `M ${start.x} ${start.y} C ${start.x + curveOffset} ${start.y}, ${end.x - curveOffset} ${end.y}, ${end.x} ${end.y}`;
+                  }
 
                   return (
                     <motion.path
@@ -172,8 +217,8 @@ export default function ItemSplitDiagram() {
             </AnimatePresence>
           </svg>
            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-8">
-            <div className="w-full md:w-2/5 space-y-2">{nodes.participantNodes.map(renderNode)}</div>
-            <div className="w-full md:w-3/5 space-y-2">{nodes.itemNodes.map(renderNode)}</div>
+            <div className="w-full md:w-2/5 space-y-2 pl-12 md:pl-0">{nodes.participantNodes.map(renderNode)}</div>
+            <div className="w-full md:w-3/5 space-y-2 pl-12 md:pl-0">{nodes.itemNodes.map(renderNode)}</div>
           </div>
         </div>
       </CardContent>
