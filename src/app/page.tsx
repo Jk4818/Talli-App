@@ -61,7 +61,7 @@ export default function Home() {
           
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-2 md:flex">
-             <Link href="/demo" className={buttonVariants({ variant: 'ghost' })}>
+             <Link href="/demo" className={buttonVariants({ variant: 'outline' })}>
                 Demo
               </Link>
               {user && (
