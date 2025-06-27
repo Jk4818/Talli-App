@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -10,7 +11,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Pencil, AlertCircle } from 'lucide-react';
 import ItemEditDialog from './ItemEditDialog';
-import { updateItem } from '@/lib/redux/slices/sessionSlice';
+import { updateItem, removeItem } from '@/lib/redux/slices/sessionSlice';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 
 interface ItemAssignmentCardProps {
@@ -29,6 +30,10 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
 
   const handleSave = (updates: { name: string; cost: number; receiptId: string }) => {
     dispatch(updateItem({ id: item.id, ...updates }));
+  };
+
+  const handleDelete = (itemId: string) => {
+    dispatch(removeItem(itemId));
   };
 
   return (
@@ -75,6 +80,7 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
         isOpen={isEditing}
         onOpenChange={setIsEditing}
         onSave={handleSave}
+        onDelete={handleDelete}
       />
     </>
   );
