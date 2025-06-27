@@ -71,6 +71,7 @@ export default function SharePieChart({ summary }: SharePieChartProps) {
         <ChartContainer config={chartConfig} className="w-full h-full">
           <PieChart>
             <Tooltip
+              wrapperStyle={{ zIndex: 50 }}
               cursor={{ fill: 'hsl(var(--accent) / 0.3)' }}
               content={<CustomTooltip currency={globalCurrency} total={totalAmount} />}
             />

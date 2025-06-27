@@ -19,6 +19,7 @@ import SharePieChart from './SharePieChart';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import ItemSplitDiagram from './ItemSplitDiagram';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
@@ -222,6 +223,9 @@ export default function Step3Summary() {
             </CardContent>
           </Card>
         </div>
+      </motion.div>
+      <motion.div variants={fadeInUp}>
+        <ItemSplitDiagram />
       </motion.div>
     </motion.div>
   );
