@@ -7,7 +7,7 @@ import { AuthProvider } from '@/lib/firebase/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
-  title: 'Splitzy - Effortless Bill Splitting',
+  title: 'Talli - Effortless Bill Splitting',
   description: 'Upload receipts, assign items, and settle up with ease. Powered by AI.',
 };
 

@@ -1,4 +1,4 @@
-# Splitzy
+# Talli
 
 This is a NextJS app for splitting bills, built in Firebase Studio.
 

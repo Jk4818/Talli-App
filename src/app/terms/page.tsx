@@ -60,7 +60,7 @@ export default function TermsPage() {
               
               <motion.div variants={fadeInUp} className="space-y-3">
                 <h3 className="font-headline text-2xl font-semibold text-foreground">Acknowledgment</h3>
-                <p>These are the Terms and Conditions governing the use of this Service and the agreement that operates between You and Splitzy. These Terms and Conditions set out the rights and obligations of all users regarding the use of the Service.</p>
+                <p>These are the Terms and Conditions governing the use of this Service and the agreement that operates between You and Talli. These Terms and Conditions set out the rights and obligations of all users regarding the use of the Service.</p>
                 <p>Your access to and use of the Service is conditioned on Your acceptance of and compliance with these Terms and Conditions. These Terms and Conditions apply to all visitors, users and others who access or use the Service.</p>
               </motion.div>
 
@@ -72,17 +72,17 @@ export default function TermsPage() {
               
               <motion.div variants={fadeInUp} className="space-y-3">
                 <h3 className="font-headline text-2xl font-semibold text-foreground">AI and User Responsibility</h3>
-                <p>The AI features for receipt scanning are provided for your convenience and may not always be 100% accurate. You are responsible for verifying the extracted information and ensuring all calculations are correct before settling payments with others. Splitzy is not liable for inaccuracies in AI-scanned data or calculation errors resulting from it.</p>
+                <p>The AI features for receipt scanning are provided for your convenience and may not always be 100% accurate. You are responsible for verifying the extracted information and ensuring all calculations are correct before settling payments with others. Talli is not liable for inaccuracies in AI-scanned data or calculation errors resulting from it.</p>
               </motion.div>
 
               <motion.div variants={fadeInUp}>
                 <h3 className="font-headline text-2xl font-semibold text-foreground mb-3">Limitation of Liability</h3>
-                <p>To the maximum extent permitted by applicable law, in no event shall Splitzy or its suppliers be liable for any special, incidental, indirect, or consequential damages whatsoever (including, but not limited to, damages for loss of profits, loss of data or other information, for business interruption, for personal injury, loss of privacy arising out of or in any way related to the use of or inability to use the Service).</p>
+                <p>To the maximum extent permitted by applicable law, in no event shall Talli or its suppliers be liable for any special, incidental, indirect, or consequential damages whatsoever (including, but not limited to, damages for loss of profits, loss of data or other information, for business interruption, for personal injury, loss of privacy arising out of or in any way related to the use of or inability to use the Service).</p>
               </motion.div>
 
               <motion.div variants={fadeInUp}>
                 <h3 className="font-headline text-2xl font-semibold text-foreground mb-3">"AS IS" and "AS AVAILABLE" Disclaimer</h3>
-                <p>The Service is provided to You "AS IS" and "AS AVAILABLE" and with all faults and defects without warranty of any kind. To the maximum extent permitted under applicable law, Splitzy, on its own behalf and on behalf of its Affiliates and its and their respective licensors and service providers, expressly disclaims all warranties, whether express, implied, statutory or otherwise, with respect to the Service.</p>
+                <p>The Service is provided to You "AS IS" and "AS AVAILABLE" and with all faults and defects without warranty of any kind. To the maximum extent permitted under applicable law, Talli, on its own behalf and on behalf of its Affiliates and its and their respective licensors and service providers, expressly disclaims all warranties, whether express, implied, statutory or otherwise, with respect to the Service.</p>
               </motion.div>
               
               <motion.div variants={fadeInUp}>
@@ -97,7 +97,7 @@ export default function TermsPage() {
       <footer className="border-t py-6">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 text-center text-sm text-muted-foreground md:flex-row">
             <Logo />
-            <p className="order-last md:order-none">&copy; {currentYear} Splitzy. All rights reserved.</p>
+            <p className="order-last md:order-none">&copy; {currentYear} Talli. All rights reserved.</p>
             <nav className="flex gap-4">
                 <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
                 <Link href="/policy" className="hover:text-foreground transition-colors">Policy</Link>

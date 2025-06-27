@@ -70,7 +70,7 @@ export default function Step3Summary() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `splitzy_session_${new Date().toISOString()}.json`;
+      link.download = `talli_session_${new Date().toISOString()}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -190,9 +190,12 @@ export default function Step3Summary() {
                         return (
                           <li
                             key={s.id}
-                            className={cn("rounded-lg border bg-card/80 p-4 transition-opacity", isPaid && "opacity-60")}
+                            className={cn("rounded-lg border bg-card/80 transition-opacity", isPaid && "opacity-60")}
                           >
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                           <Label
+                              htmlFor={`paid-${s.id}`}
+                              className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 cursor-pointer hover:bg-accent/50 rounded-lg"
+                            >
                               <div className={cn("flex items-center gap-2 font-medium w-full sm:w-auto", isPaid && "line-through")}>
                                   <Avatar className="h-8 w-8 text-xs">
                                     <AvatarFallback>{fromParticipant ? getInitials(fromParticipant.name) : '?'}</AvatarFallback>
@@ -220,18 +223,17 @@ export default function Step3Summary() {
                                     onCheckedChange={() => handleTogglePaid(s.id)}
                                     aria-label={`Mark transaction from ${s.from} to ${s.to} as paid`}
                                   />
-                                  <Label
-                                    htmlFor={`paid-${s.id}`}
+                                  <span
                                     className={cn(
-                                      'text-sm font-medium cursor-pointer',
+                                      'text-sm font-medium',
                                       isPaid ? 'text-muted-foreground' : 'text-foreground'
                                     )}
                                   >
                                     Paid
-                                  </Label>
+                                  </span>
                                 </div>
                               </div>
-                            </div>
+                           </Label>
                           </li>
                         )
                       }) : (

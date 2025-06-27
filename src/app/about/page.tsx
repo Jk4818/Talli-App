@@ -34,7 +34,7 @@ export default function AboutPage() {
       >
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto text-center space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold font-headline tracking-tight text-foreground">About Splitzy</h1>
+            <h1 className="text-4xl md:text-5xl font-bold font-headline tracking-tight text-foreground">About Talli</h1>
             <p className="text-lg md:text-xl text-muted-foreground">
               Fair, fast, and free bill splitting powered by AI.
             </p>
@@ -42,10 +42,10 @@ export default function AboutPage() {
 
           <div className="max-w-4xl mx-auto mt-12 md:mt-16 text-lg text-foreground/80 space-y-8">
             <p>
-              Splitzy was born from a simple, universal frustration: the awkward shuffle of "who owes what" after a group meal or a shared expense. We've all been there, trying to decipher a crumpled receipt, calculating tips, and navigating the complexities of shared items. It's a hassle that can put a damper on an otherwise great time with friends.
+              Talli was born from a simple, universal frustration: the awkward shuffle of "who owes what" after a group meal or a shared expense. We've all been there, trying to decipher a crumpled receipt, calculating tips, and navigating the complexities of shared items. It's a hassle that can put a damper on an otherwise great time with friends.
             </p>
             <p>
-              We believed there had to be a better way. In an age of artificial intelligence, why were we still manually punching numbers into calculators? That question sparked the idea for Splitzy—an app that makes splitting bills not just easy, but effortless.
+              We believed there had to be a better way. In an age of artificial intelligence, why were we still manually punching numbers into calculators? That question sparked the idea for Talli—an app that makes splitting bills not just easy, but effortless.
             </p>
           </div>
 
@@ -77,10 +77,10 @@ export default function AboutPage() {
                     <h3 className="text-2xl font-headline font-semibold text-foreground">How It Works</h3>
                 </div>
               <p className="text-foreground/80">
-                At the heart of Splitzy is a powerful AI engine. When you upload a photo of your receipt, our system doesn't just perform simple text recognition. It analyzes the layout, identifies line items, and understands the costs to digitize your bill in seconds.
+                At the heart of Talli is a powerful AI engine. When you upload a photo of your receipt, our system doesn't just perform simple text recognition. It analyzes the layout, identifies line items, and understands the costs to digitize your bill in seconds.
               </p>
               <p className="text-foreground/80">
-                The AI gives you a running start, but you're always in control. Our intuitive interface lets you easily edit any item, add or remove people from a split, and choose how to divide the cost—equally, by percentage, or by exact amounts. Splitzy handles all the math flawlessly, ensuring penny-perfect accuracy every time.
+                The AI gives you a running start, but you're always in control. Our intuitive interface lets you easily edit any item, add or remove people from a split, and choose how to divide the cost—equally, by percentage, or by exact amounts. Talli handles all the math flawlessly, ensuring penny-perfect accuracy every time.
               </p>
             </motion.div>
           </motion.div>
@@ -93,7 +93,7 @@ export default function AboutPage() {
               viewport={{ once: true, amount: 0.2, }}
               transition={{ delay: 0.3, duration: 0.8 }}
             >
-              Thank you for using Splitzy. We're excited to make your life a little bit simpler.
+              Thank you for using Talli. We're excited to make your life a little bit simpler.
             </motion.p>
           </div>
         </div>
@@ -101,7 +101,7 @@ export default function AboutPage() {
       <footer className="border-t py-6">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 text-center text-sm text-muted-foreground md:flex-row">
             <Logo />
-            <p className="order-last md:order-none">&copy; {currentYear} Splitzy. All rights reserved.</p>
+            <p className="order-last md:order-none">&copy; {currentYear} Talli. All rights reserved.</p>
             <nav className="flex gap-4">
                 <Link href="/policy" className="hover:text-foreground transition-colors">Policy</Link>
                 <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>

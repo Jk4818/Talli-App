@@ -160,14 +160,14 @@ export default function Home() {
             <span className="text-primary">Split it with AI.</span>
           </motion.h1>
           <motion.p variants={fadeInUp} className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Splitzy makes group expenses simple. Upload a receipt, assign items, and we'll tell you exactly who owes what. Fair, fast, and free.
+            Talli makes group expenses simple. Upload a receipt, assign items, and we'll tell you exactly who owes what. Fair, fast, and free.
           </motion.p>
           <motion.div variants={fadeInUp} className="mt-8 flex justify-center">
             <Alert className="max-w-md text-left">
                 <Rocket className="h-4 w-4" />
                 <AlertTitle>Welcome to the Beta!</AlertTitle>
                 <AlertDescription>
-                    Splitzy is currently in an invite-only beta. Functionality may change as we improve the app.
+                    Talli is currently in an invite-only beta. Functionality may change as we improve the app.
                 </AlertDescription>
             </Alert>
           </motion.div>
@@ -204,7 +204,7 @@ export default function Home() {
                 <motion.div variants={fadeIn}>
                   <Image 
                     src="/images/hero_image.png"
-                    alt="Illustration of friends happily splitting a restaurant bill using the Splitzy app on a smartphone."
+                    alt="Illustration of friends happily splitting a restaurant bill using the Talli app on a smartphone."
                     width={900}
                     height={600}
                     className="rounded-xl shadow-2xl"
@@ -242,7 +242,7 @@ export default function Home() {
       <footer className="border-t py-6">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 text-center text-sm text-muted-foreground md:flex-row">
             <Logo />
-            <p className="order-last md:order-none">&copy; {currentYear} Splitzy. Effortless bill splitting for everyone.</p>
+            <p className="order-last md:order-none">&copy; {currentYear} Talli. Effortless bill splitting for everyone.</p>
             <nav className="flex gap-4">
                 <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
                 <Link href="/policy" className="hover:text-foreground transition-colors">Policy</Link>
