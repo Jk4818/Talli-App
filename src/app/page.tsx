@@ -13,6 +13,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu"
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/firebase/auth';
@@ -61,32 +68,45 @@ export default function Home() {
           
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-2 md:flex">
-            <Button variant="ghost" asChild>
-              <Link href="/demo">Demo</Link>
-            </Button>
-            {user ? (
-              <>
-                <Button variant="ghost" asChild>
-                  <Link href="/app">Go to App</Link>
-                </Button>
-                <UserNav />
-              </>
-            ) : (
-              <>
-                {!loading && (
-                  <>
-                    <Button variant="ghost" asChild>
-                      <Link href="/login">Sign In</Link>
-                    </Button>
-                    <Button asChild>
-                      <Link href="/signup">
-                        Sign Up
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </>
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <Link href="/demo" legacyBehavior passHref>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                      Demo
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+                {user && (
+                  <NavigationMenuItem>
+                    <Link href="/app" legacyBehavior passHref>
+                      <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                        Go to App
+                      </NavigationMenuLink>
+                    </Link>
+                  </NavigationMenuItem>
                 )}
-              </>
+              </NavigationMenuList>
+            </NavigationMenu>
+
+            <div className="w-px h-6 bg-border mx-2" />
+
+            {user ? (
+                <UserNav />
+            ) : (
+              !loading && (
+                <>
+                  <Button variant="ghost" asChild>
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/signup">
+                      Sign Up
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </>
+              )
             )}
           </nav>
 
@@ -180,11 +200,12 @@ export default function Home() {
               </motion.div>
               <motion.div variants={fadeIn}>
                 <Image 
-                  src="/images/hero_image.png"
+                  src="https://placehold.co/900x600.png"
                   alt="Illustration of friends happily splitting a restaurant bill using the Splitzy app on a smartphone."
                   width={900}
                   height={600}
                   className="rounded-xl shadow-2xl"
+                  data-ai-hint="bill splitting friends"
                 />
               </motion.div>
             </motion.div>

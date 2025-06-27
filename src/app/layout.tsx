@@ -4,6 +4,7 @@ import { ReduxProvider } from '@/lib/redux/provider';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/lib/firebase/auth';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
   title: 'Splitzy - Effortless Bill Splitting',
@@ -32,6 +33,7 @@ export default function RootLayout({
             </TooltipProvider>
           </ReduxProvider>
         </AuthProvider>
+        <SpeedInsights />
       </body>
     </html>
   );

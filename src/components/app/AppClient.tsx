@@ -8,7 +8,6 @@ import { loadDemoData, resetSession, setStep } from '@/lib/redux/slices/sessionS
 import Step1Setup from './Step1Setup';
 import Step2Assignment from './Step2Assignment';
 import Step3Summary from './Step3Summary';
-import { AppHeader } from './AppHeader';
 import { Button } from '../ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -94,13 +93,12 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh bg-secondary/50">
-      <AppHeader />
-      <main className="flex-1 py-8 px-4 container mx-auto">
+    <div className="flex flex-col h-full">
+      <div className="flex-1 p-4 md:p-8">
         <AnimatePresence mode="wait">
           {renderStep()}
         </AnimatePresence>
-      </main>
+      </div>
       <footer className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div>
