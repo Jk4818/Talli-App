@@ -82,21 +82,16 @@ export default function ItemSplitDiagram() {
           
           let entryPos: Position, exitPos: Position;
 
-          if (isMobile) {
-            // On mobile, both connect from the left edge
-            const x = nodeRect.left - containerRect.left;
-            entryPos = { x, y };
-            exitPos = { x, y };
-          } else {
-            // On desktop, participant exits right, item enters left
-            if (node.type === 'participant') {
-              entryPos = { x: nodeRect.left - containerRect.left, y };
-              exitPos = { x: nodeRect.right - containerRect.left, y };
-            } else { // item
-              entryPos = { x: nodeRect.left - containerRect.left, y };
-              exitPos = { x: nodeRect.right - containerRect.left, y };
-            }
+          if (node.type === 'participant') {
+            entryPos = { x: nodeRect.left - containerRect.left, y };
+            // On mobile, participants exit from the left. On desktop, from the right.
+            exitPos = { x: (isMobile ? nodeRect.left : nodeRect.right) - containerRect.left, y };
+          } else { // item
+            // Items always have their entry point on the left.
+            entryPos = { x: nodeRect.left - containerRect.left, y };
+            exitPos = { x: nodeRect.right - containerRect.left, y };
           }
+
           newPositions[node.id] = { entry: entryPos, exit: exitPos };
         }
       });
@@ -183,15 +178,14 @@ export default function ItemSplitDiagram() {
                   
                   const lineIsHighlighted = isLineHighlighted(itemNode.id, participantId);
                   
+                  const start = participantPos.exit;
+                  const end = itemPos.entry;
+
                   let pathData: string;
                   if (isMobile) {
-                    const start = participantPos.entry; // left edge
-                    const end = itemPos.entry;       // left edge
-                    const curveOffset = -60; // How far left the curve bows
+                    const curveOffset = -60; // How far left the C-curve bows
                     pathData = `M ${start.x} ${start.y} C ${start.x + curveOffset} ${start.y}, ${end.x + curveOffset} ${end.y}, ${end.x} ${end.y}`;
                   } else {
-                    const start = participantPos.exit; // right edge of participant
-                    const end = itemPos.entry;        // left edge of item
                     const curveOffset = 60; // How far out the S-curve bows
                     pathData = `M ${start.x} ${start.y} C ${start.x + curveOffset} ${start.y}, ${end.x - curveOffset} ${end.y}, ${end.x} ${end.y}`;
                   }
