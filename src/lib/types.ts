@@ -12,17 +12,20 @@ export interface Item {
   splitMode: 'equal' | 'percentage' | 'exact';
   percentageAssignments: { [participantId: string]: number }; // participantId -> percentage (e.g. 50 for 50%)
   exactAssignments: { [participantId: string]: number }; // participantId -> amount in cents
+  confidence?: number; // 0-100
 }
 
 export interface Discount {
   id: string;
   name: string;
   amount: number; // in cents
+  confidence?: number; // 0-100
 }
 
 export interface ServiceCharge {
   type: 'fixed' | 'percentage';
   value: number; // amount in cents or percentage value
+  confidence?: number; // 0-100
 }
 
 export interface Receipt {
@@ -36,6 +39,7 @@ export interface Receipt {
   imageDataUri?: string;
   status: 'unprocessed' | 'processing' | 'processed' | 'failed';
   error?: string | null;
+  overallConfidence?: number; // 0-100
 }
 
 export interface Settlement {

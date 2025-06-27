@@ -328,11 +328,22 @@ const sessionSlice = createSlice({
           state.items = state.items.filter(item => item.receiptId !== receiptId);
 
           const serviceChargeTotal = action.payload.serviceCharges.reduce((sum, sc) => sum + sc.amount, 0);
+          const serviceChargeConfidence = action.payload.serviceCharges.length > 0 ? action.payload.serviceCharges.reduce((sum, sc) => sum + (sc.confidence || 0), 0) / action.payload.serviceCharges.length : undefined;
           
-          receipt.discounts = action.payload.discounts.map((d, i) => ({...d, id: `d_${receiptId}_${i}`, amount: Math.round(d.amount * 100)}));
-          receipt.serviceCharge = { type: 'fixed', value: Math.round(serviceChargeTotal * 100) };
+          receipt.discounts = action.payload.discounts.map((d, i) => ({
+            ...d, 
+            id: `d_${receiptId}_${i}`, 
+            amount: Math.round(d.amount * 100),
+            confidence: d.confidence
+          }));
+          receipt.serviceCharge = { 
+            type: 'fixed', 
+            value: Math.round(serviceChargeTotal * 100),
+            confidence: serviceChargeConfidence ? Math.round(serviceChargeConfidence) : undefined
+          };
           receipt.currency = action.payload.currency || state.globalCurrency;
           receipt.status = 'processed';
+          receipt.overallConfidence = action.payload.overallConfidence;
 
           const newItems: Item[] = action.payload.items.map((item, index) => ({
             id: `item_${receiptId}_${index}`,
@@ -343,6 +354,7 @@ const sessionSlice = createSlice({
             splitMode: 'equal',
             percentageAssignments: {},
             exactAssignments: {},
+            confidence: item.confidence,
           }));
 
           state.items.push(...newItems);

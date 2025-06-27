@@ -4,7 +4,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { SplitSummary, Participant, Item, Receipt } from '@/lib/types';
-import { Lightbulb, Scale, Sparkles, Info, Trophy, Gem, Pizza } from 'lucide-react';
+import { Lightbulb, Scale, Sparkles, Info, Trophy, Gem, Pizza, Bot } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -204,6 +204,16 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
         if (itemsWithCost.length === 0) return null;
         return itemsWithCost.reduce((max, item) => (item.cost > max.cost ? item : max), itemsWithCost[0]);
     }, [items]);
+    
+    const aiConfidence = React.useMemo(() => {
+        const receiptsWithConfidence = receipts.filter(r => r.overallConfidence !== undefined && r.status === 'processed');
+        if (receiptsWithConfidence.length === 0) {
+            return null;
+        }
+        const totalConfidence = receiptsWithConfidence.reduce((sum, r) => sum + r.overallConfidence!, 0);
+        const averageConfidence = totalConfidence / receiptsWithConfidence.length;
+        return Math.round(averageConfidence);
+    }, [receipts]);
 
     return (
         <Card>
@@ -216,6 +226,14 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
             </CardHeader>
             <CardContent>
                 <ul className="space-y-6">
+                    {aiConfidence !== null && (
+                        <SmartSummaryItem icon={<Bot className="h-5 w-5" />}>
+                            <p className="font-semibold text-foreground">AI Confidence</p>
+                            <p className="text-muted-foreground">
+                                On average, the AI was <span className="font-medium text-foreground">{aiConfidence}%</span> confident in its receipt scans.
+                            </p>
+                        </SmartSummaryItem>
+                    )}
                     <SmartSummaryItem icon={<Scale className="h-5 w-5" />}>
                        <div className="flex items-center gap-1.5">
                            <p className="font-semibold text-foreground">Fairness Check</p>

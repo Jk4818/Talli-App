@@ -25,27 +25,33 @@ const ExtractReceiptDataInputSchema = z.object({
 });
 export type ExtractReceiptDataInput = z.infer<typeof ExtractReceiptDataInputSchema>;
 
-const ExtractReceiptDataOutputSchema = z.object({
-  items: z.array(
-    z.object({
-      name: z.string().describe('The name of the item.'),
-      cost: z.number().describe('The cost of the item.'),
-    })
-  ).describe('The list of items extracted from the receipt.'),
-  discounts: z.array(
-    z.object({
-      name: z.string().describe('The name of the discount.'),
-      amount: z.number().describe('The amount of the discount.'),
-    })
-  ).describe('The list of discounts extracted from the receipt.'),
-  serviceCharges: z.array(
-    z.object({
-      description: z.string().describe('The description of the service charge.'),
-      amount: z.number().describe('The amount of the service charge.'),
-    })
-  ).describe('The list of service charges extracted from the receipt.'),
-  currency: z.string().describe('The currency of the receipt.'),
+const ItemSchema = z.object({
+  name: z.string().describe('The name of the item.'),
+  cost: z.number().describe('The cost of the item.'),
+  confidence: z.number().min(0).max(100).optional().describe('A percentage confidence score (0-100) on the accuracy of this item extraction.'),
 });
+
+const DiscountSchema = z.object({
+  name: z.string().describe('The name of the discount.'),
+  amount: z.number().describe('The amount of the discount.'),
+  confidence: z.number().min(0).max(100).optional().describe('A percentage confidence score (0-100) on the accuracy of this discount extraction.'),
+});
+
+const ServiceChargeSchema = z.object({
+  description: z.string().describe('The description of the service charge.'),
+  amount: z.number().describe('The amount of the service charge.'),
+  confidence: z.number().min(0).max(100).optional().describe('A percentage confidence score (0-100) on the accuracy of this service charge extraction.'),
+});
+
+
+const ExtractReceiptDataOutputSchema = z.object({
+  items: z.array(ItemSchema).describe('The list of items extracted from the receipt.'),
+  discounts: z.array(DiscountSchema).describe('The list of discounts extracted from the receipt.'),
+  serviceCharges: z.array(ServiceChargeSchema).describe('The list of service charges extracted from the receipt.'),
+  currency: z.string().describe('The currency of the receipt.'),
+  overallConfidence: z.number().min(0).max(100).optional().describe('An overall confidence score (0-100) for the entire receipt extraction, considering image quality and text legibility.'),
+});
+
 export type ExtractReceiptDataOutput = z.infer<typeof ExtractReceiptDataOutputSchema>;
 
 export async function extractReceiptData(input: ExtractReceiptDataInput): Promise<ExtractReceiptDataOutput> {
@@ -63,6 +69,8 @@ You will receive an image of a receipt. Your task is to analyze the image and ex
 2.  A list of all discounts applied, including the discount name and the amount.
 3.  A list of all service charges or tips, including a description and the amount.
 4.  The currency of the receipt (e.g., USD, GBP, EUR).
+5.  For each item, discount, and service charge, provide a confidence score from 0 to 100 on how certain you are about the accuracy of the extracted text and numbers. A low score indicates blurry text, unusual formatting, or ambiguity.
+6.  Provide an overall confidence score for the entire receipt, taking into account the image quality, clarity, and how easy it was to read.
 
 Analyze the following receipt image and return the data in the specified JSON format.
 

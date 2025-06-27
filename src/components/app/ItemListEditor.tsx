@@ -7,7 +7,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowUpDown, ListOrdered, Search, ListX, AlertCircle, Scale, SlidersHorizontal, Share2 } from 'lucide-react';
+import { ArrowUpDown, ListOrdered, Search, ListX, AlertCircle, Scale, SlidersHorizontal, Share2, Sparkles } from 'lucide-react';
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
 import { Item } from '@/lib/types';
@@ -167,7 +167,14 @@ export default function ItemListEditor() {
                   >
                     <div className="flex justify-between items-start gap-4">
                         <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold leading-snug truncate">{item.name}</h3>
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-semibold leading-snug truncate">{item.name}</h3>
+                                {item.confidence !== undefined && (
+                                    <AccessibleTooltip content={<p>{item.confidence}% AI Confidence</p>}>
+                                        <Sparkles className="h-4 w-4 text-primary/80 shrink-0" />
+                                    </AccessibleTooltip>
+                                )}
+                            </div>
                             <p className="text-sm text-muted-foreground truncate" title={receipt?.name || 'N/A'}>
                                 From: {receipt?.name || 'N/A'}
                             </p>

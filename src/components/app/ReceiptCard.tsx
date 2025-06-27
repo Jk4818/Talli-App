@@ -12,7 +12,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, Info } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -157,8 +157,16 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
             </div>
           </div>
           {receipt.status === 'processed' && (
-            <CardDescription>
-              Subtotal: {formatCurrency(subtotal, receipt.currency)}
+            <CardDescription className='flex items-center gap-2'>
+              <span>Subtotal: {formatCurrency(subtotal, receipt.currency)}</span>
+              {receipt.overallConfidence !== undefined && (
+                <AccessibleTooltip content={<p>The AI was {receipt.overallConfidence}% confident in its analysis of this receipt.</p>}>
+                  <span className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium'>
+                    <Sparkles className='h-3.5 w-3.5 text-primary' />
+                    <span>AI Confidence: {receipt.overallConfidence}%</span>
+                  </span>
+                </AccessibleTooltip>
+              )}
             </CardDescription>
           )}
           {receipt.status === 'failed' && receipt.error && (
@@ -247,7 +255,26 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
 
               <Accordion type="single" collapsible className="w-full" value={openAccordion} onValueChange={setOpenAccordion}>
                 <AccordionItem value="discounts">
-                  <AccordionTrigger>Discounts ({formatCurrency(totalDiscounts, receipt.currency)})</AccordionTrigger>
+                  <AccordionTrigger className='justify-between hover:no-underline'>
+                      <div className="flex items-center gap-2">
+                        {receipt.discounts && receipt.discounts.length > 0 && <Sparkles className="h-4 w-4 text-primary" />}
+                        <span>Discounts ({formatCurrency(totalDiscounts, receipt.currency)})</span>
+                      </div>
+                      {receipt.discounts && receipt.discounts.some(d => d.confidence !== undefined) && (
+                        <AccessibleTooltip content={
+                            <div className="p-1 space-y-1 text-xs">
+                                <p className="font-bold mb-1">AI Confidence Scores</p>
+                                {receipt.discounts.map(d => (
+                                    d.confidence !== undefined && <div key={d.id} className="flex justify-between gap-4"><span>{d.name}:</span><span>{d.confidence}%</span></div>
+                                ))}
+                            </div>
+                        }>
+                            <button className="p-1 -mr-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                        </AccessibleTooltip>
+                      )}
+                  </AccordionTrigger>
                   <AccordionContent className="space-y-2 pt-2">
                     {discounts.map(discount => (
                       <div key={discount.id} className="flex items-center gap-2">
@@ -276,7 +303,24 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="service-charge">
-                  <AccordionTrigger>Service Charge / Tip {serviceChargeDisplay}</AccordionTrigger>
+                    <AccordionTrigger className='justify-between hover:no-underline'>
+                        <div className="flex items-center gap-2">
+                            {serviceCharge.value > 0 && <Sparkles className="h-4 w-4 text-primary" />}
+                            <span>Service Charge / Tip {serviceChargeDisplay}</span>
+                        </div>
+                        {serviceCharge.confidence !== undefined && (
+                            <AccessibleTooltip content={
+                                <div className="p-1 space-y-1 text-xs">
+                                    <p className="font-bold mb-1">AI Confidence Score</p>
+                                    <div className="flex justify-between gap-4"><span>Service Charge:</span><span>{serviceCharge.confidence}%</span></div>
+                                </div>
+                            }>
+                                <button className="p-1 -mr-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                </button>
+                            </AccessibleTooltip>
+                        )}
+                    </AccordionTrigger>
                   <AccordionContent className="pt-4">
                     <div className="flex items-center gap-6">
                       <RadioGroup 
