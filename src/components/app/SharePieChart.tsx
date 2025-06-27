@@ -1,8 +1,9 @@
+
 "use client";
 
 import React from 'react';
-import { PieChart, Pie, Cell, Tooltip } from 'recharts';
-import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { ChartConfig, ChartContainer } from '@/components/ui/chart';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 import { SplitSummary } from '@/lib/types';
@@ -11,7 +12,35 @@ interface SharePieChartProps {
   summary: SplitSummary;
 }
 
-const COLORS = ['#A020F0', '#20A0F0', '#F0A020', '#20F0A0', '#F020A0', '#A0F020'];
+const COLORS = ['#A020F0', '#51C6CA', '#F0A020', '#20F0A0', '#F020A0', '#A0F020'];
+
+const CustomTooltip = ({ active, payload, currency, total }: any) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        const value = data.value;
+        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+        
+        return (
+            <div className="rounded-lg border bg-background/90 backdrop-blur-sm p-3 shadow-lg">
+                <p className="font-bold text-foreground mb-1">{data.name}</p>
+                <div className="space-y-1 text-sm">
+                  <div className='flex justify-between items-center gap-4'>
+                    <span className="text-muted-foreground">Share:</span>
+                    <span className="font-medium">
+                        {(value / 100).toLocaleString(undefined, { style: 'currency', currency: currency })}
+                    </span>
+                  </div>
+                  <div className='flex justify-between items-center gap-4'>
+                    <span className="text-muted-foreground">Percent:</span>
+                    <span className="font-medium">{percentage}%</span>
+                  </div>
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
+
 
 export default function SharePieChart({ summary }: SharePieChartProps) {
   const { globalCurrency } = useSelector((state: RootState) => state.session);
@@ -42,19 +71,16 @@ export default function SharePieChart({ summary }: SharePieChartProps) {
         <ChartContainer config={chartConfig} className="w-full h-full">
           <PieChart>
             <Tooltip
-              cursor={false}
-              content={<ChartTooltipContent 
-                formatter={(value) => (Number(value) / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
-                nameKey="name"
-              />}
+              cursor={{ fill: 'hsl(var(--accent) / 0.3)' }}
+              content={<CustomTooltip currency={globalCurrency} total={totalAmount} />}
             />
             <Pie
               data={chartData}
               cx="50%"
               cy="50%"
               labelLine={false}
-              outerRadius="80%" // Responsive radius
-              innerRadius="60%" // Responsive radius
+              outerRadius="80%"
+              innerRadius="60%"
               paddingAngle={2}
               dataKey="value"
             >
@@ -65,7 +91,7 @@ export default function SharePieChart({ summary }: SharePieChartProps) {
           </PieChart>
         </ChartContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-            <p className="text-sm text-muted-foreground">Total Bill</p>
+            <p className="text-sm text-muted-foreground">Total / {summary.participantSummaries.length} People</p>
             <p className="text-2xl sm:text-3xl font-bold font-headline">
                 {(totalAmount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency })}
             </p>
