@@ -7,6 +7,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 import { cn } from '@/lib/utils';
 import { SplitSummary, ParticipantSummary } from '@/lib/types';
+import { Separator } from '../ui/separator';
 
 interface BillSplitSummaryProps {
   summary: SplitSummary;
@@ -23,40 +24,49 @@ const getInitials = (name: string) => {
 const ParticipantCard = ({ participant, currency }: { participant: ParticipantSummary, currency: string }) => {
     const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency });
 
+    const isOwed = participant.balance > 0;
+    const owes = participant.balance < 0;
+    const isSettled = Math.abs(participant.balance) < 1;
+
     return (
-        <Card className="overflow-hidden shadow-sm transition-shadow hover:shadow-lg">
-            <div className={cn(
-                "p-4 border-b-4",
-                Math.abs(participant.balance) < 1 ? 'border-border' : participant.balance > 0 ? 'border-green-500' : 'border-destructive'
-            )}>
-                <div className="flex items-center justify-between gap-4">
+        <Card className={cn(
+            "overflow-hidden shadow-sm transition-shadow hover:shadow-md border-l-4",
+            isOwed && "border-accent",
+            owes && "border-destructive",
+            isSettled && "border-border"
+        )}>
+            <div className="p-4">
+                <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
                         <Avatar className="h-10 w-10 shrink-0">
                             <AvatarFallback>{getInitials(participant.name)}</AvatarFallback>
                         </Avatar>
-                        <p className="text-lg font-semibold truncate">{participant.name}</p>
+                        <p className="text-lg font-semibold truncate font-headline">{participant.name}</p>
                     </div>
                     <div className="text-right shrink-0">
                         <p className="text-2xl font-bold">{formatCurrency(Math.abs(participant.balance))}</p>
                         <p className={cn(
                             "text-sm font-medium",
-                            Math.abs(participant.balance) < 1 ? 'text-muted-foreground' : participant.balance > 0 ? 'text-green-600' : 'text-destructive'
+                            isOwed && "text-accent-foreground",
+                            owes && "text-destructive",
+                            isSettled && "text-muted-foreground"
                         )}>
-                            {Math.abs(participant.balance) < 1 ? 'Settled' : participant.balance > 0 ? 'Is owed' : 'Owes'}
+                            {isSettled ? 'Settled' : isOwed ? 'Is owed' : 'Owes'}
                         </p>
                     </div>
                 </div>
+                <Separator className="my-3" />
+                <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Their Share</span>
+                        <span className="font-mono">{formatCurrency(participant.totalShare)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">They Paid</span>
+                        <span className="font-mono">{formatCurrency(participant.totalPaid)}</span>
+                    </div>
+                </div>
             </div>
-            <CardContent className="p-4 text-sm space-y-2 bg-muted/20">
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Their Share</span>
-                    <span className="font-mono">{formatCurrency(participant.totalShare)}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">They Paid</span>
-                    <span className="font-mono">{formatCurrency(participant.totalPaid)}</span>
-                </div>
-            </CardContent>
         </Card>
     );
 };
