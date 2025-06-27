@@ -78,20 +78,31 @@ export default function ItemSplitDiagram() {
       [...nodes.participantNodes, ...nodes.itemNodes].forEach(node => {
         if (node.ref.current) {
           const nodeRect = node.ref.current.getBoundingClientRect();
-          const y = nodeRect.top - containerRect.top + nodeRect.height / 2;
           
           let entryPos: Position, exitPos: Position;
 
           if (node.type === 'participant') {
-            // On mobile, participants exit from the left. On desktop, from the right.
-            exitPos = { x: (isMobile ? nodeRect.left : nodeRect.right) - containerRect.left, y };
-            entryPos = { x: nodeRect.left - containerRect.left, y };
+             if (isMobile) {
+              const x = nodeRect.left - containerRect.left + nodeRect.width / 2;
+              entryPos = { x, y: nodeRect.top - containerRect.top };
+              exitPos = { x, y: nodeRect.bottom - containerRect.top };
+            } else {
+              const y = nodeRect.top - containerRect.top + nodeRect.height / 2;
+              entryPos = { x: nodeRect.left - containerRect.left, y };
+              exitPos = { x: nodeRect.right - containerRect.left, y };
+            }
           } else { // item
-            // Items always have their entry point on the left.
-            entryPos = { x: nodeRect.left - containerRect.left, y };
-            exitPos = { x: nodeRect.right - containerRect.left, y };
+            if (isMobile) {
+              const x = nodeRect.left - containerRect.left + nodeRect.width / 2;
+              entryPos = { x, y: nodeRect.top - containerRect.top };
+              exitPos = { x, y: nodeRect.bottom - containerRect.top };
+            } else {
+              const y = nodeRect.top - containerRect.top + nodeRect.height / 2;
+              entryPos = { x: nodeRect.left - containerRect.left, y };
+              exitPos = { x: nodeRect.right - containerRect.left, y };
+            }
           }
-
+          
           newPositions[node.id] = { entry: entryPos, exit: exitPos };
         }
       });
@@ -183,8 +194,8 @@ export default function ItemSplitDiagram() {
 
                   let pathData: string;
                   if (isMobile) {
-                    const curveOffset = -60; // How far left the C-curve bows
-                    pathData = `M ${start.x} ${start.y} C ${start.x + curveOffset} ${start.y}, ${end.x + curveOffset} ${end.y}, ${end.x} ${end.y}`;
+                    const curveOffset = 60; // How far down/up the S-curve bows
+                    pathData = `M ${start.x} ${start.y} C ${start.x} ${start.y + curveOffset}, ${end.x} ${end.y - curveOffset}, ${end.x} ${end.y}`;
                   } else {
                     const curveOffset = 60; // How far out the S-curve bows
                     pathData = `M ${start.x} ${start.y} C ${start.x + curveOffset} ${start.y}, ${end.x - curveOffset} ${end.y}, ${end.x} ${end.y}`;
