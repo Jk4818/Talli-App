@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useRef } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { AppDispatch } from '@/lib/redux/store';
+import { AppDispatch, RootState } from '@/lib/redux/store';
 import { restoreSession } from '@/lib/redux/slices/sessionSlice';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ export default function ImportButton({ children, ...props }: React.PropsWithChil
   const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isDemo = useSelector((state: RootState) => state.session.isDemoSession);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -37,7 +38,7 @@ export default function ImportButton({ children, ...props }: React.PropsWithChil
             title: 'Session Imported',
             description: 'Your session has been successfully restored.',
           });
-          router.push('/app');
+          router.push(isDemo ? '/demo' : '/app');
         } else {
           throw new Error('Invalid session file format.');
         }

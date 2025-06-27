@@ -74,10 +74,10 @@ const sessionSlice = createSlice({
         exactAssignments: {},
       };
     
-      const sanitizedItems = (importedData.items || []).map((item): Item => ({
+      const sanitizedItems = (importedData.items || []).map((item, index): Item => ({
         ...itemDefaults,
         ...item,
-        id: `item_${Date.now()}_${Math.random()}`,
+        id: `item_${Date.now()}_${index}`,
       }));
 
       const receiptDefaults: Omit<Receipt, 'id'> = {
@@ -89,10 +89,10 @@ const sessionSlice = createSlice({
         status: 'unprocessed',
       };
     
-      const sanitizedReceipts = (importedData.receipts || []).map((receipt): Receipt => ({
+      const sanitizedReceipts = (importedData.receipts || []).map((receipt, index): Receipt => ({
         ...receiptDefaults,
         ...receipt,
-        id: `receipt_${Date.now()}_${Math.random()}`,
+        id: `receipt_${Date.now()}_${index}`,
       }));
     
       return {
@@ -106,7 +106,8 @@ const sessionSlice = createSlice({
         step: importedData.step || 1,
         status: 'succeeded',
         error: null,
-        isDemoSession: false,
+        isDemoSession: state.isDemoSession, // Preserve demo state from before import
+        currentAssignmentIndex: 0,
       };
     },
     resetSession: (state, action: PayloadAction<{ isDemo?: boolean } | undefined>) => {
