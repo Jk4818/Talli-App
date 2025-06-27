@@ -77,10 +77,10 @@ export default function AboutPage() {
                     <h3 className="text-2xl font-headline font-semibold text-foreground">How It Works</h3>
                 </div>
               <p className="text-foreground/80">
-                At the heart of Splitzy is a powerful AI engine. When you upload a photo of your receipt, our system doesn't just perform simple text recognition. It analyzes the layout, identifies line items, understands costs, and even flags potentially ambiguous entries for your review.
+                At the heart of Splitzy is a powerful AI engine. When you upload a photo of your receipt, our system doesn't just perform simple text recognition. It analyzes the layout, identifies line items, and understands the costs to digitize your bill in seconds.
               </p>
               <p className="text-foreground/80">
-                From there, our intuitive interface lets you drag, drop, and assign items with ease. Whether it's an equally shared appetizer or a complex percentage-based split, Splitzy handles the calculations flawlessly, ensuring penny-perfect accuracy every time.
+                The AI gives you a running start, but you're always in control. Our intuitive interface lets you easily edit any item, add or remove people from a split, and choose how to divide the cost—equally, by percentage, or by exact amounts. Splitzy handles all the math flawlessly, ensuring penny-perfect accuracy every time.
               </p>
             </motion.div>
           </motion.div>

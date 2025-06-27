@@ -67,9 +67,14 @@ export default function TermsPage() {
               <motion.div variants={fadeInUp} className="space-y-3">
                 <h3 className="font-headline text-2xl font-semibold text-foreground">User Accounts</h3>
                 <p>When You create an account with Us, You must provide Us information that is accurate, complete, and current at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of Your account on Our Service.</p>
-                <p>You are responsible for safeguarding the password that You use to access the Service and for any activities or actions under Your password, whether Your password is with Our Service or a Third-Party Social Media Service.</p>
+                <p>You are responsible for safeguarding the password that You use to access the Service and for any activities or actions under Your password.</p>
               </motion.div>
               
+              <motion.div variants={fadeInUp} className="space-y-3">
+                <h3 className="font-headline text-2xl font-semibold text-foreground">AI and User Responsibility</h3>
+                <p>The AI features for receipt scanning are provided for your convenience and may not always be 100% accurate. You are responsible for verifying the extracted information and ensuring all calculations are correct before settling payments with others. Splitzy is not liable for inaccuracies in AI-scanned data or calculation errors resulting from it.</p>
+              </motion.div>
+
               <motion.div variants={fadeInUp}>
                 <h3 className="font-headline text-2xl font-semibold text-foreground mb-3">Limitation of Liability</h3>
                 <p>To the maximum extent permitted by applicable law, in no event shall Splitzy or its suppliers be liable for any special, incidental, indirect, or consequential damages whatsoever (including, but not limited to, damages for loss of profits, loss of data or other information, for business interruption, for personal injury, loss of privacy arising out of or in any way related to the use of or inability to use the Service).</p>
@@ -82,7 +87,7 @@ export default function TermsPage() {
               
               <motion.div variants={fadeInUp}>
                 <h3 className="font-headline text-2xl font-semibold text-foreground mb-3">Changes to These Terms and Conditions</h3>
-                <p>We reserve the right, at Our sole discretion, to modify or replace these Terms at any time. If a revision is material We will make reasonable efforts to provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at Our sole discretion.</p>
+                <p>We reserve the right, at Our sole discretion, to modify or replace these Terms at any time. If a revision is material We will make reasonable efforts to provide reasonable notice prior to any new terms taking effect. What constitutes a material change will be determined at Our sole discretion.</p>
               </motion.div>
 
             </motion.div>

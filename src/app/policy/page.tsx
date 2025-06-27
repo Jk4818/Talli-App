@@ -62,8 +62,8 @@ export default function PolicyPage() {
                 <h3 className="font-headline text-2xl font-semibold text-foreground">Information We Collect</h3>
                 <p>We may collect information about you in a variety of ways. The information we may collect on the Service includes:</p>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li><strong>Personal Data:</strong> Personally identifiable information, such as your name and email address, that you voluntarily give to us when you register with the Service.</li>
-                  <li><strong>User Content:</strong> We collect the images of receipts you upload to the Service. These images are processed by our AI to provide the core functionality of the app but are not stored long-term on our primary servers after processing.</li>
+                  <li><strong>Personal Data:</strong> Personally identifiable information, such as your email address, and optionally your name and profile picture, that you provide when you register with the Service via Firebase Authentication.</li>
+                  <li><strong>User Content:</strong> We collect the images of receipts you upload to the Service. These images are sent to our AI service for processing but are not stored long-term on our primary servers after processing.</li>
                 </ul>
               </motion.div>
 
@@ -72,8 +72,8 @@ export default function PolicyPage() {
                 <p>Having accurate information permits us to provide you with a smooth, efficient, and customized experience. Specifically, we may use information collected about you via the Service to:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Create and manage your account.</li>
-                  <li>Process your uploaded receipts using our AI services to provide the core functionality of the app.</li>
-                  <li>Email you regarding your account or order.</li>
+                  <li>Process your uploaded receipts using third-party AI services (Google AI) to extract transaction data.</li>
+                  <li>Email you regarding your account or other administrative matters.</li>
                   <li>Monitor and analyze usage and trends to improve your experience with the Service.</li>
                 </ul>
               </motion.div>
@@ -85,7 +85,7 @@ export default function PolicyPage() {
               
               <motion.div variants={fadeInUp}>
                 <h3 className="font-headline text-2xl font-semibold text-foreground mb-3">Third-Party Services</h3>
-                <p>We use Firebase for authentication and Google AI for receipt processing. These services have their own privacy policies, and we encourage you to review them.</p>
+                <p>We use Firebase for authentication and Google AI for receipt processing. These services have their own privacy policies, and we encourage you to review them to understand how they handle your data.</p>
               </motion.div>
 
               <motion.div variants={fadeInUp}>
