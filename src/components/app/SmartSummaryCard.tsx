@@ -14,7 +14,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 
 interface SmartSummaryCardProps {
@@ -195,13 +194,12 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                 title="Fairness Check Calculation"
                                 description={fairnessInfoDescription}
                                 trigger={
-                                    <Button
-                                        variant="link"
-                                        className="p-0 m-0 h-4 w-4 inline-flex align-middle"
+                                    <button
+                                        className="p-0 m-0 h-4 w-4 inline-flex items-center justify-center align-middle"
                                         aria-label="More information about fairness check"
                                     >
                                         <Info className="h-4 w-4 text-muted-foreground" />
-                                    </Button>
+                                    </button>
                                 }
                            />
                        </div>
@@ -217,13 +215,12 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                     title="Penny Perfect Explanation"
                                     description={pennyPerfectContent.dialogDescription}
                                     trigger={
-                                        <Button
-                                            variant="link"
-                                            className="p-0 m-0 h-4 w-4 inline-flex align-middle"
+                                        <button
+                                            className="p-0 m-0 h-4 w-4 inline-flex items-center justify-center align-middle"
                                             aria-label="More information about rounding adjustment"
                                         >
                                             <Info className="h-4 w-4 text-muted-foreground" />
-                                        </Button>
+                                        </button>
                                     }
                                />
                            )}
