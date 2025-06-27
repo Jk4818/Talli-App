@@ -11,7 +11,9 @@ export const store = configureStore({
         // Ignore these action types
         ignoredActions: ['session/processReceipt/fulfilled', 'session/processReceipt/rejected'],
         // Ignore these field paths in all actions
-        ignoredActionPaths: ['meta.arg', 'payload.timestamp'],
+        // Next.js's searchParams object is not serializable and will cause an error when the middleware
+        // tries to enumerate its properties. This ignores them in any dispatched actions.
+        ignoredActionPaths: ['meta.arg', 'payload.timestamp', 'params', 'searchParams'],
         // Ignore these paths in the state
         ignoredPaths: ['session.items', 'session.receipts'],
       },
