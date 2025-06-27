@@ -29,8 +29,8 @@ export const addReceiptFromFile = createAsyncThunk(
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(file);
       });
-      // In demo mode, we bypass the AI scanning step by setting the status to 'processed'.
-      const status = isDemo ? 'processed' : 'unprocessed';
+      // All new uploads are unprocessed, the UI will gate AI scanning in demo mode.
+      const status = 'unprocessed';
       return { name: file.name, imageDataUri, status };
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Could not read file.');

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -32,7 +33,7 @@ import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
 
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
-  const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
+  const { participants, items, globalCurrency, isDemoSession } = useSelector((state: RootState) => state.session);
   const { user } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -120,10 +121,21 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                 </Button>
               )}
               {receipt.status === 'unprocessed' && (
-                  <Button onClick={handleScanReceipt} disabled={!user}>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Scan with AI
-                  </Button>
+                isDemoSession ? (
+                    <AccessibleTooltip content={<p>AI scanning is disabled in demo mode.</p>}>
+                        <span tabIndex={0}>
+                            <Button disabled className="pointer-events-none">
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                Scan with AI
+                            </Button>
+                        </span>
+                    </AccessibleTooltip>
+                ) : (
+                    <Button onClick={handleScanReceipt} disabled={!user}>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Scan with AI
+                    </Button>
+                )
               )}
               {receipt.status === 'processing' && (
                 <Button disabled>
