@@ -4,11 +4,11 @@ import React, { useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { calculateSplits } from '@/lib/splitter';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import BillSplitSummary from './BillSplitSummary';
 import { Button } from '../ui/button';
 import { resetSession, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
-import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight } from 'lucide-react';
+import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight, MessageSquareText, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -58,6 +58,57 @@ export default function Step3Summary() {
     return calculateSplits(sessionState);
   }, [sessionState]);
 
+  const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
+
+  const recapText = useMemo(() => {
+    const lines = [];
+    lines.push(`Total: ${formatCurrency(calculatedSummary.total)}`);
+    lines.push(''); // blank line
+    
+    calculatedSummary.participantSummaries.forEach(p => {
+        if (p.balance < -0.5) {
+            lines.push(`${p.name} owes ${formatCurrency(Math.abs(p.balance))}`);
+        } else if (p.balance > 0.5) {
+            lines.push(`${p.name} gets back ${formatCurrency(p.balance)}`);
+        }
+    });
+
+    if (calculatedSummary.settlements.length > 0) {
+        lines.push('');
+        lines.push('---');
+        lines.push('To settle up:');
+        calculatedSummary.settlements.forEach(s => {
+            lines.push(`- ${s.from} pays ${s.to} ${formatCurrency(s.amount)}`);
+        });
+    }
+
+    return lines.join('\n');
+  }, [calculatedSummary, formatCurrency]);
+
+
+  const handleCopy = () => {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(recapText).then(() => {
+          toast({
+            title: "Copied to clipboard!",
+            description: "You can now paste the summary in any messaging app.",
+          });
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+          toast({
+            variant: 'destructive',
+            title: 'Copy Failed',
+            description: 'Could not copy the text to your clipboard.',
+          });
+        });
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Copy Failed',
+            description: 'Clipboard API not available on your browser.',
+        });
+    }
+  };
 
   const handleReset = () => {
     dispatch(resetSession());
@@ -95,8 +146,6 @@ export default function Step3Summary() {
   const handleTogglePaid = (settlementId: string) => {
     dispatch(toggleSettlementPaid({ settlementId }));
   };
-
-  const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
 
   const getInitials = (name: string) => {
     const names = name.split(' ');
@@ -248,6 +297,30 @@ export default function Step3Summary() {
             </Card>
         </div>
         <div className="lg:col-span-1 space-y-8">
+            <motion.div variants={fadeInUp}>
+              <Card>
+                <CardHeader className='flex-row items-center gap-4 space-y-0'>
+                    <MessageSquareText className="w-8 h-8 text-primary" />
+                    <div>
+                        <CardTitle>Shareable Summary</CardTitle>
+                        <CardDescription>A simple text recap for your group.</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-lg border bg-muted/50 p-4">
+                        <pre className="text-sm whitespace-pre-wrap font-sans text-muted-foreground">
+                            {recapText}
+                        </pre>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button className="w-full" onClick={handleCopy}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy Recap
+                    </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
           <Card>
             <CardHeader className='pt-6'>
               <CardTitle>Total Shares</CardTitle>
