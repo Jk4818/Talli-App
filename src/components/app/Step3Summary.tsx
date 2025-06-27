@@ -20,6 +20,17 @@ import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import ItemSplitDiagram from './ItemSplitDiagram';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
@@ -122,7 +133,27 @@ export default function Step3Summary() {
     >
         <motion.div variants={fadeInUp} className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export Session</Button>
-            <Button onClick={handleReset}><RefreshCw className="mr-2 h-4 w-4" /> Reset Session</Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <RefreshCw className="mr-2 h-4 w-4" /> Reset Session
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete all participants, receipts, and item assignments from the current session. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleReset}>
+                    Yes, Reset Session
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
         </motion.div>
       <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
