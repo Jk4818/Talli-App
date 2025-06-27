@@ -64,7 +64,7 @@ const sessionSlice = createSlice({
       const importedData = action.payload;
       
       const sanitizedItems = (importedData.items || []).map((item, index): Item => ({
-        id: `item_${Date.now()}_${index}`,
+        id: item.id || `item_${Date.now()}_${index}`,
         receiptId: item.receiptId || '',
         name: item.name || 'New Item',
         cost: item.cost || 0,
@@ -76,7 +76,7 @@ const sessionSlice = createSlice({
       }));
 
       const sanitizedReceipts = (importedData.receipts || []).map((receipt, index): Receipt => ({
-        id: `receipt_${Date.now()}_${index}`,
+        id: receipt.id || `receipt_${Date.now()}_${index}`,
         name: receipt.name || 'New Receipt',
         payerId: receipt.payerId || null,
         discounts: receipt.discounts || [],
