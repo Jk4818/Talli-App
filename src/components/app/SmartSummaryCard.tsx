@@ -35,24 +35,30 @@ const SmartSummaryItem = ({ icon, children }: { icon: React.ReactNode; children:
     </li>
 );
 
-// New InfoDialog component with a robust scrollable content area
 const InfoDialog = ({ title, description, trigger }: { title: string, description: React.ReactNode, trigger: React.ReactNode }) => (
   <AlertDialog>
     <AlertDialogTrigger asChild>
       {trigger}
     </AlertDialogTrigger>
-    <AlertDialogContent className="flex flex-col max-h-[85vh]">
-      <AlertDialogHeader className="flex-shrink-0">
+    {/*
+      Using grid layout for the modal content to ensure the middle section scrolls correctly.
+      - The parent is a grid with fixed height.
+      - The header and footer have `auto` height.
+      - The middle content div takes up the remaining space (`1fr`) and is set to `overflow-y-auto`.
+      - Padding is applied to each section individually instead of the parent.
+    */}
+    <AlertDialogContent className="grid w-[90vw] max-w-lg grid-rows-[auto_1fr_auto] p-0 max-h-[85vh]">
+      <AlertDialogHeader className="border-b p-6">
         <AlertDialogTitle>{title}</AlertDialogTitle>
       </AlertDialogHeader>
-      <ScrollArea className="flex-1 -mx-6 px-6">
-          <AlertDialogDescription asChild>
-            <div className="space-y-4 text-left py-4 text-sm text-foreground/80">
-                {description}
-            </div>
-          </AlertDialogDescription>
-      </ScrollArea>
-      <AlertDialogFooter className="flex-shrink-0 pt-4 border-t">
+      <div className="overflow-y-auto p-6">
+        <AlertDialogDescription asChild>
+          <div className="space-y-4 text-left text-sm text-foreground/80">
+            {description}
+          </div>
+        </AlertDialogDescription>
+      </div>
+      <AlertDialogFooter className="border-t p-6">
         <AlertDialogAction>Got it</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
@@ -101,22 +107,22 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
       </>
     );
 
-    const { roundingAdjustment, roundingOccurred, roundedItems } = summary;
+    const { roundingAdjustment, roundedItems } = summary;
 
     const pennyPerfectContent = React.useMemo(() => {
         if (roundingAdjustment && roundingAdjustment.amount !== 0) {
             const adjustmentVerb = roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from';
             return `To ensure the total was exact, a final rounding adjustment of ${formatCurrency(Math.abs(roundingAdjustment.amount))} was ${adjustmentVerb} ${roundingAdjustment.participantName}'s share.`;
         }
-        if (roundingOccurred) {
+        if (roundedItems.length > 0) {
             return "To ensure totals were exact, minor rounding differences were automatically distributed across some shared items. This keeps the final bill penny-perfect.";
         }
         return "All items were split perfectly without any need for rounding adjustments. Your math was easy this time!";
-    }, [summary, formatCurrency, roundingOccurred, roundingAdjustment]);
+    }, [summary, formatCurrency, roundedItems, roundingAdjustment]);
 
 
     const pennyPerfectDialogDescription = React.useMemo(() => {
-        if (!roundingOccurred && !(roundingAdjustment && roundingAdjustment.amount !== 0)) {
+        if (roundedItems.length === 0) {
              return <p>All items in this session were split perfectly without any need for rounding adjustments.</p>
         }
 
@@ -127,39 +133,35 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                 {introText}
                 <div className="mt-4 rounded-md border bg-muted/50">
                     <div className="space-y-3 p-2">
-                        {roundedItems.length > 0 ? (
-                            roundedItems.map((item, index) => (
-                                <React.Fragment key={index}>
-                                    {index > 0 && <Separator className="my-2 bg-border/50" />}
-                                    <div>
-                                        <div className="flex justify-between font-semibold">
-                                            <span>Item:</span>
-                                            <span className="font-mono text-right">{item.name}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs pl-4">
-                                            <span className='text-muted-foreground'>Cost:</span>
-                                            <span className="font-mono">{formatCurrency(item.cost)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs pl-4">
-                                            <span className='text-muted-foreground'>Split between:</span>
-                                            <span className="font-mono">{item.assigneesCount} people</span>
-                                        </div>
-                                        {item.adjustments.map((adj, adjIndex) => (
-                                            <div key={adjIndex} className="flex justify-between text-xs pl-4">
-                                                <span className='text-muted-foreground'>
-                                                    → {adj.participantName} paid
-                                                </span>
-                                                <span className="font-mono">
-                                                    {formatCurrency(Math.abs(adj.amount))}{' '}{adj.amount > 0 ? 'more' : 'less'}
-                                                </span>
-                                            </div>
-                                        ))}
+                        {roundedItems.map((item, index) => (
+                            <React.Fragment key={index}>
+                                {index > 0 && <Separator className="my-2 bg-border/50" />}
+                                <div>
+                                    <div className="flex justify-between font-semibold">
+                                        <span>Item:</span>
+                                        <span className="font-mono text-right">{item.name}</span>
                                     </div>
-                                </React.Fragment>
-                            ))
-                        ) : (
-                            <p className='text-xs text-muted-foreground text-center py-2'>Rounding was required for percentage-based service charges, not specific items.</p>
-                        )}
+                                    <div className="flex justify-between text-xs pl-4">
+                                        <span className='text-muted-foreground'>Cost:</span>
+                                        <span className="font-mono">{formatCurrency(item.cost)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs pl-4">
+                                        <span className='text-muted-foreground'>Split between:</span>
+                                        <span className="font-mono">{item.assigneesCount} people</span>
+                                    </div>
+                                    {item.adjustments.map((adj, adjIndex) => (
+                                        <div key={adjIndex} className="flex justify-between text-xs pl-4">
+                                            <span className='text-muted-foreground'>
+                                                → {adj.participantName} paid
+                                            </span>
+                                            <span className="font-mono">
+                                                {formatCurrency(Math.abs(adj.amount))}{' '}{adj.amount > 0 ? 'more' : 'less'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </React.Fragment>
+                        ))}
                     </div>
                 </div>
                 {roundingAdjustment && roundingAdjustment.amount !== 0 && (
@@ -167,7 +169,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                 )}
             </>
         );
-    }, [roundingOccurred, roundedItems, roundingAdjustment, formatCurrency]);
+    }, [roundedItems, roundingAdjustment, formatCurrency]);
 
 
     const fairnessMetric = React.useMemo(() => {
