@@ -129,6 +129,11 @@ const sessionSlice = createSlice({
         i.assignees = i.assignees.filter(id => id !== action.payload);
       });
     },
+    removeReceipt: (state, action: PayloadAction<string>) => {
+      const receiptId = action.payload;
+      state.receipts = state.receipts.filter((r) => r.id !== receiptId);
+      state.items = state.items.filter((i) => i.receiptId !== receiptId);
+    },
     updateReceipt: (state, action: PayloadAction<Partial<Receipt> & { id: string }>) => {
       const receipt = state.receipts.find(r => r.id === action.payload.id);
       if (receipt) {
@@ -308,6 +313,7 @@ const sessionSlice = createSlice({
         const receipt = state.receipts.find(r => r.id === action.meta.arg.receiptId);
         if (receipt) {
           receipt.status = 'processing';
+          receipt.error = null;
           state.error = null;
         }
       })
@@ -344,8 +350,8 @@ const sessionSlice = createSlice({
         const receipt = state.receipts.find(r => r.id === action.meta.arg.receiptId);
         if (receipt) {
           receipt.status = 'failed';
+          receipt.error = action.payload as string;
         }
-        state.error = action.payload as string;
       });
   }
 });
@@ -356,6 +362,7 @@ export const {
   setStep,
   addParticipant,
   removeParticipant,
+  removeReceipt,
   updateReceipt,
   updateServiceCharge,
   addDiscount,

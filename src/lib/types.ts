@@ -36,6 +36,7 @@ export interface Receipt {
   exchangeRate?: number;
   imageDataUri?: string;
   status: 'unprocessed' | 'processing' | 'processed' | 'failed';
+  error?: string | null;
 }
 
 export interface Settlement {

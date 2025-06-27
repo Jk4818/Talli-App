@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
-import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, processReceipt } from '@/lib/redux/slices/sessionSlice';
+import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, processReceipt, removeReceipt } from '@/lib/redux/slices/sessionSlice';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -18,6 +18,19 @@ import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/firebase/auth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
+
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -50,6 +63,10 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
       }));
     }
   };
+  
+  const handleRemoveReceipt = () => {
+    dispatch(removeReceipt(receipt.id));
+  };
 
   const handleUpdateReceipt = (updates: Partial<Receipt>) => {
     dispatch(updateReceipt({ id: receipt.id, ...updates }));
@@ -72,13 +89,13 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
       <ReceiptImageViewer receipt={receipt} isOpen={isViewerOpen} onOpenChange={setIsViewerOpen} />
       <Card className='bg-card/50'>
         <CardHeader>
-          <div className="flex flex-wrap sm:flex-nowrap justify-between items-center sm:items-start gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap justify-between items-start gap-2">
             <Input 
               defaultValue={receipt.name}
               onBlur={(e) => handleUpdateReceipt({ name: e.target.value })}
               className="text-lg font-semibold border-0 shadow-none -ml-3 focus-visible:ring-1 focus-visible:ring-ring flex-1"
             />
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-2 flex-shrink-0'>
               {receipt.imageDataUri && (
                 <Button variant="outline" size="icon" onClick={() => setIsViewerOpen(true)}>
                     <ImageIcon className="h-5 w-5" />
@@ -97,11 +114,27 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                   Scanning...
                 </Button>
               )}
-              {receipt.status === 'failed' && (
-                <Button variant="destructive" onClick={handleScanReceipt}>
-                  <AlertCircle className="mr-2 h-4 w-4"/>
-                  Retry Scan
-                </Button>
+              {(receipt.status === 'processed' || receipt.status === 'failed') && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="icon">
+                        <Trash2 className="h-5 w-5" />
+                        <span className="sr-only">Remove Receipt</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action will permanently delete the receipt "{receipt.name}" and all of its associated items. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleRemoveReceipt}>Continue</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </div>
           </div>
@@ -109,6 +142,15 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
             <CardDescription>
               Subtotal: {formatCurrency(subtotal, receipt.currency)}
             </CardDescription>
+          )}
+          {receipt.status === 'failed' && receipt.error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Scan Failed</AlertTitle>
+              <AlertDescription>
+                {receipt.error}
+              </AlertDescription>
+            </Alert>
           )}
         </CardHeader>
         {receipt.status === 'processed' && (
@@ -146,6 +188,11 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                       <SelectItem value="GBP">GBP</SelectItem>
                       <SelectItem value="CAD">CAD</SelectItem>
                       <SelectItem value="AUD">AUD</SelectItem>
+                      <SelectItem value="JPY">JPY</SelectItem>
+                      <SelectItem value="INR">INR</SelectItem>
+                      <SelectItem value="CNY">CNY</SelectItem>
+                      <SelectItem value="CHF">CHF</SelectItem>
+                      <SelectItem value="NZD">NZD</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

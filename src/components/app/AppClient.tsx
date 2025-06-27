@@ -43,9 +43,12 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   };
   
   const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
+  const hasAmbiguousItems = items.some(item => item.isAmbiguous);
   
   const step1TooltipMessage = useMemo(() => {
-    if (isStep1Complete) return '';
+    if (hasAmbiguousItems) {
+      return 'Please resolve all ambiguous items before continuing.';
+    }
     if (participants.length === 0) {
         return 'Please add at least one participant to continue.';
     }
@@ -56,7 +59,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
         return 'A payer must be assigned to every receipt.';
     }
     return 'Please complete all setup steps to continue.';
-  }, [isStep1Complete, participants.length, receipts]);
+  }, [hasAmbiguousItems, participants.length, receipts]);
 
   const isStep2Complete = useMemo(() => {
     return items.every(item => {
@@ -111,12 +114,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
           </div>
           <div>
             {step === 1 && (
-              isStep1Complete ? (
-                <Button onClick={handleNext}>
-                  Assign Items
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
+              !isStep1Complete || hasAmbiguousItems ? (
                 <AccessibleTooltip content={<p>{step1TooltipMessage}</p>}>
                   {/* The span wrapper is crucial for the tooltip to work on a disabled button */}
                   <span tabIndex={0}>
@@ -126,6 +124,11 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
                     </Button>
                   </span>
                 </AccessibleTooltip>
+              ) : (
+                <Button onClick={handleNext}>
+                  Assign Items
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               )
             )}
             {step === 2 && (

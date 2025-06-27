@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { FilePlus2, ReceiptText, Users, RefreshCw, Upload } from 'lucide-react';
+import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle } from 'lucide-react';
 import { addReceiptFromFile, setGlobalCurrency, resetSession } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
 
@@ -32,6 +33,8 @@ export default function Step1Setup() {
   const dispatch = useDispatch<AppDispatch>();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const hasAmbiguousItems = React.useMemo(() => items.some(item => item.isAmbiguous), [items]);
 
   React.useEffect(() => {
     if (error) {
@@ -139,11 +142,16 @@ export default function Step1Setup() {
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="USD">USD</SelectItem>
-                        <SelectItem value="EUR">EUR</SelectItem>
-                        <SelectItem value="GBP">GBP</SelectItem>
-                        <SelectItem value="CAD">CAD</SelectItem>
-                        <SelectItem value="AUD">AUD</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="GBP">GBP</SelectItem>
+                      <SelectItem value="CAD">CAD</SelectItem>
+                      <SelectItem value="AUD">AUD</SelectItem>
+                      <SelectItem value="JPY">JPY</SelectItem>
+                      <SelectItem value="INR">INR</SelectItem>
+                      <SelectItem value="CNY">CNY</SelectItem>
+                      <SelectItem value="CHF">CHF</SelectItem>
+                      <SelectItem value="NZD">NZD</SelectItem>
                     </SelectContent>
                     </Select>
                 </div>
@@ -177,7 +185,16 @@ export default function Step1Setup() {
         </Card>
       </motion.div>
 
-      <motion.div variants={fadeInUp}>
+      <motion.div variants={fadeInUp} className="space-y-4">
+        {hasAmbiguousItems && (
+            <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Action Required</AlertTitle>
+                <AlertDescription>
+                    Some items were flagged by the AI as ambiguous. Please review them in the list below and uncheck the "Ambiguous" toggle for each item to confirm they are correct. You cannot proceed until all ambiguous items are resolved.
+                </AlertDescription>
+            </Alert>
+        )}
         <ItemListEditor />
       </motion.div>
     </motion.div>

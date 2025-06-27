@@ -115,6 +115,16 @@ export default function Home() {
                       Go to App
                     </Link>
                   )}
+                  <Separator className="my-2" />
+                  <Link href="/about" className={cn(buttonVariants({ variant: 'ghost' }), 'justify-start')}>
+                    About Us
+                  </Link>
+                  <Link href="/policy" className={cn(buttonVariants({ variant: 'ghost' }), 'justify-start')}>
+                    Privacy Policy
+                  </Link>
+                  <Link href="/terms" className={cn(buttonVariants({ variant: 'ghost' }), 'justify-start')}>
+                    Terms of Service
+                  </Link>
                 </nav>
                 <div className="absolute bottom-6 left-6 right-6">
                   {user ? (
@@ -152,7 +162,7 @@ export default function Home() {
           </motion.p>
           <motion.div variants={fadeInUp} className="mt-8 flex justify-center gap-4">
             <Button size="lg" asChild>
-              <Link href={user ? "/app" : "/signup"}>
+              <Link href={user ? "/app" : "/login"}>
                 Start Splitting
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
@@ -223,6 +233,7 @@ export default function Home() {
             <nav className="flex gap-4">
                 <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
                 <Link href="/policy" className="hover:text-foreground transition-colors">Policy</Link>
+                <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             </nav>
         </div>
       </footer>
