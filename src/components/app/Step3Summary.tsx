@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
-import type { SessionState, Settlement } from '@/lib/types';
+import type { SessionState } from '@/lib/types';
 import SharePieChart from './SharePieChart';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
@@ -34,7 +34,7 @@ import {
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
-  const { participants, items, receipts, settlements, globalCurrency } = sessionState;
+  const { participants, items, receipts, paidSettlements, globalCurrency } = sessionState;
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
 
@@ -50,33 +50,10 @@ export default function Step3Summary() {
         totalServiceCharge: 0
       };
     }
-    
-    // Create a temporary state object for the calculation function.
-    // We pass an empty settlements array to get a fresh calculation based on current data.
-    const tempState: SessionState = {
-        participants,
-        items,
-        receipts,
-        globalCurrency,
-        settlements: [], // Pass empty array to get fresh calculation
-        step: 3,
-        status: 'succeeded',
-        error: null,
-        isDemoSession: false,
-        currentAssignmentIndex: 0,
-    };
-    const summary = calculateSplits(tempState);
-
-    // Now, merge the `paid` status from the Redux store into the freshly calculated settlements.
-    // This makes this component a pure "view" of the state, eliminating conflicting dispatches.
-    const existingSettlementsById = new Map(settlements.map(s => [s.id, s]));
-    summary.settlements = summary.settlements.map((newS: Settlement) => {
-      const existingS = existingSettlementsById.get(newS.id);
-      return existingS ? { ...newS, paid: existingS.paid } : newS;
-    });
-
-    return summary;
-  }, [participants, items, receipts, globalCurrency, settlements]);
+    // The calculation function is pure and derives its results from the session state.
+    // The `paid` status of settlements is handled separately in the component's render logic.
+    return calculateSplits(sessionState);
+  }, [participants, items, receipts, globalCurrency, sessionState]);
 
 
   const handleReset = () => {
@@ -210,13 +187,14 @@ export default function Step3Summary() {
                       {calculatedSummary.settlements.length > 0 ? calculatedSummary.settlements.map((s) => {
                         const fromParticipant = participants.find(p => p.name === s.from);
                         const toParticipant = participants.find(p => p.name === s.to);
+                        const isPaid = !!paidSettlements[s.id];
                         return (
                           <li
                             key={s.id}
-                            className={cn("rounded-lg border bg-card/80 p-4 transition-opacity", s.paid && "opacity-60")}
+                            className={cn("rounded-lg border bg-card/80 p-4 transition-opacity", isPaid && "opacity-60")}
                           >
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                              <div className={cn("flex items-center gap-2 font-medium w-full sm:w-auto", s.paid && "line-through")}>
+                              <div className={cn("flex items-center gap-2 font-medium w-full sm:w-auto", isPaid && "line-through")}>
                                   <Avatar className="h-8 w-8 text-xs">
                                     <AvatarFallback>{fromParticipant ? getInitials(fromParticipant.name) : '?'}</AvatarFallback>
                                   </Avatar>
@@ -231,7 +209,7 @@ export default function Step3Summary() {
                                 <span
                                   className={cn(
                                     'text-xl font-bold text-primary',
-                                    s.paid && 'text-muted-foreground line-through'
+                                    isPaid && 'text-muted-foreground line-through'
                                   )}
                                 >
                                   {formatCurrency(s.amount)}
@@ -239,7 +217,7 @@ export default function Step3Summary() {
                                 <div className="flex items-center space-x-2">
                                   <Switch
                                     id={`paid-${s.id}`}
-                                    checked={s.paid}
+                                    checked={isPaid}
                                     onCheckedChange={() => handleTogglePaid(s.id)}
                                     aria-label={`Mark transaction from ${s.from} to ${s.to} as paid`}
                                   />
@@ -247,7 +225,7 @@ export default function Step3Summary() {
                                     htmlFor={`paid-${s.id}`}
                                     className={cn(
                                       'text-sm font-medium',
-                                      s.paid ? 'text-muted-foreground' : 'text-foreground'
+                                      isPaid ? 'text-muted-foreground' : 'text-foreground'
                                     )}
                                   >
                                     Paid

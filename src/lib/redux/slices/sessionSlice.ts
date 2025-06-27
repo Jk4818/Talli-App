@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction, createAction } from '@reduxjs/toolkit';
-import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge, Settlement } from '@/lib/types';
+import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge } from '@/lib/types';
 import { MOCK_DATA } from '@/lib/mock-data';
 import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 import type { AuthUser } from '@/ai/auth';
@@ -9,7 +9,7 @@ const initialState: SessionState = {
   participants: [],
   receipts: [],
   items: [],
-  settlements: [],
+  paidSettlements: {},
   globalCurrency: 'USD',
   status: 'idle',
   error: null,
@@ -94,7 +94,7 @@ const sessionSlice = createSlice({
         items: sanitizedItems,
         receipts: sanitizedReceipts,
         participants: importedData.participants || [],
-        settlements: [],
+        paidSettlements: importedData.paidSettlements || {},
         globalCurrency: importedData.globalCurrency || initialState.globalCurrency,
         step: 1, // Always start at step 1 for validation
         status: 'succeeded',
@@ -105,9 +105,10 @@ const sessionSlice = createSlice({
     },
     resetSession: (state) => {
       // Preserve the demo status while resetting everything else
+      const isDemo = state.isDemoSession;
       return {
         ...initialState,
-        isDemoSession: state.isDemoSession,
+        isDemoSession: isDemo,
       };
     },
     addManualReceipt: (state) => {
@@ -287,22 +288,10 @@ const sessionSlice = createSlice({
     setCurrentAssignmentIndex: (state, action: PayloadAction<number>) => {
       state.currentAssignmentIndex = action.payload;
     },
-    setSettlements: (state, action: PayloadAction<Settlement[]>) => {
-      const newSettlements = action.payload;
-      const existingSettlementsById = new Map(state.settlements.map(s => [s.id, s]));
-      
-      const mergedSettlements = newSettlements.map(newS => {
-        const existingS = existingSettlementsById.get(newS.id);
-        return existingS ? { ...newS, paid: existingS.paid } : newS;
-      });
-
-      state.settlements = mergedSettlements;
-    },
     toggleSettlementPaid: (state, action: PayloadAction<{ settlementId: string }>) => {
-      const settlement = state.settlements.find(s => s.id === action.payload.settlementId);
-      if (settlement) {
-          settlement.paid = !settlement.paid;
-      }
+      const { settlementId } = action.payload;
+      const currentStatus = !!state.paidSettlements[settlementId];
+      state.paidSettlements[settlementId] = !currentStatus;
     },
   },
   extraReducers: (builder) => {
@@ -310,7 +299,7 @@ const sessionSlice = createSlice({
       .addCase(loadDemoData, (state) => {
         const demoState = { ...MOCK_DATA, status: 'succeeded' as const, error: null, isDemoSession: true };
         const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'processed' as const}));
-        return { ...initialState, ...demoState, receipts: processedDemoReceipts, settlements: [], step: 1 };
+        return { ...initialState, ...demoState, receipts: processedDemoReceipts, paidSettlements: {}, step: 1 };
       })
       .addCase(addReceiptFromFile.fulfilled, (state, action) => {
         const newReceipt: Receipt = {
@@ -395,7 +384,6 @@ export const {
   setPercentageAssignment,
   setExactAssignment,
   setCurrentAssignmentIndex,
-  setSettlements,
   toggleSettlementPaid,
   addManualReceipt,
 } = sessionSlice.actions;

@@ -69,7 +69,7 @@ export interface SessionState {
   participants: Participant[];
   receipts: Receipt[];
   items: Item[];
-  settlements: Settlement[];
+  paidSettlements: Record<string, boolean>;
   globalCurrency: string;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;

@@ -49,6 +49,6 @@ export const MOCK_DATA: SessionState = {
     { id: 'i_11', receiptId: 'r_2', name: 'Scotch Egg', cost: 450, isAmbiguous: false, assignees: ['p_1', 'p_2'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {} },
     { id: 'i_12', receiptId: 'r_2', name: 'Round of Shots', cost: 1500, isAmbiguous: false, assignees: ['p_3', 'p_4'], splitMode: 'exact', percentageAssignments: {}, exactAssignments: { 'p_3': 1000, 'p_4': 500 } },
   ],
-  settlements: [],
+  paidSettlements: {},
   currentAssignmentIndex: 0,
 };

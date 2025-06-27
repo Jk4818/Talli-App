@@ -14,7 +14,7 @@ const distributeCents = (total: number, n: number): number[] => {
 };
 
 export const calculateSplits = (session: SessionState): SplitSummary => {
-  const { participants, receipts, items, globalCurrency, settlements: existingSettlements } = session;
+  const { participants, receipts, items, globalCurrency } = session;
 
   const summaries = new Map<string, ParticipantSummary>();
   participants.forEach(p => {
