@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -163,8 +162,8 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Tabs value={splitMode} onValueChange={handleModeChange} className="w-auto">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <Tabs value={splitMode} onValueChange={handleModeChange} className="w-full sm:w-auto">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="equal">Equal</TabsTrigger>
             <TabsTrigger value="percentage">Percent</TabsTrigger>
@@ -172,7 +171,13 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
           </TabsList>
         </Tabs>
 
-        <Button variant="outline" size="sm" onClick={handleToggleAll} disabled={participants.length === 0}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleToggleAll}
+          disabled={participants.length === 0}
+          className="w-full sm:w-32"
+        >
           <Users className="mr-2 h-4 w-4" />
           {assignees.length < participants.length ? 'Select All' : 'Deselect All'}
         </Button>
