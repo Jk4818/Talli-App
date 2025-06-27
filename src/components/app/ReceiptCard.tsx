@@ -273,7 +273,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                     <div className="flex items-center gap-6">
                       <RadioGroup 
                         value={serviceCharge.type} 
-                        onValueChange={(type: 'fixed' | 'percentage') => handleUpdateServiceCharge({ type })}
+                        onValueChange={(type: 'fixed' | 'percentage') => handleUpdateServiceCharge({ type, value: 0 })}
                         className="flex items-center gap-4"
                       >
                         <div className="flex items-center space-x-2">
@@ -286,9 +286,10 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                         </div>
                       </RadioGroup>
                       <Input
+                        key={`${receipt.id}-${serviceCharge.type}`} // Force re-render on type change
                         type="number"
                         step="0.01"
-                        defaultValue={serviceCharge.type === 'fixed' ? serviceCharge.value / 100 : serviceCharge.value}
+                        defaultValue={serviceCharge.type === 'fixed' ? (serviceCharge.value / 100).toFixed(2) : serviceCharge.value}
                         onBlur={(e) => handleUpdateServiceCharge({ 
                           value: serviceCharge.type === 'fixed' 
                             ? Math.round(parseFloat(e.target.value) * 100) || 0
