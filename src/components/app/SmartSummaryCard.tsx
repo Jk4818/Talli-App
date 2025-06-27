@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 
 interface SmartSummaryCardProps {
@@ -30,7 +31,7 @@ const SmartSummaryItem = ({ icon, children }: { icon: React.ReactNode; children:
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0 mt-1">
             {icon}
         </div>
-        <div className="text-sm text-muted-foreground flex-1">{children}</div>
+        <div className="text-sm flex-1 space-y-0.5">{children}</div>
     </li>
 );
 
@@ -39,17 +40,17 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
     <AlertDialogTrigger asChild>
       {trigger}
     </AlertDialogTrigger>
-    <AlertDialogContent className="grid w-[90vw] max-w-lg grid-rows-[auto_1fr_auto] p-0 max-h-[85vh]">
+    <AlertDialogContent className="flex flex-col max-h-[85vh]">
       <AlertDialogHeader className="border-b p-6">
         <AlertDialogTitle>{title}</AlertDialogTitle>
       </AlertDialogHeader>
-      <div className="overflow-y-auto p-6">
-        <AlertDialogDescription asChild>
-          <div className="space-y-4 text-left text-sm text-foreground/80">
-            {description}
-          </div>
-        </AlertDialogDescription>
-      </div>
+      <ScrollArea className="flex-1 p-0">
+          <AlertDialogDescription asChild>
+            <div className="space-y-4 text-left text-sm text-foreground/80 p-6">
+              {description}
+            </div>
+          </AlertDialogDescription>
+      </ScrollArea>
       <AlertDialogFooter className="border-t p-6">
         <AlertDialogAction>Got it</AlertDialogAction>
       </AlertDialogFooter>
@@ -214,10 +215,10 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                 </div>
             </CardHeader>
             <CardContent>
-                <ul className="space-y-5">
+                <ul className="space-y-6">
                     <SmartSummaryItem icon={<Scale className="h-5 w-5" />}>
-                       <div className="flex items-center gap-1">
-                           <span><strong>Fairness Check:</strong> {fairnessMetric}</span>
+                       <div className="flex items-center gap-1.5">
+                           <p className="font-semibold text-foreground">Fairness Check</p>
                            <InfoDialog
                                 title="Fairness Check Calculation"
                                 description={fairnessInfoDescription}
@@ -231,14 +232,12 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                 }
                            />
                        </div>
+                       <p className="text-muted-foreground">{fairnessMetric}</p>
                     </SmartSummaryItem>
                      <SmartSummaryItem icon={<Sparkles className="h-5 w-5" />}>
-                        <div className="flex items-center gap-1">
-                           <span>
-                                <strong>Penny Perfect:</strong>{' '}
-                                {pennyPerfectContent}
-                           </span>
-                           {pennyPerfectDialogDescription && (
+                        <div className="flex items-center gap-1.5">
+                            <p className="font-semibold text-foreground">Penny Perfect</p>
+                            {pennyPerfectDialogDescription && (
                                <InfoDialog
                                     title="Penny Perfect Breakdown"
                                     description={pennyPerfectDialogDescription}
@@ -253,38 +252,44 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                />
                            )}
                        </div>
+                       <p className="text-muted-foreground">{pennyPerfectContent}</p>
                     </SmartSummaryItem>
                     {highestPayer && highestPayer.totalPaid > 0 && (
                         <SmartSummaryItem icon={<Trophy className="h-5 w-5" />}>
-                            <span>
-                                <strong>Top Payer:</strong> {highestPayer.name} paid the most at {formatCurrency(highestPayer.totalPaid)}.
-                            </span>
+                            <p className="font-semibold text-foreground">Top Payer</p>
+                            <p className="text-muted-foreground">
+                                {highestPayer.name} contributed the most with{' '}
+                                <span className="font-medium text-foreground">{formatCurrency(highestPayer.totalPaid)}</span>.
+                            </p>
                         </SmartSummaryItem>
                     )}
                     {highestShare && highestShare.totalShare > 0 && (
                         <SmartSummaryItem icon={<Pizza className="h-5 w-5" />}>
-                            <span>
-                                <strong>Highest Share:</strong> {highestShare.name}'s share of the bill was the largest at {formatCurrency(highestShare.totalShare)}.
-                            </span>
+                             <p className="font-semibold text-foreground">Highest Share</p>
+                            <p className="text-muted-foreground">
+                                {highestShare.name}'s portion of the bill was the largest at{' '}
+                                <span className="font-medium text-foreground">{formatCurrency(highestShare.totalShare)}</span>.
+                            </p>
                         </SmartSummaryItem>
                     )}
                     {mostExpensiveItem && (
                         <SmartSummaryItem icon={<Gem className="h-5 w-5" />}>
-                            <span>
-                                <strong>Priciest Item:</strong> {formatCurrency(mostExpensiveItem.cost)} for "{mostExpensiveItem.name}".
-                                <span className="block text-xs mt-1">
-                                    {(() => {
-                                        if (mostExpensiveItem.assignees.length === 0) {
-                                            return "This item was unassigned.";
-                                        } else if (mostExpensiveItem.assignees.length === 1) {
-                                            const person = participants.find(p => p.id === mostExpensiveItem.assignees[0]);
-                                            return `Claimed by ${person ? person.name : 'someone'}.`;
-                                        } else {
-                                            return `Shared between ${mostExpensiveItem.assignees.length} people.`;
-                                        }
-                                    })()}
-                                </span>
-                            </span>
+                             <p className="font-semibold text-foreground">Priciest Item</p>
+                             <p className="text-muted-foreground">
+                                <span className="font-medium text-foreground">{formatCurrency(mostExpensiveItem.cost)}</span> for "{mostExpensiveItem.name}".
+                            </p>
+                            <p className="text-xs text-muted-foreground/80">
+                                {(() => {
+                                    if (mostExpensiveItem.assignees.length === 0) {
+                                        return "This item was unassigned.";
+                                    } else if (mostExpensiveItem.assignees.length === 1) {
+                                        const person = participants.find(p => p.id === mostExpensiveItem.assignees[0]);
+                                        return `Claimed by ${person ? person.name : 'someone'}.`;
+                                    } else {
+                                        return `Shared between ${mostExpensiveItem.assignees.length} people.`;
+                                    }
+                                })()}
+                            </p>
                         </SmartSummaryItem>
                     )}
                 </ul>
