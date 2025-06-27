@@ -249,7 +249,7 @@ export default function Step3Summary() {
                               htmlFor={`paid-${s.id}`}
                               className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 cursor-pointer hover:bg-accent/50 rounded-lg"
                             >
-                              <div className={cn("flex items-center gap-2 font-medium w-full sm:w-auto", isPaid && "line-through")}>
+                              <div className="flex items-center gap-2 font-medium w-full sm:w-auto">
                                   <Avatar className="h-8 w-8 text-xs">
                                     <AvatarFallback>{fromParticipant ? getInitials(fromParticipant.name) : '?'}</AvatarFallback>
                                   </Avatar>
