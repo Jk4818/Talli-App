@@ -160,7 +160,7 @@ export default function ItemSplitDiagram() {
         </div>
       </CardHeader>
       <CardContent>
-        <div ref={containerRef} className="relative w-full min-h-[400px] isolate pl-8 md:pl-0" onClick={(e) => {
+        <div ref={containerRef} className="relative w-full min-h-[400px] isolate" onClick={(e) => {
           if (e.target === e.currentTarget) {
             setHighlightedId(null);
           }
@@ -211,9 +211,9 @@ export default function ItemSplitDiagram() {
               )}
             </AnimatePresence>
           </svg>
-           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-8">
-            <div className="w-full md:w-auto md:max-w-lg space-y-2">{nodes.participantNodes.map(renderNode)}</div>
-            <div className="w-full md:w-auto md:max-w-xl space-y-2">{nodes.itemNodes.map(renderNode)}</div>
+           <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 lg:gap-24">
+            <div className="space-y-2">{nodes.participantNodes.map(renderNode)}</div>
+            <div className="space-y-2">{nodes.itemNodes.map(renderNode)}</div>
           </div>
         </div>
       </CardContent>
