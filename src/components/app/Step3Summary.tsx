@@ -1,20 +1,20 @@
 
 'use client';
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { calculateSplits } from '@/lib/splitter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import BillSplitSummary from './BillSplitSummary';
 import { Button } from '../ui/button';
-import { resetSession, setSettlements, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
+import { resetSession, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
 import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
-import type { SessionState } from '@/lib/types';
+import type { SessionState, Settlement } from '@/lib/types';
 import SharePieChart from './SharePieChart';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
@@ -39,34 +39,44 @@ export default function Step3Summary() {
   const { toast } = useToast();
 
   const calculatedSummary = useMemo(() => {
-    if (participants.length > 0) {
-      const tempState: SessionState = {
+    // Guard against running calculations if there's no one to split the bill with.
+    if (participants.length === 0) {
+      return {
+        participantSummaries: [],
+        settlements: [],
+        total: 0,
+        totalItemCost: 0,
+        totalDiscounts: 0,
+        totalServiceCharge: 0
+      };
+    }
+    
+    // Create a temporary state object for the calculation function.
+    // We pass an empty settlements array to get a fresh calculation based on current data.
+    const tempState: SessionState = {
         participants,
         items,
         receipts,
-        settlements: [],
         globalCurrency,
+        settlements: [], // Pass empty array to get fresh calculation
         step: 3,
         status: 'succeeded',
         error: null,
         isDemoSession: false,
         currentAssignmentIndex: 0,
-      };
-      return calculateSplits(tempState);
-    }
-    return {
-      participantSummaries: [],
-      settlements: [],
-      total: 0,
-      totalItemCost: 0,
-      totalDiscounts: 0,
-      totalServiceCharge: 0
     };
-  }, [participants, items, receipts, globalCurrency]);
+    const summary = calculateSplits(tempState);
 
-  useEffect(() => {
-    dispatch(setSettlements(calculatedSummary.settlements));
-  }, [calculatedSummary.settlements, dispatch]);
+    // Now, merge the `paid` status from the Redux store into the freshly calculated settlements.
+    // This makes this component a pure "view" of the state, eliminating conflicting dispatches.
+    const existingSettlementsById = new Map(settlements.map(s => [s.id, s]));
+    summary.settlements = summary.settlements.map((newS: Settlement) => {
+      const existingS = existingSettlementsById.get(newS.id);
+      return existingS ? { ...newS, paid: existingS.paid } : newS;
+    });
+
+    return summary;
+  }, [participants, items, receipts, globalCurrency, settlements]);
 
 
   const handleReset = () => {
@@ -197,7 +207,7 @@ export default function Step3Summary() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-4">
-                      {settlements.length > 0 ? settlements.map((s) => {
+                      {calculatedSummary.settlements.length > 0 ? calculatedSummary.settlements.map((s) => {
                         const fromParticipant = participants.find(p => p.name === s.from);
                         const toParticipant = participants.find(p => p.name === s.to);
                         return (
