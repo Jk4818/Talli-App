@@ -9,6 +9,8 @@ import { RootState } from '@/lib/redux/store';
 import { cn } from '@/lib/utils';
 import { SplitSummary, ParticipantSummary } from '@/lib/types';
 import { Separator } from '../ui/separator';
+import { Progress } from '../ui/progress';
+
 
 interface BillSplitSummaryProps {
   summary: SplitSummary;
@@ -28,6 +30,12 @@ const ParticipantCard = ({ participant, currency }: { participant: ParticipantSu
     const isOwed = participant.balance > 0;
     const owes = participant.balance < 0;
     const isSettled = Math.abs(participant.balance) < 1;
+    
+    // Defines progress as how much of their share they've covered by their payment.
+    // Handles cases where share is 0 or negative.
+    const progressValue = participant.totalShare > 0
+      ? (participant.totalPaid / participant.totalShare) * 100
+      : (participant.totalPaid > 0 ? 100 : 0);
 
     return (
         <Card className={cn(
@@ -57,19 +65,16 @@ const ParticipantCard = ({ participant, currency }: { participant: ParticipantSu
                     </div>
                 </div>
                 <Separator className="my-3" />
-                <div className="text-sm space-y-1">
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Total Share</span>
-                        <span className="font-mono">{formatCurrency(participant.totalShare)}</span>
-                    </div>
-                    <div className="flex justify-between pl-4">
-                        <span className="text-muted-foreground text-xs">incl. Service Charge</span>
-                        <span className="font-mono text-xs">{formatCurrency(participant.totalServiceChargeShare)}</span>
-                    </div>
+                <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">They Paid</span>
-                        <span className="font-mono">{formatCurrency(participant.totalPaid)}</span>
+                        <span className="font-medium">{formatCurrency(participant.totalPaid)}</span>
                     </div>
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Their Share</span>
+                        <span className="font-medium">{formatCurrency(participant.totalShare)}</span>
+                    </div>
+                    <Progress value={progressValue} className="h-2 mt-2" />
                 </div>
             </div>
         </Card>
