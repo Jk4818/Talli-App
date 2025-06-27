@@ -5,13 +5,19 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles } from 'lucide-react';
+import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles, Plus } from 'lucide-react';
 import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt, restoreSession } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -128,7 +134,6 @@ export default function Step1Setup() {
             title: 'Session Imported',
             description: 'Your session has been successfully restored.',
           });
-          // No need to router.push, component will re-render with new state
         } else {
           throw new Error('Invalid session file format.');
         }
@@ -224,14 +229,16 @@ export default function Step1Setup() {
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <ReceiptText className="w-8 h-8 text-primary shrink-0" />
-            <div>
-              <CardTitle>Receipts</CardTitle>
-              <CardDescription>Upload and manage your receipts.</CardDescription>
+          <CardHeader>
+            <div className="flex flex-row items-center gap-4">
+                <ReceiptText className="w-8 h-8 text-primary shrink-0" />
+                <div>
+                  <CardTitle>Receipts</CardTitle>
+                  <CardDescription>Upload and manage your receipts.</CardDescription>
+                </div>
             </div>
           </CardHeader>
-          <div className="flex w-full flex-wrap items-center justify-end gap-x-4 gap-y-2 px-6 pb-4">
+          <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 px-6 pb-4">
               <div className="flex items-center gap-2">
                   <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
                   <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
@@ -252,19 +259,41 @@ export default function Step1Setup() {
                   </SelectContent>
                   </Select>
               </div>
-              <div className="flex items-center gap-2">
-                  <AccessibleTooltip content={<p>Create a new receipt without an image and add items manually.</p>}>
-                      <Button onClick={handleAddManually} size="sm" variant='outline'>
-                          <FilePlus2 className="mr-2 h-4 w-4" />
-                          Add Manually
-                      </Button>
-                  </AccessibleTooltip>
-                  <AccessibleTooltip content={<p>Upload a receipt image. In real sessions, AI will scan it. In demo mode, you can add items manually.</p>}>
-                      <Button onClick={handleUploadClick} size="sm">
-                          <Sparkles className="mr-2 h-4 w-4" />
-                          Upload Receipt
-                      </Button>
-                  </AccessibleTooltip>
+
+              {/* Responsive actions */}
+              <div className="flex flex-1 justify-end">
+                {/* Mobile Dropdown */}
+                <div className="sm:hidden">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button size="sm">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleAddManually}>
+                                <FilePlus2 className="mr-2 h-4 w-4" />
+                                <span>Add Manually</span>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onClick={handleUploadClick}>
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                <span>Upload Receipt</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                {/* Desktop Buttons */}
+                <div className="hidden sm:flex flex-1 items-center gap-2">
+                    <Button onClick={handleAddManually} size="sm" variant='outline' className="flex-1">
+                        <FilePlus2 className="mr-2 h-4 w-4" />
+                        Add Manually
+                    </Button>
+                    <Button onClick={handleUploadClick} size="sm" className="flex-1">
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Upload Receipt
+                    </Button>
+                </div>
               </div>
           </div>
           <CardContent>
