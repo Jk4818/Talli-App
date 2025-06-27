@@ -4,7 +4,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { SplitSummary, Participant, Item, Receipt } from '@/lib/types';
-import { Lightbulb, Scale, Sparkles, Info } from 'lucide-react';
+import { Lightbulb, Scale, Sparkles, Info, Trophy, Gem, Pizza } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Separator } from '../ui/separator';
-import { ScrollArea } from '../ui/scroll-area';
 
 interface SmartSummaryCardProps {
   summary: SplitSummary;
@@ -40,13 +39,6 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
     <AlertDialogTrigger asChild>
       {trigger}
     </AlertDialogTrigger>
-    {/*
-      Using grid layout for the modal content to ensure the middle section scrolls correctly.
-      - The parent is a grid with fixed height.
-      - The header and footer have `auto` height.
-      - The middle content div takes up the remaining space (`1fr`) and is set to `overflow-y-auto`.
-      - Padding is applied to each section individually instead of the parent.
-    */}
     <AlertDialogContent className="grid w-[90vw] max-w-lg grid-rows-[auto_1fr_auto] p-0 max-h-[85vh]">
       <AlertDialogHeader className="border-b p-6">
         <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -195,6 +187,23 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
     }, [summary, participants, averageShare]);
 
 
+    const highestPayer = React.useMemo(() => {
+      if (!summary.participantSummaries || summary.participantSummaries.length === 0) return null;
+      return summary.participantSummaries.reduce((max, p) => (p.totalPaid > max.totalPaid ? p : max), summary.participantSummaries[0]);
+    }, [summary.participantSummaries]);
+
+    const highestShare = React.useMemo(() => {
+        if (!summary.participantSummaries || summary.participantSummaries.length === 0) return null;
+        return summary.participantSummaries.reduce((max, p) => (p.totalShare > max.totalShare ? p : max), summary.participantSummaries[0]);
+    }, [summary.participantSummaries]);
+
+    const mostExpensiveItem = React.useMemo(() => {
+        if (items.length === 0) return null;
+        const itemsWithCost = items.filter(i => i.cost > 0);
+        if (itemsWithCost.length === 0) return null;
+        return itemsWithCost.reduce((max, item) => (item.cost > max.cost ? item : max), itemsWithCost[0]);
+    }, [items]);
+
     return (
         <Card>
             <CardHeader className='flex-row items-center gap-4 space-y-0'>
@@ -245,6 +254,39 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                            )}
                        </div>
                     </SmartSummaryItem>
+                    {highestPayer && highestPayer.totalPaid > 0 && (
+                        <SmartSummaryItem icon={<Trophy className="h-5 w-5" />}>
+                            <span>
+                                <strong>Top Payer:</strong> {highestPayer.name} paid the most at {formatCurrency(highestPayer.totalPaid)}.
+                            </span>
+                        </SmartSummaryItem>
+                    )}
+                    {highestShare && highestShare.totalShare > 0 && (
+                        <SmartSummaryItem icon={<Pizza className="h-5 w-5" />}>
+                            <span>
+                                <strong>Highest Share:</strong> {highestShare.name}'s share of the bill was the largest at {formatCurrency(highestShare.totalShare)}.
+                            </span>
+                        </SmartSummaryItem>
+                    )}
+                    {mostExpensiveItem && (
+                        <SmartSummaryItem icon={<Gem className="h-5 w-5" />}>
+                            <span>
+                                <strong>Priciest Item:</strong> {formatCurrency(mostExpensiveItem.cost)} for "{mostExpensiveItem.name}".
+                                <span className="block text-xs mt-1">
+                                    {(() => {
+                                        if (mostExpensiveItem.assignees.length === 0) {
+                                            return "This item was unassigned.";
+                                        } else if (mostExpensiveItem.assignees.length === 1) {
+                                            const person = participants.find(p => p.id === mostExpensiveItem.assignees[0]);
+                                            return `Claimed by ${person ? person.name : 'someone'}.`;
+                                        } else {
+                                            return `Shared between ${mostExpensiveItem.assignees.length} people.`;
+                                        }
+                                    })()}
+                                </span>
+                            </span>
+                        </SmartSummaryItem>
+                    )}
                 </ul>
             </CardContent>
         </Card>
