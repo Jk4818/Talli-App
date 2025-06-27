@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -12,6 +13,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/Logo";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -53,6 +56,13 @@ export default function SignupPage() {
           <CardDescription>Enter your email and password to sign up.</CardDescription>
         </CardHeader>
         <CardContent>
+          <Alert className="mb-4 text-left">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Invite-Only Beta</AlertTitle>
+              <AlertDescription>
+                  To create an account, you must use an email address that has been added to the allowlist.
+              </AlertDescription>
+          </Alert>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField

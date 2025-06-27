@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, BarChart, Users, UploadCloud, Divide, Menu } from 'lucide-react';
+import { ArrowRight, BarChart, Users, UploadCloud, Divide, Menu, Rocket } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import Image from 'next/image';
 import {
@@ -21,6 +21,7 @@ import { UserNav } from '@/components/auth/UserNav';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp, fadeIn } from '@/lib/animations';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -161,6 +162,15 @@ export default function Home() {
           <motion.p variants={fadeInUp} className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
             Splitzy makes group expenses simple. Upload a receipt, assign items, and we'll tell you exactly who owes what. Fair, fast, and free.
           </motion.p>
+          <motion.div variants={fadeInUp} className="mt-8 flex justify-center">
+            <Alert className="max-w-md text-left">
+                <Rocket className="h-4 w-4" />
+                <AlertTitle>Welcome to the Beta!</AlertTitle>
+                <AlertDescription>
+                    Splitzy is currently in an invite-only beta. Functionality may change as we improve the app.
+                </AlertDescription>
+            </Alert>
+          </motion.div>
           <motion.div variants={fadeInUp} className="mt-8 flex justify-center gap-4">
             <Button size="lg" asChild>
               <Link href={user ? "/app" : "/login"}>
