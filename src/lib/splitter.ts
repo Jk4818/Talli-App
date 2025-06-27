@@ -65,6 +65,10 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     });
   });
 
+  // This map will track which participants have paid extra pennies due to rounding.
+  const participantRoundingDebt = new Map<string, number>();
+  participants.forEach(p => participantRoundingDebt.set(p.id, 0));
+
   let roundingOccurred = false;
   const roundedItems: SplitSummary['roundedItems'] = [];
   let totalItemCost = 0;
@@ -86,44 +90,43 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       if (item.cost <= 0 || item.assignees.length === 0) return;
       
       const itemShares = new Map<string, number>();
-      let fallbackToEqual = item.splitMode === 'equal';
       let itemCausedRounding = false;
       const adjustments: { participantName: string, amount: number }[] = [];
       
+      let fallbackToEqual = item.splitMode === 'equal';
+
       if (item.splitMode === 'percentage') {
           const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
           if (totalPercentage === 100) {
-              let distributedAmount = 0;
               const calculatedShares: {id: string, share: number}[] = [];
+              let distributedAmount = 0;
 
+              // Calculate everyone's floored share first
               item.assignees.forEach(pid => {
                   const percentage = item.percentageAssignments[pid] || 0;
-                  const share = Math.round((item.cost * percentage) / 100);
+                  const share = Math.floor((item.cost * percentage) / 100);
                   distributedAmount += share;
                   calculatedShares.push({ id: pid, share });
               });
 
               let remainder = item.cost - distributedAmount;
-              if (remainder !== 0) {
-                roundingOccurred = true;
-                itemCausedRounding = true;
-              }
 
-              let i = 0;
-              while(remainder !== 0) {
-                  const direction = remainder > 0 ? 1 : -1;
-                  const pidToAdjust = calculatedShares[i % calculatedShares.length].id;
-                  calculatedShares[i % calculatedShares.length].share += direction;
+              if (remainder > 0) {
+                  roundingOccurred = true;
+                  itemCausedRounding = true;
+
+                  // Sort the assignees by who has paid the least in rounding so far.
+                  const assigneesSortedByDebt = calculatedShares.sort((a, b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0));
                   
-                  const name = participantIdToName.get(pidToAdjust)!;
-                  const existingAdjustment = adjustments.find(a => a.participantName === name);
-                  if (existingAdjustment) {
-                      existingAdjustment.amount += direction;
-                  } else {
-                      adjustments.push({ participantName: name, amount: direction });
+                  // Distribute the remainder pennies.
+                  for (let i = 0; i < remainder; i++) {
+                      const assigneeToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
+                      assigneeToAdjust.share += 1;
+
+                      const pidToAdjust = assigneeToAdjust.id;
+                      participantRoundingDebt.set(pidToAdjust, (participantRoundingDebt.get(pidToAdjust) || 0) + 1);
+                      adjustments.push({ participantName: participantIdToName.get(pidToAdjust)!, amount: 1 });
                   }
-                  remainder -= direction;
-                  i++;
               }
               calculatedShares.forEach(s => itemShares.set(s.id, s.share));
           } else {
@@ -141,21 +144,35 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       }
       
       if (fallbackToEqual) {
-        if (item.assignees.length > 0 && item.cost % item.assignees.length !== 0) {
-            roundingOccurred = true;
-            itemCausedRounding = true;
-        }
-        const baseShare = Math.floor(item.cost / item.assignees.length);
-        let remainder = item.cost % item.assignees.length;
-        item.assignees.forEach(id => {
-            let share = baseShare;
-            if (remainder > 0) {
-                share += 1;
-                adjustments.push({ participantName: participantIdToName.get(id)!, amount: 1 });
-                remainder--;
+        if (item.assignees.length > 0) {
+            if (item.cost % item.assignees.length !== 0) {
+                roundingOccurred = true;
+                itemCausedRounding = true;
             }
-            itemShares.set(id, share);
-        });
+            const baseShare = Math.floor(item.cost / item.assignees.length);
+            let remainder = item.cost % item.assignees.length;
+
+            item.assignees.forEach(id => {
+                itemShares.set(id, baseShare);
+            });
+
+            if (remainder > 0) {
+                // Sort assignees by who has paid the least in rounding so far.
+                const assigneesSortedByDebt = [...item.assignees].sort((a, b) => (participantRoundingDebt.get(a) || 0) - (participantRoundingDebt.get(b) || 0));
+
+                // Distribute the remainder pennies to those with the lowest debt.
+                for (let i = 0; i < remainder; i++) {
+                    const pidToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
+                    itemShares.set(pidToAdjust, (itemShares.get(pidToAdjust) || 0) + 1);
+                    
+                    // Update their global rounding debt accumulator.
+                    participantRoundingDebt.set(pidToAdjust, (participantRoundingDebt.get(pidToAdjust) || 0) + 1);
+                    
+                    // For the UI breakdown.
+                    adjustments.push({ participantName: participantIdToName.get(pidToAdjust)!, amount: 1 });
+                }
+            }
+        }
       }
 
       if (itemCausedRounding) {
@@ -240,8 +257,10 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   let roundingAdjustment: SplitSummary['roundingAdjustment'] | undefined = undefined;
 
   if (roundingDifference !== 0) {
+    roundingOccurred = true;
     const payers = [...finalSummaries.values()].filter(s => s.totalPaid > 0).sort((a,b) => b.totalPaid - a.totalPaid);
-    const personToAdjust = payers.length > 0 ? payers[0] : [...finalSummaries.values()][0];
+    // Find who has paid the least rounding pennies to apply the final adjustment to.
+    const personToAdjust = (payers.length > 0 ? payers : [...finalSummaries.values()]).sort((a,b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0))[0];
 
     if (personToAdjust) {
         const summaryToAdjust = finalSummaries.get(personToAdjust.id);
