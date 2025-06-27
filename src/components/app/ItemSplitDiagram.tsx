@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -26,8 +25,10 @@ interface Position {
 }
 
 interface NodePositions {
-    entry: Position;
-    exit: Position;
+  left: Position;
+  right: Position;
+  top: Position;
+  bottom: Position;
 }
 
 const getInitials = (name: string) => {
@@ -78,40 +79,22 @@ export default function ItemSplitDiagram() {
       [...nodes.participantNodes, ...nodes.itemNodes].forEach(node => {
         if (node.ref.current) {
           const nodeRect = node.ref.current.getBoundingClientRect();
+          const y_mid = nodeRect.top - containerRect.top + nodeRect.height / 2;
+          const x_mid = nodeRect.left - containerRect.left + nodeRect.width / 2;
           
-          let entryPos: Position, exitPos: Position;
-
-          if (node.type === 'participant') {
-             if (isMobile) {
-              const x = nodeRect.left - containerRect.left + nodeRect.width / 2;
-              entryPos = { x, y: nodeRect.top - containerRect.top };
-              exitPos = { x, y: nodeRect.bottom - containerRect.top };
-            } else {
-              const y = nodeRect.top - containerRect.top + nodeRect.height / 2;
-              entryPos = { x: nodeRect.left - containerRect.left, y };
-              exitPos = { x: nodeRect.right - containerRect.left, y };
-            }
-          } else { // item
-            if (isMobile) {
-              const x = nodeRect.left - containerRect.left + nodeRect.width / 2;
-              entryPos = { x, y: nodeRect.top - containerRect.top };
-              exitPos = { x, y: nodeRect.bottom - containerRect.top };
-            } else {
-              const y = nodeRect.top - containerRect.top + nodeRect.height / 2;
-              entryPos = { x: nodeRect.left - containerRect.left, y };
-              exitPos = { x: nodeRect.right - containerRect.left, y };
-            }
-          }
-          
-          newPositions[node.id] = { entry: entryPos, exit: exitPos };
+          newPositions[node.id] = {
+            left: { x: nodeRect.left - containerRect.left, y: y_mid },
+            right: { x: nodeRect.right - containerRect.left, y: y_mid },
+            top: { x: x_mid, y: nodeRect.top - containerRect.top },
+            bottom: { x: x_mid, y: nodeRect.bottom - containerRect.top },
+          };
         }
       });
       setNodePositions(newPositions);
     };
 
-    // Recalculate positions on resize or when mobile state changes
     calculatePositions();
-    const timer = setTimeout(calculatePositions, 100); // Recalc after initial render
+    const timer = setTimeout(calculatePositions, 100);
     const resizeObserver = new ResizeObserver(calculatePositions);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
@@ -147,8 +130,11 @@ export default function ItemSplitDiagram() {
       onClick={() => handleNodeClick(node.id)}
       className={cn(
         "relative z-10 flex items-center gap-3 rounded-lg border bg-card p-2 shadow-sm transition-all duration-300 cursor-pointer",
-        isHighlighted(node) ? 'bg-primary/10 border-primary shadow-lg ring-2 ring-primary/50' : 'opacity-80 hover:opacity-100',
-        !highlightedId && 'opacity-100'
+        highlightedId
+          ? (isHighlighted(node)
+            ? 'border-primary shadow-lg ring-2 ring-primary/50 bg-primary/10'
+            : 'opacity-30')
+          : 'hover:bg-accent hover:text-accent-foreground'
       )}
     >
       {node.type === 'participant' && (
@@ -173,7 +159,7 @@ export default function ItemSplitDiagram() {
         </div>
       </CardHeader>
       <CardContent>
-        <div ref={containerRef} className="relative w-full min-h-[400px] isolate" onClick={(e) => {
+        <div ref={containerRef} className="relative w-full min-h-[400px] isolate pl-8 md:pl-0" onClick={(e) => {
           if (e.target === e.currentTarget) {
             setHighlightedId(null);
           }
@@ -189,14 +175,16 @@ export default function ItemSplitDiagram() {
                   
                   const lineIsHighlighted = isLineHighlighted(itemNode.id, participantId);
                   
-                  const start = participantPos.exit;
-                  const end = itemPos.entry;
+                  let start: Position, end: Position, pathData: string;
 
-                  let pathData: string;
                   if (isMobile) {
-                    const curveOffset = 60; // How far down/up the S-curve bows
-                    pathData = `M ${start.x} ${start.y} C ${start.x} ${start.y + curveOffset}, ${end.x} ${end.y - curveOffset}, ${end.x} ${end.y}`;
+                    start = participantPos.left;
+                    end = itemPos.left;
+                    const curveOffset = 40; // How far out the C-curve bows
+                    pathData = `M ${start.x} ${start.y} C ${start.x - curveOffset} ${start.y}, ${end.x - curveOffset} ${end.y}, ${end.x} ${end.y}`;
                   } else {
+                    start = participantPos.right;
+                    end = itemPos.left;
                     const curveOffset = 60; // How far out the S-curve bows
                     pathData = `M ${start.x} ${start.y} C ${start.x + curveOffset} ${start.y}, ${end.x - curveOffset} ${end.y}, ${end.x} ${end.y}`;
                   }
