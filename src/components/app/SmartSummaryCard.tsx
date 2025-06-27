@@ -15,19 +15,20 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '../ui/button';
+import { Separator } from '../ui/separator';
 
 interface SmartSummaryCardProps {
   summary: SplitSummary;
   participants: Participant[];
+  globalCurrency: string;
 }
-
 
 const SmartSummaryItem = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => (
     <li className="flex items-start gap-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0 mt-1">
             {icon}
         </div>
-        <p className="text-sm text-muted-foreground flex-1">{children}</p>
+        <div className="text-sm text-muted-foreground flex-1">{children}</div>
     </li>
 );
 
@@ -40,7 +41,9 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
       <AlertDialogHeader>
         <AlertDialogTitle>{title}</AlertDialogTitle>
         <AlertDialogDescription asChild>
-          {description}
+          <div className="space-y-4 text-left pt-2 text-sm text-foreground/80">
+            {description}
+          </div>
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -51,7 +54,9 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
 );
 
 
-export default function SmartSummaryCard({ summary, participants }: SmartSummaryCardProps) {
+export default function SmartSummaryCard({ summary, participants, globalCurrency }: SmartSummaryCardProps) {
+    const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
+
     const fairnessMetric = React.useMemo(() => {
         if (!summary.total || participants.length < 2) {
             return "Fairness check not applicable.";
@@ -75,15 +80,39 @@ export default function SmartSummaryCard({ summary, participants }: SmartSummary
       ? "To ensure totals were exact, minor rounding differences were automatically distributed across some shared items. This keeps the final bill penny-perfect."
       : "All items were split perfectly without any need for rounding adjustments. Your math was easy this time!";
 
+    const averageShare = participants.length > 0 ? summary.total / participants.length : 0;
+
     const fairnessInfoDescription = (
-      <div className="space-y-4 text-left pt-2">
-        <p>This metric shows how evenly the total cost was distributed. Here's how it's calculated:</p>
-        <ol className="list-decimal pl-5 space-y-2 text-sm">
-          <li><strong>Find the average:</strong> First, we find the average share per person (`Total Bill ÷ Number of Participants`).</li>
-          <li><strong>Measure deviation:</strong> Then, for each person, we see how far their actual share is from that average.</li>
-          <li><strong>Show the max:</strong> The percentage you see is the largest deviation we found. A lower number means a more even split!</li>
-        </ol>
-      </div>
+      <>
+        <p>This metric shows how evenly the total cost was distributed. Here's the exact calculation for your session:</p>
+        <div className="space-y-3 rounded-md border p-3 bg-muted/50">
+          <div className="flex justify-between">
+            <span>Total Bill:</span>
+            <span className="font-mono">{formatCurrency(summary.total)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Participants:</span>
+            <span className="font-mono">{participants.length}</span>
+          </div>
+          <Separator />
+          <div className="flex justify-between font-semibold">
+            <span>Average Share:</span>
+            <span className="font-mono">{formatCurrency(averageShare)}</span>
+          </div>
+        </div>
+        <p>The deviation for each participant is:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          {summary.participantSummaries.map(p => (
+            <li key={p.id}>
+              <strong>{p.name}:</strong> {formatCurrency(p.totalShare)}
+              <span className="text-muted-foreground ml-2">
+                ({p.totalShare > averageShare ? '+' : ''}{formatCurrency(p.totalShare - averageShare)})
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p>The "Fairness Check" number shows the largest of these deviations as a percentage of the average share.</p>
+      </>
     );
 
     return (
