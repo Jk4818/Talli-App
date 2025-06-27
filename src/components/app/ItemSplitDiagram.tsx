@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -160,7 +159,7 @@ export default function ItemSplitDiagram() {
         </div>
       </CardHeader>
       <CardContent>
-        <div ref={containerRef} className="relative w-full min-h-[400px] isolate" onClick={(e) => {
+        <div ref={containerRef} className="relative w-full min-h-[400px] isolate md:pl-0 pl-10" onClick={(e) => {
           if (e.target === e.currentTarget) {
             setHighlightedId(null);
           }
