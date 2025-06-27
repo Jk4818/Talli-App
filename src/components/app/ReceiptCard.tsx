@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -132,7 +131,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                   Scanning...
                 </Button>
               )}
-              {(receipt.status === 'processed' || receipt.status === 'failed') && (
+              {receipt.status !== 'processing' && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="icon">
