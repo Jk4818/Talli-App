@@ -56,6 +56,11 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
       return receiptTotal < 0;
     });
   }, [receipts, items]);
+  
+  const hasOrphanedItems = useMemo(() => {
+    const receiptIds = new Set(receipts.map(r => r.id));
+    return items.some(item => !receiptIds.has(item.receiptId));
+  }, [items, receipts]);
 
   const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
   const hasAmbiguousItems = items.some(item => item.isAmbiguous);
@@ -67,6 +72,9 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     if (hasAmbiguousItems) {
       return 'Please resolve all ambiguous items before continuing.';
     }
+    if (hasOrphanedItems) {
+      return 'Some items are not assigned to a valid receipt. Please edit them in the item list below.';
+    }
     if (participants.length === 0) {
         return 'Please add at least one participant to continue.';
     }
@@ -77,7 +85,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
         return 'A payer must be assigned to every receipt.';
     }
     return 'Please complete all setup steps to continue.';
-  }, [hasConflictingReceipts, hasAmbiguousItems, participants.length, receipts]);
+  }, [hasConflictingReceipts, hasAmbiguousItems, participants.length, receipts, hasOrphanedItems]);
 
   const isStep2Complete = useMemo(() => {
     return items.every(item => {
@@ -132,7 +140,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
           </div>
           <div>
             {step === 1 && (
-              !isStep1Complete || hasAmbiguousItems || hasConflictingReceipts ? (
+              !isStep1Complete || hasAmbiguousItems || hasConflictingReceipts || hasOrphanedItems ? (
                 <AccessibleTooltip content={<p>{step1TooltipMessage}</p>}>
                   {/* The span wrapper is crucial for the tooltip to work on a disabled button */}
                   <span tabIndex={0}>

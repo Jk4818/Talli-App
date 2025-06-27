@@ -41,6 +41,10 @@ export default function Step1Setup() {
   const receiptFileInputRef = React.useRef<HTMLInputElement>(null);
   const sessionImportInputRef = React.useRef<HTMLInputElement>(null);
 
+  const hasOrphanedItems = React.useMemo(() => {
+    const receiptIds = new Set(receipts.map(r => r.id));
+    return items.some(item => !receiptIds.has(item.receiptId));
+  }, [items, receipts]);
   const hasAmbiguousItems = React.useMemo(() => items.some(item => item.isAmbiguous), [items]);
   const hasConflictingReceipts = React.useMemo(() => {
     return receipts.some(receipt => {
@@ -280,12 +284,13 @@ export default function Step1Setup() {
         </Card>
       </motion.div>
       
-      {(hasAmbiguousItems || hasConflictingReceipts) && (
+      {(hasAmbiguousItems || hasConflictingReceipts || hasOrphanedItems) && (
         <motion.div variants={fadeInUp}>
             <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Action Required</AlertTitle>
                 <AlertDescription>
+                    {hasOrphanedItems && <p>Some items are not linked to a valid receipt. Please edit these items in the list below and assign them to a receipt.</p>}
                     {hasConflictingReceipts && <p>At least one receipt has a negative total. Please resolve conflicts in the expanded receipt sections.</p>}
                     {hasAmbiguousItems && <p>Some items were flagged as ambiguous. Please review them in the list below and uncheck the "Ambiguous" toggle to confirm they are correct.</p>}
                     <p className='mt-2'>You cannot proceed until all issues are resolved.</p>
