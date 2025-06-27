@@ -8,7 +8,6 @@ export interface Item {
   receiptId: string;
   name: string;
   cost: number; // in cents
-  isAmbiguous: boolean;
   assignees: string[]; // array of participant IDs
   splitMode: 'equal' | 'percentage' | 'exact';
   percentageAssignments: { [participantId: string]: number }; // participantId -> percentage (e.g. 50 for 50%)

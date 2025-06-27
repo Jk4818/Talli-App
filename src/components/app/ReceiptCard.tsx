@@ -103,6 +103,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
               defaultValue={receipt.name}
               onBlur={(e) => handleUpdateReceipt({ name: e.target.value })}
               className="text-lg font-semibold border-0 shadow-none -ml-3 focus-visible:ring-1 focus-visible:ring-ring flex-1"
+              maxLength={50}
             />
             <div className='flex items-center gap-2 flex-shrink-0'>
               {receipt.imageDataUri && (

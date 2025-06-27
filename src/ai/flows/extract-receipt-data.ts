@@ -30,7 +30,6 @@ const ExtractReceiptDataOutputSchema = z.object({
     z.object({
       name: z.string().describe('The name of the item.'),
       cost: z.number().describe('The cost of the item.'),
-      isAmbiguous: z.boolean().describe('Whether the item is ambiguous and requires manual review.'),
     })
   ).describe('The list of items extracted from the receipt.'),
   discounts: z.array(
@@ -61,10 +60,9 @@ const extractReceiptDataPrompt = ai.definePrompt({
 
 You will receive an image of a receipt. Your task is to analyze the image and extract the following information:
 1.  A list of all individual items, including their name and cost.
-2.  For each item, determine if it is ambiguous. An item is considered ambiguous if its name is unusual, illegible, or if its cost seems disproportionately high or low. Set the 'isAmbiguous' flag to 'true' for these items, and 'false' otherwise.
-3.  A list of all discounts applied, including the discount name and the amount.
-4.  A list of all service charges or tips, including a description and the amount.
-5.  The currency of the receipt (e.g., USD, GBP, EUR).
+2.  A list of all discounts applied, including the discount name and the amount.
+3.  A list of all service charges or tips, including a description and the amount.
+4.  The currency of the receipt (e.g., USD, GBP, EUR).
 
 Analyze the following receipt image and return the data in the specified JSON format.
 

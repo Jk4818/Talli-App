@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -7,8 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Trash2, AlertTriangle, ArrowUpDown, ListOrdered, Pencil } from 'lucide-react';
+import { Trash2, ArrowUpDown, ListOrdered, Pencil } from 'lucide-react';
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
 import { Item } from '@/lib/types';
@@ -98,7 +98,6 @@ export default function ItemListEditor() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">Ambiguous</TableHead>
                   <TableHead>
                     <Button variant="ghost" onClick={() => requestSort('name')}>
                       Item Name {getSortIndicator('name')}
@@ -120,17 +119,6 @@ export default function ItemListEditor() {
                     const currency = receipt?.currency || globalCurrency;
                     return (
                       <TableRow key={item.id}>
-                        <TableCell className="text-center">
-                          <div className='flex justify-center'>
-                              <Switch
-                                  id={`ambiguous-${item.id}`}
-                                  checked={item.isAmbiguous}
-                                  onCheckedChange={(checked) => dispatch(updateItem({ id: item.id, isAmbiguous: checked }))}
-                                  aria-label="Toggle ambiguous flag"
-                              />
-                              {item.isAmbiguous && <AlertTriangle className="h-4 w-4 text-amber-500 ml-2" />}
-                          </div>
-                        </TableCell>
                         <TableCell className='font-medium'>
                           <AccessibleTooltip content={<p>{item.name}</p>}>
                             <div className="max-w-[250px] truncate">{item.name}</div>
@@ -153,7 +141,7 @@ export default function ItemListEditor() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                       No items found.
                     </TableCell>
                   </TableRow>
