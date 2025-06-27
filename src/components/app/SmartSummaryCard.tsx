@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { SplitSummary, Participant, Item } from '@/lib/types';
+import { SplitSummary, Participant, Item, Receipt } from '@/lib/types';
 import { Lightbulb, Scale, Sparkles, Info } from 'lucide-react';
 import {
   AlertDialog,
@@ -21,6 +21,7 @@ interface SmartSummaryCardProps {
   summary: SplitSummary;
   participants: Participant[];
   items: Item[];
+  receipts: Receipt[];
   globalCurrency: string;
 }
 
@@ -55,34 +56,11 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
 );
 
 
-export default function SmartSummaryCard({ summary, participants, items, globalCurrency }: SmartSummaryCardProps) {
+export default function SmartSummaryCard({ summary, participants, items, receipts, globalCurrency }: SmartSummaryCardProps) {
     const formatCurrency = React.useCallback((amount: number) => {
       if (typeof amount !== 'number') return '';
       return (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
     }, [globalCurrency]);
-
-    const fairnessMetric = React.useMemo(() => {
-        if (!summary.total || participants.length < 2) {
-            return "Fairness check not applicable.";
-        }
-        const averageShare = summary.total / participants.length;
-        if (averageShare === 0) {
-            return "Everyone's share is zero. Perfectly balanced!";
-        }
-        
-        const deviations = summary.participantSummaries.map(p =>
-            Math.abs(p.totalShare - averageShare)
-        );
-        
-        const maxDeviation = Math.max(...deviations);
-        const maxDeviationPercent = (maxDeviation / averageShare) * 100;
-        
-        if (maxDeviationPercent < 0.1) {
-            return "The split is almost perfectly even. Excellent!";
-        }
-
-        return `All payers are within ±${maxDeviationPercent.toFixed(1)}% of an equal share. Nicely balanced!`;
-    }, [summary, participants]);
 
     const averageShare = participants.length > 0 ? summary.total / participants.length : 0;
     
@@ -121,24 +99,83 @@ export default function SmartSummaryCard({ summary, participants, items, globalC
 
     const { roundingAdjustment } = summary;
 
-    const pennyPerfectExplanation = React.useMemo(() => {
+    const pennyPerfectContent = React.useMemo(() => {
         if (!roundingAdjustment || roundingAdjustment.amount === 0) {
-            return "All items were split perfectly without any need for rounding adjustments. Your math was easy this time!";
+            return {
+                mainText: "All items were split perfectly without any need for rounding adjustments. Your math was easy this time!",
+                dialogDescription: null,
+            };
         }
-
-        const exampleItem = items.find(i =>
-            i.splitMode === 'equal' && i.assignees.length > 1 && i.cost % i.assignees.length !== 0
-        );
 
         const adjustmentVerb = roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from';
-        const adjustmentText = `a final rounding adjustment of ${formatCurrency(Math.abs(roundingAdjustment.amount))} was ${adjustmentVerb} ${roundingAdjustment.participantName}'s share.`;
+        const mainText = `To ensure the total was exact, a final rounding adjustment of ${formatCurrency(Math.abs(roundingAdjustment.amount))} was ${adjustmentVerb} ${roundingAdjustment.participantName}'s share.`;
 
+        const exampleItem = items.find(i =>
+            i.splitMode === 'equal' && i.assignees.length > 1 && (i.cost % i.assignees.length !== 0)
+        );
+        
+        let dialogDescription;
         if (exampleItem) {
-            return `Because items like '${exampleItem.name}' couldn't be split perfectly down to the cent, ${adjustmentText}`;
+            const receipt = receipts.find(r => r.id === exampleItem.receiptId);
+            const currency = receipt?.currency || globalCurrency;
+            
+            dialogDescription = (
+                <>
+                    <p>This adjustment is needed when individual shares of an item result in fractions of a cent. The app handles this automatically to ensure the final bill is exact.</p>
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/50 mt-4">
+                        <p className="font-semibold">Example from your session:</p>
+                        <div className="flex justify-between">
+                            <span>Item:</span>
+                            <span className="font-mono">{exampleItem.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Cost:</span>
+                            <span className="font-mono">{(exampleItem.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}</span>
+                        </div>
+                         <div className="flex justify-between">
+                            <span>Split between:</span>
+                            <span className="font-mono">{exampleItem.assignees.length} people</span>
+                        </div>
+                        <Separator />
+                        <p className="text-xs text-muted-foreground">
+                            This item's cost doesn't divide perfectly, contributing to the final rounding adjustment.
+                        </p>
+                    </div>
+                </>
+            );
+        } else {
+            dialogDescription = (
+                 <p>This adjustment is necessary because the sum of all individual shares, when calculated with high precision and then rounded to the nearest cent, didn't perfectly match the rounded grand total. This final micro-adjustment ensures everything adds up perfectly.</p>
+            );
         }
 
-        return `To ensure the total was exact, ${adjustmentText}`;
-    }, [summary, items, formatCurrency]);
+        return { mainText, dialogDescription };
+
+    }, [summary, items, receipts, globalCurrency, formatCurrency]);
+
+
+    const fairnessMetric = React.useMemo(() => {
+        if (!summary.total || participants.length < 2) {
+            return "Fairness check not applicable.";
+        }
+        if (averageShare === 0) {
+            return "Everyone's share is zero. Perfectly balanced!";
+        }
+        
+        const deviations = summary.participantSummaries.map(p =>
+            Math.abs(p.totalShare - averageShare)
+        );
+        
+        const maxDeviation = Math.max(...deviations);
+        const maxDeviationPercent = (maxDeviation / averageShare) * 100;
+        
+        if (maxDeviationPercent < 0.1) {
+            return "The split is almost perfectly even. Excellent!";
+        }
+
+        return `All payers are within ±${maxDeviationPercent.toFixed(1)}% of an equal share. Nicely balanced!`;
+    }, [summary, participants, averageShare]);
+
 
     return (
         <Card>
@@ -170,8 +207,27 @@ export default function SmartSummaryCard({ summary, participants, items, globalC
                        </div>
                     </SmartSummaryItem>
                      <SmartSummaryItem icon={<Sparkles className="h-5 w-5" />}>
-                        <strong>Penny Perfect:</strong>{' '}
-                        {pennyPerfectExplanation}
+                        <div className="flex items-center gap-1">
+                           <span>
+                                <strong>Penny Perfect:</strong>{' '}
+                                {pennyPerfectContent.mainText}
+                           </span>
+                           {pennyPerfectContent.dialogDescription && (
+                               <InfoDialog
+                                    title="Penny Perfect Explanation"
+                                    description={pennyPerfectContent.dialogDescription}
+                                    trigger={
+                                        <Button
+                                            variant="link"
+                                            className="p-0 m-0 h-4 w-4 inline-flex align-middle"
+                                            aria-label="More information about rounding adjustment"
+                                        >
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Button>
+                                    }
+                               />
+                           )}
+                       </div>
                     </SmartSummaryItem>
                 </ul>
             </CardContent>

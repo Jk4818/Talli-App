@@ -255,7 +255,7 @@ export default function Step3Summary() {
                 <SharePieChart summary={calculatedSummary} />
             </CardContent>
           </Card>
-          <SmartSummaryCard summary={calculatedSummary} participants={participants} items={items} globalCurrency={globalCurrency} />
+          <SmartSummaryCard summary={calculatedSummary} participants={participants} items={items} receipts={receipts} globalCurrency={globalCurrency} />
         </div>
       </motion.div>
       <motion.div variants={fadeInUp}>
