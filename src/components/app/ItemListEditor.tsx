@@ -7,7 +7,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, ArrowUpDown, ListOrdered, Pencil, MoreHorizontal, Search, Users, AlertCircle, ListX } from 'lucide-react';
+import { Trash2, ArrowUpDown, ListOrdered, MoreHorizontal, Search, Users, AlertCircle, ListX } from 'lucide-react';
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
 import { Item } from '@/lib/types';
@@ -126,25 +126,44 @@ export default function ItemListEditor() {
                 const receipt = receipts.find(r => r.id === item.receiptId);
                 const currency = receipt?.currency || globalCurrency;
                 return (
-                  <div key={item.id} className="rounded-lg border bg-background p-4 flex flex-col justify-between gap-4 transition-shadow hover:shadow-md">
+                  <div
+                    key={item.id}
+                    className="group rounded-lg border bg-background p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                    onClick={() => setEditingItem(item)}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setEditingItem(item);
+                      }
+                    }}
+                  >
                     <div>
                         <div className="flex justify-between items-start gap-2">
                             <AccessibleTooltip content={<p>{item.name}</p>}>
-                                <h3 className="font-semibold leading-snug truncate cursor-default">{item.name}</h3>
+                                <h3 className="font-semibold leading-snug truncate">{item.name}</h3>
                             </AccessibleTooltip>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className='h-8 w-8 -mt-1 -mr-1 shrink-0'>
+                                    {/* Stop propagation so clicking the button doesn't trigger the card's onClick */}
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      aria-label={`Actions for ${item.name}`}
+                                      className='relative z-10 h-8 w-8 -mt-1 -mr-1 shrink-0 opacity-50 group-hover:opacity-100 group-focus:opacity-100 transition-opacity'
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
                                         <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setEditingItem(item)}>
-                                        <Pencil className="mr-2 h-4 w-4" />
-                                        <span>Edit</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => dispatch(removeItem(item.id))} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                                    <DropdownMenuItem 
+                                      onClick={(e) => {
+                                          e.stopPropagation();
+                                          dispatch(removeItem(item.id))
+                                      }} 
+                                      className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    >
                                         <Trash2 className="mr-2 h-4 w-4" />
                                         <span>Delete</span>
                                     </DropdownMenuItem>
