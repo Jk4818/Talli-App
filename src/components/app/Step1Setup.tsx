@@ -6,11 +6,10 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles } from 'lucide-react';
-import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt } from '@/lib/redux/slices/sessionSlice';
+import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt, restoreSession } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
-import ImportButton from './ImportButton';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
@@ -28,12 +27,19 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
+import { useRouter } from 'next/navigation';
+import type { SessionState } from '@/lib/types';
 
 export default function Step1Setup() {
-  const { participants, receipts, items, error, globalCurrency, isDemoSession } = useSelector((state: RootState) => state.session);
+  const session = useSelector((state: RootState) => state.session);
+  const { participants, receipts, items, error, globalCurrency, isDemoSession } = session;
+
   const dispatch = useDispatch<AppDispatch>();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const { toast } = useToast();
+  
+  const receiptFileInputRef = React.useRef<HTMLInputElement>(null);
+  const sessionImportInputRef = React.useRef<HTMLInputElement>(null);
 
   const hasAmbiguousItems = React.useMemo(() => items.some(item => item.isAmbiguous), [items]);
 
@@ -47,19 +53,18 @@ export default function Step1Setup() {
     }
   }, [error, toast]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReceiptFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       dispatch(addReceiptFromFile({file, isDemo: isDemoSession}));
     }
-    // Reset file input to allow uploading the same file again
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (receiptFileInputRef.current) {
+      receiptFileInputRef.current.value = '';
     }
   };
 
   const handleUploadClick = () => {
-    fileInputRef.current?.click();
+    receiptFileInputRef.current?.click();
   };
   
   const handleGlobalCurrencyChange = (currency: string) => {
@@ -81,6 +86,55 @@ export default function Step1Setup() {
         description: 'A new blank receipt has been added. You can now add items to it below.',
     });
   };
+
+  const handleImportClick = () => {
+    sessionImportInputRef.current?.click();
+  };
+
+  const handleSessionFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text !== 'string') {
+          throw new Error('Failed to read file content.');
+        }
+        const data = JSON.parse(text) as Partial<SessionState>;
+
+        if (data && typeof data === 'object' && 'participants' in data && 'items' in data && 'receipts' in data) {
+          dispatch(restoreSession(data));
+          toast({
+            title: 'Session Imported',
+            description: 'Your session has been successfully restored.',
+          });
+          router.push(isDemoSession ? '/demo' : '/app');
+        } else {
+          throw new Error('Invalid session file format.');
+        }
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Import Failed',
+          description: error instanceof Error ? error.message : 'Could not import the session file.',
+        });
+      } finally {
+        if (sessionImportInputRef.current) {
+          sessionImportInputRef.current.value = '';
+        }
+      }
+    };
+    reader.onerror = () => {
+        toast({
+            variant: 'destructive',
+            title: 'Import Failed',
+            description: 'There was an error reading the file.',
+        });
+    }
+    reader.readAsText(file);
+  };
   
   const isSessionActive = participants.length > 0 || receipts.length > 0 || items.length > 0;
 
@@ -92,11 +146,25 @@ export default function Step1Setup() {
       animate="show"
       exit="exit"
     >
+      <input
+        type="file"
+        ref={sessionImportInputRef}
+        onChange={handleSessionFileChange}
+        className="hidden"
+        accept="application/json"
+      />
+      <input
+        type="file"
+        ref={receiptFileInputRef}
+        onChange={handleReceiptFileChange}
+        className="hidden"
+        accept="image/*"
+      />
       <motion.div variants={fadeInUp} className="flex flex-wrap items-center justify-end gap-2">
         <AccessibleTooltip content={<p>Import a previously exported session from a JSON file.</p>}>
-          <ImportButton variant="outline">
+          <Button variant="outline" onClick={handleImportClick}>
             <Upload className="mr-2 h-4 w-4" /> Import Session
-          </ImportButton>
+          </Button>
         </AccessibleTooltip>
 
         {isSessionActive && (
@@ -167,14 +235,7 @@ export default function Step1Setup() {
                     </SelectContent>
                     </Select>
                 </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept="image/*"
-              />
-              <AccessibleTooltip content={<p>Create a new receipt without an image and add items manually.</p>}>
+               <AccessibleTooltip content={<p>Create a new receipt without an image and add items manually.</p>}>
                   <Button onClick={handleAddManually} size="sm" className="flex-1 sm:flex-none">
                     <FilePlus2 className="mr-2 h-4 w-4" />
                     Add Manually
