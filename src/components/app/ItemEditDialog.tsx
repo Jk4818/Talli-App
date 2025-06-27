@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -7,6 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
+
 
 interface ItemEditDialogProps {
   item: Item | null;
@@ -14,9 +28,10 @@ interface ItemEditDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSave: (updates: { name: string; cost: number; receiptId: string }) => void;
+  onDelete: (itemId: string) => void;
 }
 
-export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, onSave }: ItemEditDialogProps) {
+export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, onSave, onDelete }: ItemEditDialogProps) {
   const [name, setName] = useState('');
   const [cost, setCost] = useState('');
   const [receiptId, setReceiptId] = useState('');
@@ -36,6 +51,13 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
       onOpenChange(false);
     }
   };
+  
+  const handleDelete = () => {
+      if(item) {
+          onDelete(item.id);
+          onOpenChange(false);
+      }
+  }
 
   if (!item) return null;
 
@@ -89,9 +111,31 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
             </Select>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave}>Save Changes</Button>
+        <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="sm:mr-auto mt-2 sm:mt-0 w-full sm:w-auto">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Item
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the item "{item?.name}". This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button onClick={handleSave}>Save Changes</Button>
+            </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
