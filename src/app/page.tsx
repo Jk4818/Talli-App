@@ -13,13 +13,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/firebase/auth';
@@ -68,26 +61,14 @@ export default function Home() {
           
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-2 md:flex">
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <Link href="/demo" asChild>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                      Demo
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-                {user && (
-                  <NavigationMenuItem>
-                    <Link href="/app" asChild>
-                      <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                        Go to App
-                      </NavigationMenuLink>
-                    </Link>
-                  </NavigationMenuItem>
-                )}
-              </NavigationMenuList>
-            </NavigationMenu>
+             <Link href="/demo" className={buttonVariants({ variant: 'ghost' })}>
+                Demo
+              </Link>
+              {user && (
+                <Link href="/app" className={buttonVariants({ variant: 'ghost' })}>
+                  Go to App
+                </Link>
+              )}
 
             <div className="w-px h-6 bg-border mx-2" />
 

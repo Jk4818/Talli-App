@@ -3,67 +3,59 @@
 import { useAuth } from '@/lib/firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
-import { SidebarProvider, Sidebar, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuSkeleton } from '@/components/ui/sidebar';
+import { AppHeader } from '@/components/app/AppHeader';
 import { Skeleton } from '@/components/ui/skeleton';
-import AppSidebar from '@/components/app/AppSidebar';
-import AppNavbar from '@/components/app/AppNavbar';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // If the auth state is not loading and there is no user, redirect to login.
+    // If auth state is not loading and no user, redirect to login page.
     if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
 
-  // While the auth state is loading, or if there's no user (and redirection is imminent),
-  // show a skeleton screen that matches the new app layout.
+  // While auth state is loading or if there's no user (and redirection is imminent)
   if (loading || !user) {
     return (
-        <SidebarProvider>
-            <Sidebar>
-                <SidebarHeader>
+        <div className="flex flex-col min-h-dvh">
+            {/* Skeleton for Header */}
+            <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+                <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
                     <Skeleton className="h-8 w-32" />
-                </SidebarHeader>
-                <SidebarContent className="p-2">
-                    <SidebarMenu>
-                       <SidebarMenuSkeleton showIcon />
-                       <SidebarMenuSkeleton showIcon />
-                       <SidebarMenuSkeleton showIcon />
-                    </SidebarMenu>
-                </SidebarContent>
-            </Sidebar>
-            <SidebarInset>
-                <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:justify-end">
+                    <Skeleton className="h-8 w-48 hidden sm:block" />
                     <Skeleton className="h-10 w-10 rounded-full" />
-                </header>
-                <main className="flex-1 p-4 md:p-8 overflow-auto bg-secondary/50">
-                    <div className="space-y-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <Skeleton className="h-64 lg:col-span-1" />
-                            <Skeleton className="h-64 lg:col-span-2" />
-                        </div>
-                        <Skeleton className="h-96 w-full" />
+                </div>
+            </header>
+            {/* Skeleton for main content area */}
+            <main className="flex-1 flex flex-col bg-secondary/50 p-4 md:p-8">
+                <div className="space-y-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <Skeleton className="h-64 lg:col-span-1" />
+                        <Skeleton className="h-64 lg:col-span-2" />
                     </div>
-                </main>
-            </SidebarInset>
-        </SidebarProvider>
+                    <Skeleton className="h-96 w-full" />
+                </div>
+                 {/* Skeleton for footer */}
+                <footer className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
+                    <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+                        <Skeleton className="h-10 w-24" />
+                        <Skeleton className="h-10 w-32" />
+                    </div>
+                </footer>
+            </main>
+        </div>
     );
   }
 
-  // If the user is authenticated, render the main application with the new sidebar layout.
   return (
-    <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-            <AppNavbar />
-            <div className="flex-1 overflow-auto bg-secondary/50">
-                {children}
-            </div>
-        </SidebarInset>
-    </SidebarProvider>
-    );
+    <div className="flex flex-col min-h-dvh">
+      <AppHeader />
+      <main className="flex-1 flex flex-col bg-secondary/50">
+        {children}
+      </main>
+    </div>
+  );
 }
