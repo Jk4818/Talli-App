@@ -54,7 +54,7 @@ export default function Step3Summary() {
     // The calculation function is pure and derives its results from the session state.
     // The `paid` status of settlements is handled separately in the component's render logic.
     return calculateSplits(sessionState);
-  }, [participants, items, receipts, globalCurrency, sessionState]);
+  }, [sessionState]);
 
 
   const handleReset = () => {
@@ -255,7 +255,7 @@ export default function Step3Summary() {
                 <SharePieChart summary={calculatedSummary} />
             </CardContent>
           </Card>
-          <SmartSummaryCard summary={calculatedSummary} participants={participants} globalCurrency={globalCurrency} />
+          <SmartSummaryCard summary={calculatedSummary} participants={participants} items={items} globalCurrency={globalCurrency} />
         </div>
       </motion.div>
       <motion.div variants={fadeInUp}>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { SplitSummary, Participant } from '@/lib/types';
+import { SplitSummary, Participant, Item } from '@/lib/types';
 import { Lightbulb, Scale, Sparkles, Info } from 'lucide-react';
 import {
   AlertDialog,
@@ -20,6 +20,7 @@ import { Separator } from '../ui/separator';
 interface SmartSummaryCardProps {
   summary: SplitSummary;
   participants: Participant[];
+  items: Item[];
   globalCurrency: string;
 }
 
@@ -54,8 +55,11 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
 );
 
 
-export default function SmartSummaryCard({ summary, participants, globalCurrency }: SmartSummaryCardProps) {
-    const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
+export default function SmartSummaryCard({ summary, participants, items, globalCurrency }: SmartSummaryCardProps) {
+    const formatCurrency = React.useCallback((amount: number) => {
+      if (typeof amount !== 'number') return '';
+      return (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
+    }, [globalCurrency]);
 
     const fairnessMetric = React.useMemo(() => {
         if (!summary.total || participants.length < 2) {
@@ -73,12 +77,15 @@ export default function SmartSummaryCard({ summary, participants, globalCurrency
         const maxDeviation = Math.max(...deviations);
         const maxDeviationPercent = (maxDeviation / averageShare) * 100;
         
+        if (maxDeviationPercent < 0.1) {
+            return "The split is almost perfectly even. Excellent!";
+        }
+
         return `All payers are within ±${maxDeviationPercent.toFixed(1)}% of an equal share. Nicely balanced!`;
     }, [summary, participants]);
 
     const averageShare = participants.length > 0 ? summary.total / participants.length : 0;
-    const { roundingAdjustment } = summary;
-
+    
     const fairnessInfoDescription = (
       <>
         <p>This metric shows how evenly the total cost was distributed. Here's the exact calculation for your session:</p>
@@ -112,6 +119,27 @@ export default function SmartSummaryCard({ summary, participants, globalCurrency
       </>
     );
 
+    const { roundingAdjustment } = summary;
+
+    const pennyPerfectExplanation = React.useMemo(() => {
+        if (!roundingAdjustment || roundingAdjustment.amount === 0) {
+            return "All items were split perfectly without any need for rounding adjustments. Your math was easy this time!";
+        }
+
+        const exampleItem = items.find(i =>
+            i.splitMode === 'equal' && i.assignees.length > 1 && i.cost % i.assignees.length !== 0
+        );
+
+        const adjustmentVerb = roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from';
+        const adjustmentText = `a final rounding adjustment of ${formatCurrency(Math.abs(roundingAdjustment.amount))} was ${adjustmentVerb} ${roundingAdjustment.participantName}'s share.`;
+
+        if (exampleItem) {
+            return `Because items like '${exampleItem.name}' couldn't be split perfectly down to the cent, ${adjustmentText}`;
+        }
+
+        return `To ensure the total was exact, ${adjustmentText}`;
+    }, [summary, items, formatCurrency]);
+
     return (
         <Card>
             <CardHeader className='flex-row items-center gap-4 space-y-0'>
@@ -124,28 +152,26 @@ export default function SmartSummaryCard({ summary, participants, globalCurrency
             <CardContent>
                 <ul className="space-y-5">
                     <SmartSummaryItem icon={<Scale className="h-5 w-5" />}>
-                        <strong>Fairness Check:</strong> {fairnessMetric}{' '}
-                        <InfoDialog
-                          title="Fairness Check Calculation"
-                          description={fairnessInfoDescription}
-                          trigger={
-                            <Button
-                                variant="link"
-                                className="p-0 m-0 h-4 w-4 inline-flex align-middle"
-                                aria-label="More information about fairness check"
-                            >
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          }
-                        />
+                       <div className="flex items-center gap-1">
+                           <span><strong>Fairness Check:</strong> {fairnessMetric}</span>
+                           <InfoDialog
+                                title="Fairness Check Calculation"
+                                description={fairnessInfoDescription}
+                                trigger={
+                                    <Button
+                                        variant="link"
+                                        className="p-0 m-0 h-4 w-4 inline-flex align-middle"
+                                        aria-label="More information about fairness check"
+                                    >
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                }
+                           />
+                       </div>
                     </SmartSummaryItem>
                      <SmartSummaryItem icon={<Sparkles className="h-5 w-5" />}>
                         <strong>Penny Perfect:</strong>{' '}
-                        {roundingAdjustment && roundingAdjustment.amount !== 0 ? (
-                            `To ensure the total was exact, a final rounding adjustment of ${formatCurrency(roundingAdjustment.amount)} was made to ${roundingAdjustment.participantName}'s share.`
-                        ) : (
-                            'All items were split perfectly without any need for rounding adjustments. Your math was easy this time!'
-                        )}
+                        {pennyPerfectExplanation}
                     </SmartSummaryItem>
                 </ul>
             </CardContent>
