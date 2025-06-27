@@ -18,14 +18,14 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   const { step, participants, items, receipts, isDemoSession } = useSelector((state: RootState) => state.session);
 
   useEffect(() => {
-    if (isDemo) {
+    // In demo mode, only load the demo data if the session isn't already a demo.
+    // This prevents the demo data from reloading every time, e.g., after a reset.
+    if (isDemo && !isDemoSession) {
       dispatch(loadDemoData());
-    } else {
+    } else if (!isDemo && isDemoSession) {
       // On the main app, if we are in a demo session, reset it.
       // This happens if a user navigates from /demo to /app.
-      if (isDemoSession) {
-        dispatch(resetSession());
-      }
+      dispatch(resetSession());
     }
   }, [dispatch, isDemo, isDemoSession]);
 
