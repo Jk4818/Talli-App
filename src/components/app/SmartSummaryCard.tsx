@@ -7,6 +7,11 @@ import { SplitSummary, Participant } from '@/lib/types';
 import { Lightbulb, Scale, ShieldCheck, Sparkles, Info } from 'lucide-react';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 
+interface SmartSummaryCardProps {
+    summary: SplitSummary;
+    participants: Participant[];
+}
+
 const SmartSummaryItem = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => (
     <li className="flex items-start gap-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0 mt-1">
@@ -38,7 +43,7 @@ export default function SmartSummaryCard({ summary, participants }: SmartSummary
 
     const confidenceLevel = "We're 97% confident this split is correct, based on receipt scanning and item assignment.";
     
-    const roundingExplanation = "To ensure penny-perfect totals, any rounding differences from splitting items (usually just a single cent) are automatically and fairly distributed among the participants involved in that specific split.";
+    const roundingExplanation = "To ensure the final bill is exact, tiny rounding differences (often just a single cent) are automatically distributed among the participants of a split. This guarantees the total is always penny-perfect.";
 
     const fairnessInfo = (
         <div className="space-y-2 text-left">
@@ -69,7 +74,9 @@ export default function SmartSummaryCard({ summary, participants }: SmartSummary
                         <span>
                             <strong>Fairness Check:</strong> {fairnessMetric}{' '}
                             <AccessibleTooltip content={fairnessInfo}>
-                                <Info className="inline-block h-4 w-4 align-text-bottom text-muted-foreground cursor-help" />
+                                <span className="inline-flex cursor-help" aria-label="More information about fairness check">
+                                    <Info className="inline-block h-4 w-4 align-text-bottom text-muted-foreground" />
+                                </span>
                             </AccessibleTooltip>
                         </span>
                     </SmartSummaryItem>
@@ -77,7 +84,9 @@ export default function SmartSummaryCard({ summary, participants }: SmartSummary
                          <span>
                             <strong>Split Confidence:</strong> {confidenceLevel}{' '}
                             <AccessibleTooltip content={confidenceInfo}>
-                                <Info className="inline-block h-4 w-4 align-text-bottom text-muted-foreground cursor-help" />
+                                <span className="inline-flex cursor-help" aria-label="More information about split confidence">
+                                    <Info className="inline-block h-4 w-4 align-text-bottom text-muted-foreground" />
+                                </span>
                             </AccessibleTooltip>
                         </span>
                     </SmartSummaryItem>
