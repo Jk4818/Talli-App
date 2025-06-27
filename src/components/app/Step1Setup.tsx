@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles, Plus } from 'lucide-react';
+import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles } from 'lucide-react';
 import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt, restoreSession } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
@@ -23,12 +23,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
@@ -230,75 +224,49 @@ export default function Step1Setup() {
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <ReceiptText className="w-8 h-8 text-primary" />
-              <div>
-                <CardTitle>Receipts</CardTitle>
-                <CardDescription>Upload and manage your receipts.</CardDescription>
-              </div>
-            </div>
-            <div className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-auto sm:justify-end">
-                <div className="flex items-center gap-2">
-                    <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
-                    <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
-                    <SelectTrigger id="global-currency" className="w-[90px] h-9">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="CAD">CAD</SelectItem>
-                      <SelectItem value="AUD">AUD</SelectItem>
-                      <SelectItem value="JPY">JPY</SelectItem>
-                      <SelectItem value="INR">INR</SelectItem>
-                      <SelectItem value="CNY">CNY</SelectItem>
-                      <SelectItem value="CHF">CHF</SelectItem>
-                      <SelectItem value="NZD">NZD</SelectItem>
-                    </SelectContent>
-                    </Select>
-                </div>
-               
-                {/* Desktop Buttons */}
-                <div className="hidden items-center gap-2 sm:flex">
-                    <AccessibleTooltip content={<p>Create a new receipt without an image and add items manually.</p>}>
-                        <Button onClick={handleAddManually} size="sm" variant='outline'>
-                            <FilePlus2 className="mr-2 h-4 w-4" />
-                            Add Manually
-                        </Button>
-                    </AccessibleTooltip>
-                    <AccessibleTooltip content={<p>Upload a receipt image. In real sessions, AI will scan it. In demo mode, you can add items manually.</p>}>
-                        <Button onClick={handleUploadClick} size="sm">
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            Upload Receipt
-                        </Button>
-                    </AccessibleTooltip>
-                </div>
-
-                {/* Mobile Dropdown */}
-                <div className="flex sm:hidden">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="sm">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleUploadClick}>
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                <span>Upload Receipt</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleAddManually}>
-                                <FilePlus2 className="mr-2 h-4 w-4" />
-                                <span>Add Manually</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
+          <CardHeader className="flex flex-row items-center gap-4">
+            <ReceiptText className="w-8 h-8 text-primary shrink-0" />
+            <div>
+              <CardTitle>Receipts</CardTitle>
+              <CardDescription>Upload and manage your receipts.</CardDescription>
             </div>
           </CardHeader>
+          <div className="flex w-full flex-wrap items-center justify-end gap-x-4 gap-y-2 px-6 pb-4">
+              <div className="flex items-center gap-2">
+                  <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
+                  <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
+                  <SelectTrigger id="global-currency" className="w-[90px] h-9">
+                      <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="CAD">CAD</SelectItem>
+                    <SelectItem value="AUD">AUD</SelectItem>
+                    <SelectItem value="JPY">JPY</SelectItem>
+                    <SelectItem value="INR">INR</SelectItem>
+                    <SelectItem value="CNY">CNY</SelectItem>
+                    <SelectItem value="CHF">CHF</SelectItem>
+                    <SelectItem value="NZD">NZD</SelectItem>
+                  </SelectContent>
+                  </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                  <AccessibleTooltip content={<p>Create a new receipt without an image and add items manually.</p>}>
+                      <Button onClick={handleAddManually} size="sm" variant='outline'>
+                          <FilePlus2 className="mr-2 h-4 w-4" />
+                          Add Manually
+                      </Button>
+                  </AccessibleTooltip>
+                  <AccessibleTooltip content={<p>Upload a receipt image. In real sessions, AI will scan it. In demo mode, you can add items manually.</p>}>
+                      <Button onClick={handleUploadClick} size="sm">
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Upload Receipt
+                      </Button>
+                  </AccessibleTooltip>
+              </div>
+          </div>
           <CardContent>
             {receipts.length > 0 ? (
               <div className="space-y-4">
