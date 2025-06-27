@@ -83,9 +83,9 @@ export default function ItemSplitDiagram() {
           let entryPos: Position, exitPos: Position;
 
           if (node.type === 'participant') {
-            entryPos = { x: nodeRect.left - containerRect.left, y };
             // On mobile, participants exit from the left. On desktop, from the right.
             exitPos = { x: (isMobile ? nodeRect.left : nodeRect.right) - containerRect.left, y };
+            entryPos = { x: nodeRect.left - containerRect.left, y };
           } else { // item
             // Items always have their entry point on the left.
             entryPos = { x: nodeRect.left - containerRect.left, y };
