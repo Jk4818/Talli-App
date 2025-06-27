@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { type Receipt, type Discount, type ServiceCharge } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -37,6 +37,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const { user } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState<string | undefined>(undefined);
 
   const serviceCharge = receipt.serviceCharge || { type: 'fixed', value: 0 };
   const discounts = receipt.discounts || [];
@@ -55,6 +56,12 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
 
   const hasConflict = receiptTotal < 0;
+
+  useEffect(() => {
+    if (hasConflict) {
+      setOpenAccordion('discounts');
+    }
+  }, [hasConflict]);
 
   const handleScanReceipt = () => {
     if (receipt.imageDataUri && user) {
@@ -161,7 +168,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Receipt Conflict</AlertTitle>
                     <AlertDescription>
-                        This receipt's total is negative because discounts exceed the item subtotal. Please adjust discounts or item costs.
+                        This receipt's total is negative. Please adjust the values in the expanded "Discounts" section below, or correct the item costs in the list at the bottom of the page.
                     </AlertDescription>
                 </Alert>
             </div>
@@ -229,7 +236,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                 </div>
               )}
 
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion type="single" collapsible className="w-full" value={openAccordion} onValueChange={setOpenAccordion}>
                 <AccordionItem value="discounts">
                   <AccordionTrigger>Discounts ({formatCurrency(totalDiscounts, receipt.currency)})</AccordionTrigger>
                   <AccordionContent className="space-y-2 pt-2">

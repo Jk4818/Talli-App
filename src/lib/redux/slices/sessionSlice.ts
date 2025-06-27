@@ -103,10 +103,10 @@ const sessionSlice = createSlice({
         participants: importedData.participants || [],
         settlements: [],
         globalCurrency: importedData.globalCurrency || initialState.globalCurrency,
-        step: importedData.step || 1,
+        step: 1, // Always start at step 1 for validation
         status: 'succeeded',
         error: null,
-        isDemoSession: state.isDemoSession, // Preserve demo state from before import
+        isDemoSession: importedData.isDemoSession ?? state.isDemoSession,
         currentAssignmentIndex: 0,
       };
     },
@@ -318,7 +318,7 @@ const sessionSlice = createSlice({
       .addCase(loadDemoData, (state) => {
         const demoState = { ...MOCK_DATA, status: 'succeeded' as const, error: null, isDemoSession: true };
         const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'processed' as const}));
-        return { ...initialState, ...demoState, receipts: processedDemoReceipts, settlements: [] };
+        return { ...initialState, ...demoState, receipts: processedDemoReceipts, settlements: [], step: 1 };
       })
       .addCase(addReceiptFromFile.fulfilled, (state, action) => {
         const newReceipt: Receipt = {

@@ -6,7 +6,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles } from 'lucide-react';
-import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt, restoreSession } from '@/lib/redux/slices/sessionSlice';
+import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt, restoreSession, loadDemoData } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
@@ -72,11 +72,19 @@ export default function Step1Setup() {
   };
 
   const handleResetSession = () => {
-    dispatch(resetSession({ isDemo: isDemoSession }));
-    toast({
-      title: 'New Session Started',
-      description: 'Your previous session data has been cleared.',
-    });
+    if (isDemoSession) {
+      dispatch(loadDemoData());
+      toast({
+        title: 'Demo Session Reset',
+        description: 'The demo data has been reloaded.',
+      });
+    } else {
+      dispatch(resetSession({ isDemo: false }));
+      toast({
+        title: 'New Session Started',
+        description: 'Your previous session data has been cleared.',
+      });
+    }
   };
 
   const handleAddManually = () => {
@@ -105,12 +113,12 @@ export default function Step1Setup() {
         const data = JSON.parse(text) as Partial<SessionState>;
 
         if (data && typeof data === 'object' && 'participants' in data && 'items' in data && 'receipts' in data) {
-          dispatch(restoreSession(data));
+          dispatch(restoreSession({ ...data, isDemoSession }));
           toast({
             title: 'Session Imported',
             description: 'Your session has been successfully restored.',
           });
-          router.push(isDemoSession ? '/demo' : '/app');
+          // No need to router.push, component will re-render with new state
         } else {
           throw new Error('Invalid session file format.');
         }

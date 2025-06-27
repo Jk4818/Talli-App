@@ -8,7 +8,7 @@ import { calculateSplits } from '@/lib/splitter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import BillSplitSummary from './BillSplitSummary';
 import { Button } from '../ui/button';
-import { resetSession, setSettlements, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
+import { resetSession, setSettlements, toggleSettlementPaid, loadDemoData } from '@/lib/redux/slices/sessionSlice';
 import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ import ItemSplitDiagram from './ItemSplitDiagram';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
-  const { participants, items, receipts, settlements, globalCurrency } = sessionState;
+  const { participants, items, receipts, settlements, globalCurrency, isDemoSession } = sessionState;
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
 
@@ -58,8 +58,20 @@ export default function Step3Summary() {
   }, [calculatedSummary.settlements, dispatch]);
 
 
-  const handleStartNew = () => {
-    dispatch(resetSession());
+  const handleReset = () => {
+    if (isDemoSession) {
+      dispatch(loadDemoData());
+      toast({
+        title: 'Demo Session Reset',
+        description: 'The demo data has been reloaded.',
+      });
+    } else {
+      dispatch(resetSession({ isDemo: false }));
+      toast({
+        title: 'New Session Started',
+        description: 'Your previous session data has been cleared.',
+      });
+    }
   };
 
   const handleExport = () => {
@@ -111,7 +123,7 @@ export default function Step3Summary() {
     >
         <motion.div variants={fadeInUp} className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export Session</Button>
-            <Button onClick={handleStartNew}><RefreshCw className="mr-2 h-4 w-4" /> Start New Session</Button>
+            <Button onClick={handleReset}><RefreshCw className="mr-2 h-4 w-4" /> Reset Session</Button>
         </motion.div>
       <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
