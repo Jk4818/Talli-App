@@ -149,7 +149,7 @@ export default function Step3Summary() {
                     <Scale className="w-8 h-8 text-primary" />
                     <div>
                         <CardTitle>Participant Balances</CardTitle>
-                        <CardDescription>Final shares, payments, and balances for each participant.</CardDescription>
+                        <CardDescription>The breakdown. Here's the nitty-gritty on each person's tab.</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -162,7 +162,7 @@ export default function Step3Summary() {
                     <Calculator className="w-8 h-8 text-primary" />
                     <div>
                         <CardTitle>Overall Bill Calculation</CardTitle>
-                        <CardDescription>A summary of the entire bill across all receipts.</CardDescription>
+                        <CardDescription>The grand total. From subtotal to service charge, here's the full damage.</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
@@ -179,7 +179,7 @@ export default function Step3Summary() {
                     <HandCoins className="w-8 h-8 text-primary" />
                     <div>
                         <CardTitle>Settlement Plan</CardTitle>
-                        <CardDescription>The simplest way to settle up. Mark transactions as paid.</CardDescription>
+                        <CardDescription>Payback time! The easiest way to get even. Mark payments as you go.</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -246,7 +246,7 @@ export default function Step3Summary() {
           <Card>
             <CardHeader className='pt-6'>
               <CardTitle>Total Shares</CardTitle>
-              <CardDescription>How the total bill is divided.</CardDescription>
+              <CardDescription>Your bill, visualized. See who's responsible for what slice of the pie.</CardDescription>
             </CardHeader>
             <CardContent>
                 <SharePieChart summary={calculatedSummary} />
