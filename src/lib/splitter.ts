@@ -47,6 +47,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       totalDiscounts: 0,
       totalServiceCharge: 0,
       roundingAdjustment: undefined,
+      roundingOccurred: false,
     };
   }
   
@@ -63,7 +64,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     });
   });
 
-  let grandTotal = 0;
+  let roundingOccurred = false;
   let totalItemCost = 0;
   let totalDiscounts = 0;
   let totalServiceCharge = 0;
@@ -88,18 +89,24 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
           if (totalPercentage === 100) {
               let distributedAmount = 0;
               const calculatedShares: {id: string, share: number}[] = [];
+
               item.assignees.forEach(pid => {
                   const percentage = item.percentageAssignments[pid] || 0;
+                  if (((item.cost * percentage) / 100) % 1 !== 0) {
+                      roundingOccurred = true;
+                  }
                   const share = Math.round((item.cost * percentage) / 100);
                   distributedAmount += share;
                   calculatedShares.push({ id: pid, share });
               });
+
               let remainder = item.cost - distributedAmount;
+              if (remainder !== 0) roundingOccurred = true;
+
               let i = 0;
               while(remainder !== 0) {
                   const direction = remainder > 0 ? 1 : -1;
-                  const assigneeIndex = i % calculatedShares.length;
-                  calculatedShares[assigneeIndex].share += direction;
+                  calculatedShares[i % calculatedShares.length].share += direction;
                   remainder -= direction;
                   i++;
               }
@@ -119,6 +126,9 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       }
       
       if (fallbackToEqual) {
+        if (item.assignees.length > 0 && item.cost % item.assignees.length !== 0) {
+            roundingOccurred = true;
+        }
         const baseShare = Math.floor(item.cost / item.assignees.length);
         let remainder = item.cost % item.assignees.length;
         item.assignees.forEach(id => {
@@ -146,6 +156,9 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         localServiceCharge = receipt.serviceCharge.value;
     } else if (receipt.serviceCharge?.type === 'percentage') {
         localServiceCharge = Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
+        if (subtotalAfterDiscounts * (receipt.serviceCharge.value / 100) !== localServiceCharge) {
+            roundingOccurred = true;
+        }
     }
     
     const distributedDiscounts = distributeAmount(localDiscounts, participantSharesOnReceipt);
@@ -194,12 +207,13 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     totalPaid += receiptTotalInGlobal;
   });
 
-  grandTotal = totalPaid;
+  const grandTotal = totalPaid;
   let totalCalculatedShare = [...finalSummaries.values()].reduce((sum, s) => sum + s.totalShare, 0);
   let roundingDifference = grandTotal - totalCalculatedShare;
   let roundingAdjustment: SplitSummary['roundingAdjustment'] | undefined = undefined;
 
   if (roundingDifference !== 0) {
+    roundingOccurred = true; // Final session-level rounding also counts.
     const payers = [...finalSummaries.values()].filter(s => s.totalPaid > 0).sort((a,b) => b.totalPaid - a.totalPaid);
     const personToAdjust = payers.length > 0 ? payers[0] : [...finalSummaries.values()][0];
 
@@ -253,5 +267,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     totalDiscounts,
     totalServiceCharge,
     roundingAdjustment,
+    roundingOccurred,
   };
 };

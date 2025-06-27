@@ -66,6 +66,7 @@ export interface SplitSummary {
     amount: number; // in cents
     participantName: string;
   };
+  roundingOccurred: boolean;
 }
 
 export interface SessionState {
