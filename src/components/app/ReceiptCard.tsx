@@ -93,6 +93,14 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     dispatch(updateDiscount({ receiptId: receipt.id, discount: { id, ...updates } }));
   }
 
+  const serviceChargeDisplay =
+    serviceCharge.type === 'percentage' && serviceCharge.value > 0
+      ? `(${serviceCharge.value}% → ${formatCurrency(
+          serviceChargeAmount,
+          receipt.currency
+        )})`
+      : `(${formatCurrency(serviceChargeAmount, receipt.currency)})`;
+
   return (
     <>
       <ReceiptImageViewer receipt={receipt} isOpen={isViewerOpen} onOpenChange={setIsViewerOpen} />
@@ -268,7 +276,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="service-charge">
-                  <AccordionTrigger>Service Charge / Tip ({formatCurrency(serviceChargeAmount, receipt.currency)})</AccordionTrigger>
+                  <AccordionTrigger>Service Charge / Tip {serviceChargeDisplay}</AccordionTrigger>
                   <AccordionContent className="pt-4">
                     <div className="flex items-center gap-6">
                       <RadioGroup 
