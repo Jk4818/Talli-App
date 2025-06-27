@@ -62,7 +62,10 @@ export interface SplitSummary {
   totalItemCost: number;
   totalDiscounts: number;
   totalServiceCharge: number;
-  roundingOccurred: boolean;
+  roundingAdjustment?: {
+    amount: number; // in cents
+    participantName: string;
+  };
 }
 
 export interface SessionState {

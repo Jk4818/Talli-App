@@ -76,11 +76,8 @@ export default function SmartSummaryCard({ summary, participants, globalCurrency
         return `All payers are within ±${maxDeviationPercent.toFixed(1)}% of an equal share. Nicely balanced!`;
     }, [summary, participants]);
 
-    const pennyPerfectText = summary.roundingOccurred
-      ? "To ensure totals were exact, minor rounding differences were automatically distributed across some shared items. This keeps the final bill penny-perfect."
-      : "All items were split perfectly without any need for rounding adjustments. Your math was easy this time!";
-
     const averageShare = participants.length > 0 ? summary.total / participants.length : 0;
+    const { roundingAdjustment } = summary;
 
     const fairnessInfoDescription = (
       <>
@@ -96,11 +93,11 @@ export default function SmartSummaryCard({ summary, participants, globalCurrency
           </div>
           <Separator />
           <div className="flex justify-between font-semibold">
-            <span>Average Share:</span>
+            <span>Average Share per Person:</span>
             <span className="font-mono">{formatCurrency(averageShare)}</span>
           </div>
         </div>
-        <p>The deviation for each participant is:</p>
+        <p>The deviation for each participant from the average is:</p>
         <ul className="list-disc pl-5 space-y-1">
           {summary.participantSummaries.map(p => (
             <li key={p.id}>
@@ -111,7 +108,7 @@ export default function SmartSummaryCard({ summary, participants, globalCurrency
             </li>
           ))}
         </ul>
-        <p>The "Fairness Check" number shows the largest of these deviations as a percentage of the average share.</p>
+        <p>The "Fairness Check" percentage shows the largest of these deviations relative to the average share.</p>
       </>
     );
 
@@ -143,7 +140,12 @@ export default function SmartSummaryCard({ summary, participants, globalCurrency
                         />
                     </SmartSummaryItem>
                      <SmartSummaryItem icon={<Sparkles className="h-5 w-5" />}>
-                        <strong>Penny Perfect:</strong> {pennyPerfectText}
+                        <strong>Penny Perfect:</strong>{' '}
+                        {roundingAdjustment && roundingAdjustment.amount !== 0 ? (
+                            `To ensure the total was exact, a final rounding adjustment of ${formatCurrency(roundingAdjustment.amount)} was made to ${roundingAdjustment.participantName}'s share.`
+                        ) : (
+                            'All items were split perfectly without any need for rounding adjustments. Your math was easy this time!'
+                        )}
                     </SmartSummaryItem>
                 </ul>
             </CardContent>
