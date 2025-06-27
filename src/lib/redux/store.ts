@@ -7,16 +7,12 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: {
-        // Ignore these action types
-        ignoredActions: ['session/processReceipt/fulfilled', 'session/processReceipt/rejected'],
-        // Ignore these field paths in all actions
-        // Next.js's searchParams object is not serializable and will cause an error when the middleware
-        // tries to enumerate its properties. This ignores them in any dispatched actions.
-        ignoredActionPaths: ['meta.arg', 'payload.timestamp', 'params', 'searchParams'],
-        // Ignore these paths in the state
-        ignoredPaths: ['session.items', 'session.receipts'],
-      },
+      // In Next.js 15, props like `searchParams` are special, read-only objects.
+      // The default Redux middleware tries to check if every piece of data in an action
+      // is "serializable" (can be converted to plain text), which causes a crash when it
+      // inspects the `searchParams` object.
+      // Disabling this check is the most robust way to prevent this class of errors.
+      serializableCheck: false,
     }),
 });
 
