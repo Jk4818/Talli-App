@@ -54,6 +54,8 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   
   const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
 
+  const hasConflict = receiptTotal < 0;
+
   const handleScanReceipt = () => {
     if (receipt.imageDataUri && user) {
       dispatch(processReceipt({ 
@@ -153,6 +155,17 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
             </Alert>
           )}
         </CardHeader>
+        {hasConflict && receipt.status === 'processed' && (
+            <div className='px-6 pb-6'>
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Receipt Conflict</AlertTitle>
+                    <AlertDescription>
+                        This receipt's total is negative because discounts exceed the item subtotal. Please adjust discounts or item costs.
+                    </AlertDescription>
+                </Alert>
+            </div>
+        )}
         {receipt.status === 'processed' && (
           <>
             <CardContent className="space-y-4">

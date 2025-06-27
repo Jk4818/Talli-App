@@ -42,10 +42,28 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     }
   };
   
+  const hasConflictingReceipts = useMemo(() => {
+    return receipts.some(receipt => {
+      const receiptItems = items.filter(i => i.receiptId === receipt.id);
+      const subtotal = receiptItems.reduce((acc, item) => acc + item.cost, 0);
+      const totalDiscounts = (receipt.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+      const subtotalAfterDiscounts = subtotal - totalDiscounts;
+      const serviceCharge = receipt.serviceCharge || { type: 'fixed', value: 0 };
+      const serviceChargeAmount = serviceCharge.type === 'fixed'
+        ? serviceCharge.value
+        : Math.round(subtotalAfterDiscounts * (serviceCharge.value / 100));
+      const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
+      return receiptTotal < 0;
+    });
+  }, [receipts, items]);
+
   const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
   const hasAmbiguousItems = items.some(item => item.isAmbiguous);
   
   const step1TooltipMessage = useMemo(() => {
+    if (hasConflictingReceipts) {
+      return 'Please resolve all receipt conflicts before continuing.';
+    }
     if (hasAmbiguousItems) {
       return 'Please resolve all ambiguous items before continuing.';
     }
@@ -59,7 +77,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
         return 'A payer must be assigned to every receipt.';
     }
     return 'Please complete all setup steps to continue.';
-  }, [hasAmbiguousItems, participants.length, receipts]);
+  }, [hasConflictingReceipts, hasAmbiguousItems, participants.length, receipts]);
 
   const isStep2Complete = useMemo(() => {
     return items.every(item => {
@@ -114,7 +132,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
           </div>
           <div>
             {step === 1 && (
-              !isStep1Complete || hasAmbiguousItems ? (
+              !isStep1Complete || hasAmbiguousItems || hasConflictingReceipts ? (
                 <AccessibleTooltip content={<p>{step1TooltipMessage}</p>}>
                   {/* The span wrapper is crucial for the tooltip to work on a disabled button */}
                   <span tabIndex={0}>
