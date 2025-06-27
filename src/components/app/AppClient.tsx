@@ -11,7 +11,6 @@ import Step3Summary from './Step3Summary';
 import { Button } from '../ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
-import { AnimatePresence } from 'framer-motion';
 
 export function AppClient({ isDemo }: { isDemo: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,10 +21,6 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     // This prevents the demo data from reloading every time, e.g., after a reset.
     if (isDemo && !isDemoSession) {
       dispatch(loadDemoData());
-    } else if (!isDemo && isDemoSession) {
-      // On the main app, if we are in a demo session, reset it.
-      // This happens if a user navigates from /demo to /app.
-      dispatch(resetSession());
     }
   }, [dispatch, isDemo, isDemoSession]);
 
@@ -124,9 +119,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   return (
     <>
       <div className="flex-1 p-4 md:p-8">
-        <AnimatePresence mode="wait">
-          {renderStep()}
-        </AnimatePresence>
+        {renderStep()}
       </div>
       <footer className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
