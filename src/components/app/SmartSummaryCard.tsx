@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -99,61 +100,59 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
     const { roundingAdjustment, roundingOccurred } = summary;
 
     const pennyPerfectContent = React.useMemo(() => {
-        if (!roundingOccurred) {
+        if (roundingAdjustment && roundingAdjustment.amount !== 0) {
+            const adjustmentVerb = roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from';
             return {
-                mainText: "All items were split perfectly without any need for rounding adjustments. Your math was easy this time!",
-                dialogDescription: null,
+                mainText: `To ensure the total was exact, a final rounding adjustment of ${formatCurrency(Math.abs(roundingAdjustment.amount))} was ${adjustmentVerb} ${roundingAdjustment.participantName}'s share.`
             };
         }
 
-        if (roundingAdjustment && roundingAdjustment.amount !== 0) {
-            const adjustmentVerb = roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from';
-            const mainText = `To ensure the total was exact, a final rounding adjustment of ${formatCurrency(Math.abs(roundingAdjustment.amount))} was ${adjustmentVerb} ${roundingAdjustment.participantName}'s share.`;
-            
-            const exampleItem = items.find(i =>
-                (i.splitMode === 'equal' && i.assignees.length > 1 && (i.cost % i.assignees.length !== 0))
-            );
-            
-            let dialogDescription;
-            if (exampleItem) {
-                const receipt = receipts.find(r => r.id === exampleItem.receiptId);
-                const currency = receipt?.currency || globalCurrency;
-                
-                dialogDescription = (
-                    <>
-                        <p>This final adjustment is necessary because the sum of all individual shares, when calculated with high precision and then rounded to the nearest cent, didn't perfectly match the rounded grand total.</p>
-                        <div className="space-y-3 rounded-md border p-3 bg-muted/50 mt-4">
-                            <p className="font-semibold">Example from your session:</p>
-                            <p className="text-xs text-muted-foreground">Item-level rounding contributed to this final adjustment. For example:</p>
-                            <div className="flex justify-between">
-                                <span>Item:</span>
-                                <span className="font-mono">{exampleItem.name}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Cost:</span>
-                                <span className="font-mono">{(exampleItem.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}</span>
-                            </div>
-                             <div className="flex justify-between">
-                                <span>Split between:</span>
-                                <span className="font-mono">{exampleItem.assignees.length} people</span>
-                            </div>
-                        </div>
-                    </>
-                );
-            } else {
-                 dialogDescription = (
-                     <p>This adjustment is necessary because the sum of all individual shares, when calculated with high precision and then rounded to the nearest cent, didn't perfectly match the rounded grand total. This final micro-adjustment ensures everything adds up perfectly.</p>
-                );
-            }
-            return { mainText, dialogDescription };
-        }
-
         return {
-            mainText: "To ensure totals were exact, minor rounding differences were automatically distributed across some shared items. This keeps the final bill penny-perfect.",
-            dialogDescription: <p>This happens when splitting items where the cost doesn't divide perfectly among assignees (e.g., $10 split three ways). The app handles these micro-adjustments automatically for you.</p>
+            mainText: "All items were split perfectly without any need for rounding adjustments. Your math was easy this time!"
         };
 
-    }, [summary, items, receipts, globalCurrency, formatCurrency]);
+    }, [summary, formatCurrency]);
+
+    const pennyPerfectDialogDescription = React.useMemo(() => {
+        if (!roundingOccurred) return null;
+
+        const exampleItem = items.find(i =>
+            (i.splitMode === 'equal' && i.assignees.length > 1 && (i.cost % i.assignees.length !== 0))
+        );
+        
+        const introText = roundingAdjustment && roundingAdjustment.amount !== 0
+            ? <p>This final adjustment is necessary because the sum of all individual shares, when calculated with high precision and then rounded to the nearest cent, didn't perfectly match the rounded grand total.</p>
+            : <p>This happens when splitting items where the cost doesn't divide perfectly among assignees (e.g., $10 split three ways). The app handles these micro-adjustments automatically for you.</p>;
+        
+        if (exampleItem) {
+            const receipt = receipts.find(r => r.id === exampleItem.receiptId);
+            const currency = receipt?.currency || globalCurrency;
+            
+            return (
+                <>
+                    {introText}
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/50 mt-4">
+                        <p className="font-semibold">Example from your session:</p>
+                        <p className="text-xs text-muted-foreground">Item-level rounding contributed to this. For example:</p>
+                        <div className="flex justify-between">
+                            <span>Item:</span>
+                            <span className="font-mono">{exampleItem.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Cost:</span>
+                            <span className="font-mono">{(exampleItem.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}</span>
+                        </div>
+                         <div className="flex justify-between">
+                            <span>Split between:</span>
+                            <span className="font-mono">{exampleItem.assignees.length} people</span>
+                        </div>
+                    </div>
+                </>
+            );
+        }
+
+        return introText;
+    }, [roundingOccurred, roundingAdjustment, items, receipts, globalCurrency]);
 
 
     const fairnessMetric = React.useMemo(() => {
@@ -213,10 +212,10 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                 <strong>Penny Perfect:</strong>{' '}
                                 {pennyPerfectContent.mainText}
                            </span>
-                           {pennyPerfectContent.dialogDescription && (
+                           {pennyPerfectDialogDescription && (
                                <InfoDialog
                                     title="Penny Perfect Explanation"
-                                    description={pennyPerfectContent.dialogDescription}
+                                    description={pennyPerfectDialogDescription}
                                     trigger={
                                         <button
                                             className="p-0 m-0 h-4 w-4 inline-flex items-center justify-center align-middle"
