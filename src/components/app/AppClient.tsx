@@ -27,7 +27,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
       // reset it to a clean, non-demo state.
       dispatch(resetSession());
     }
-  }, [dispatch, isDemo]);
+  }, [dispatch, isDemo, isDemoSession]);
 
 
   const handleNext = () => {
@@ -152,10 +152,21 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
               )
             )}
             {step === 2 && (
-              <Button onClick={handleNext} disabled={!isStep2Complete}>
-                View Summary
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              isStep2Complete ? (
+                <Button onClick={handleNext}>
+                  View Summary
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <AccessibleTooltip content={<p>All items must be fully assigned without errors to continue.</p>}>
+                  <span tabIndex={0}>
+                    <Button disabled className="pointer-events-none">
+                      View Summary
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </span>
+                </AccessibleTooltip>
+              )
             )}
           </div>
         </div>

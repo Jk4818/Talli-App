@@ -174,56 +174,58 @@ export default function Home() {
           </motion.div>
         </motion.section>
 
-        <section className="bg-secondary/50 py-16 lg:py-24">
+        <section className="py-16 lg:py-24">
           <div className="container mx-auto px-4">
-            <motion.div 
-              className="grid items-center gap-12 lg:grid-cols-2"
-              variants={staggerContainer(0.2, 0.1)}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.5 }}
-            >
-              <motion.div variants={fadeInUp} className="space-y-4">
-                <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm font-medium text-primary">How It Works</div>
-                <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">From Receipt to Resolution in 3 Steps</h2>
-                <p className="text-muted-foreground">
-                  Splitting a bill has never been easier. Our streamlined process saves you time and prevents awkward "who had what" conversations.
-                </p>
-              </motion.div>
-              <motion.div variants={fadeIn}>
-                <Image 
-                  src="/images/hero_image.png"
-                  alt="Illustration of friends happily splitting a restaurant bill using the Splitzy app on a smartphone."
-                  width={900}
-                  height={600}
-                  className="rounded-xl shadow-2xl"
-                  data-ai-hint="bill splitting friends"
-                />
-              </motion.div>
-            </motion.div>
-            <motion.div 
-              className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4"
-              variants={staggerContainer(0.2, 0.3)}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.2 }}
-            >
-              {features.map((feature) => (
-                <motion.div variants={fadeInUp} key={feature.title}>
-                  <Card className="text-center h-full">
-                    <CardHeader>
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                        <span className="text-3xl">{feature.emoji}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <CardTitle className="font-headline text-xl">{feature.title}</CardTitle>
-                      <CardDescription>{feature.description}</CardDescription>
-                    </CardContent>
-                  </Card>
+            <div className="bg-secondary/50 rounded-3xl p-8 md:p-16">
+              <motion.div 
+                className="grid items-center gap-12 lg:grid-cols-2"
+                variants={staggerContainer(0.2, 0.1)}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.5 }}
+              >
+                <motion.div variants={fadeInUp} className="space-y-4">
+                  <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm font-medium text-primary">How It Works</div>
+                  <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">From Receipt to Resolution in 3 Steps</h2>
+                  <p className="text-muted-foreground">
+                    Splitting a bill has never been easier. Our streamlined process saves you time and prevents awkward "who had what" conversations.
+                  </p>
                 </motion.div>
-              ))}
-            </motion.div>
+                <motion.div variants={fadeIn}>
+                  <Image 
+                    src="/images/hero_image.png"
+                    alt="Illustration of friends happily splitting a restaurant bill using the Splitzy app on a smartphone."
+                    width={900}
+                    height={600}
+                    className="rounded-xl shadow-2xl"
+                    data-ai-hint="bill splitting friends"
+                  />
+                </motion.div>
+              </motion.div>
+              <motion.div 
+                className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4"
+                variants={staggerContainer(0.2, 0.3)}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                {features.map((feature) => (
+                  <motion.div variants={fadeInUp} key={feature.title}>
+                    <Card className="text-center h-full">
+                      <CardHeader>
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                          <span className="text-3xl">{feature.emoji}</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <CardTitle className="font-headline text-xl">{feature.title}</CardTitle>
+                        <CardDescription>{feature.description}</CardDescription>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
           </div>
         </section>
       </main>
