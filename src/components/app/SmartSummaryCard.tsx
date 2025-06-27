@@ -35,21 +35,24 @@ const SmartSummaryItem = ({ icon, children }: { icon: React.ReactNode; children:
     </li>
 );
 
+// New InfoDialog component with a robust scrollable content area
 const InfoDialog = ({ title, description, trigger }: { title: string, description: React.ReactNode, trigger: React.ReactNode }) => (
   <AlertDialog>
     <AlertDialogTrigger asChild>
       {trigger}
     </AlertDialogTrigger>
-    <AlertDialogContent>
-      <AlertDialogHeader>
+    <AlertDialogContent className="flex flex-col max-h-[85vh]">
+      <AlertDialogHeader className="flex-shrink-0">
         <AlertDialogTitle>{title}</AlertDialogTitle>
-        <AlertDialogDescription asChild>
-          <div className="space-y-4 text-left pt-2 text-sm text-foreground/80">
-            {description}
-          </div>
-        </AlertDialogDescription>
       </AlertDialogHeader>
-      <AlertDialogFooter>
+      <ScrollArea className="flex-1 -mx-6 px-6">
+          <AlertDialogDescription asChild>
+            <div className="space-y-4 text-left py-4 text-sm text-foreground/80">
+                {description}
+            </div>
+          </AlertDialogDescription>
+      </ScrollArea>
+      <AlertDialogFooter className="flex-shrink-0 pt-4 border-t">
         <AlertDialogAction>Got it</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
@@ -113,14 +116,16 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
 
 
     const pennyPerfectDialogDescription = React.useMemo(() => {
-        if (!roundingOccurred) return null;
+        if (!roundingOccurred && !(roundingAdjustment && roundingAdjustment.amount !== 0)) {
+             return <p>All items in this session were split perfectly without any need for rounding adjustments.</p>
+        }
 
         const introText = <p>This happens when an item's cost doesn't divide perfectly into cents among the sharers. The app distributes these extra pennies one by one to ensure fairness. The following items from your session required this kind of adjustment:</p>;
 
         return (
             <>
                 {introText}
-                <ScrollArea className="mt-4 max-h-[200px] rounded-md border bg-muted/50">
+                <div className="mt-4 rounded-md border bg-muted/50">
                     <div className="space-y-3 p-2">
                         {roundedItems.length > 0 ? (
                             roundedItems.map((item, index) => (
@@ -145,7 +150,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                                     → {adj.participantName} paid
                                                 </span>
                                                 <span className="font-mono">
-                                                    {formatCurrency(Math.abs(adj.amount))} {adj.amount > 0 ? 'more' : 'less'}
+                                                    {formatCurrency(Math.abs(adj.amount))}{' '}{adj.amount > 0 ? 'more' : 'less'}
                                                 </span>
                                             </div>
                                         ))}
@@ -156,7 +161,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             <p className='text-xs text-muted-foreground text-center py-2'>Rounding was required for percentage-based service charges, not specific items.</p>
                         )}
                     </div>
-                </ScrollArea>
+                </div>
                 {roundingAdjustment && roundingAdjustment.amount !== 0 && (
                      <p className='mt-4'>After all items were calculated, a final session-wide adjustment of <strong>{formatCurrency(Math.abs(roundingAdjustment.amount))}</strong> was {roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from'} <strong>{roundingAdjustment.participantName}'s</strong> share to make the grand total exact.</p>
                 )}
