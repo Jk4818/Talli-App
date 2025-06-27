@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import React, { useMemo, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -103,6 +103,13 @@ export default function Step3Summary() {
         return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
+  }
+
+  // This is the key fix. If the session is reset, participants will be empty.
+  // Rendering null prevents the component from crashing during its exit animation
+  // as its data has been wiped from the Redux store.
+  if (participants.length === 0) {
+    return null;
   }
 
   return (
