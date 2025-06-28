@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +19,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Trash2 } from 'lucide-react';
+import {
+  ResponsiveSelect,
+  ResponsiveSelectContent,
+  ResponsiveSelectItem,
+  ResponsiveSelectLabel,
+  ResponsiveSelectTrigger,
+} from '../ui/responsive-select';
 
 
 interface ItemEditDialogProps {
@@ -104,16 +110,21 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
             <Label htmlFor="receipt" className="text-right">
               Receipt
             </Label>
-            <Select value={receiptId} onValueChange={setReceiptId} disabled={receipts.length === 0}>
-                <SelectTrigger id="receipt" className="col-span-3">
-                    <SelectValue placeholder="Select a receipt" />
-                </SelectTrigger>
-                <SelectContent>
-                    {receipts.map(r => (
-                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+             <div className="col-span-3">
+              <ResponsiveSelect value={receiptId} onValueChange={setReceiptId}>
+                <ResponsiveSelectTrigger id="receipt" disabled={receipts.length === 0} placeholder="Select a receipt">
+                  {receipts.find((r) => r.id === receiptId)?.name}
+                </ResponsiveSelectTrigger>
+                <ResponsiveSelectContent>
+                  <ResponsiveSelectLabel>Select a Receipt</ResponsiveSelectLabel>
+                  {receipts.map((r) => (
+                    <ResponsiveSelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </ResponsiveSelectItem>
+                  ))}
+                </ResponsiveSelectContent>
+              </ResponsiveSelect>
+            </div>
           </div>
         </div>
         <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">

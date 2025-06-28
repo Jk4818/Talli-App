@@ -11,7 +11,6 @@ import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
   DropDrawer,
   DropDrawerContent,
@@ -36,6 +35,13 @@ import { staggerContainer, fadeInUp } from '@/lib/animations';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { useRouter } from 'next/navigation';
 import type { SessionState } from '@/lib/types';
+import {
+  ResponsiveSelect,
+  ResponsiveSelectContent,
+  ResponsiveSelectItem,
+  ResponsiveSelectLabel,
+  ResponsiveSelectTrigger,
+} from '../ui/responsive-select';
 
 const MAX_RECEIPTS = 3;
 
@@ -264,23 +270,24 @@ export default function Step1Setup() {
             <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4">
                 <div className="flex items-center gap-2">
                     <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
-                    <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
-                    <SelectTrigger id="global-currency" className="w-[90px] h-9">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="CAD">CAD</SelectItem>
-                      <SelectItem value="AUD">AUD</SelectItem>
-                      <SelectItem value="JPY">JPY</SelectItem>
-                      <SelectItem value="INR">INR</SelectItem>
-                      <SelectItem value="CNY">CNY</SelectItem>
-                      <SelectItem value="CHF">CHF</SelectItem>
-                      <SelectItem value="NZD">NZD</SelectItem>
-                    </SelectContent>
-                    </Select>
+                    <ResponsiveSelect value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
+                      <ResponsiveSelectTrigger id="global-currency" className="w-[90px] h-9">
+                        {globalCurrency}
+                      </ResponsiveSelectTrigger>
+                      <ResponsiveSelectContent>
+                        <ResponsiveSelectLabel>Settle In</ResponsiveSelectLabel>
+                        <ResponsiveSelectItem value="USD">USD</ResponsiveSelectItem>
+                        <ResponsiveSelectItem value="EUR">EUR</ResponsiveSelectItem>
+                        <ResponsiveSelectItem value="GBP">GBP</ResponsiveSelectItem>
+                        <ResponsiveSelectItem value="CAD">CAD</ResponsiveSelectItem>
+                        <ResponsiveSelectItem value="AUD">AUD</ResponsiveSelectItem>
+                        <ResponsiveSelectItem value="JPY">JPY</ResponsiveSelectItem>
+                        <ResponsiveSelectItem value="INR">INR</ResponsiveSelectItem>
+                        <ResponsiveSelectItem value="CNY">CNY</ResponsiveSelectItem>
+                        <ResponsiveSelectItem value="CHF">CHF</ResponsiveSelectItem>
+                        <ResponsiveSelectItem value="NZD">NZD</ResponsiveSelectItem>
+                      </ResponsiveSelectContent>
+                    </ResponsiveSelect>
                 </div>
 
                 {/* Responsive actions */}
@@ -294,7 +301,7 @@ export default function Step1Setup() {
                                   Add
                               </Button>
                           </DropDrawerTrigger>
-                          <DropDrawerContent>
+                          <DropDrawerContent drawerClassName="pb-0">
                               <DropDrawerLabel>Add Receipt</DropDrawerLabel>
                               <DropDrawerItem onClick={handleAddManually} disabled={isReceiptLimitReached} icon={<FilePlus2 className="h-4 w-4" />}>
                                 Add Manually

@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from 'react';
 import { type Receipt, type Discount, type ServiceCharge } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
 import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, processReceipt, removeReceipt } from '@/lib/redux/slices/sessionSlice';
@@ -31,6 +30,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '../ui/collapsible';
+import {
+  ResponsiveSelect,
+  ResponsiveSelectContent,
+  ResponsiveSelectItem,
+  ResponsiveSelectLabel,
+  ResponsiveSelectTrigger,
+} from '../ui/responsive-select';
 
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
@@ -237,38 +243,53 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                     </AccessibleTooltip>
                                 )}
                             </Label>
-                            <Select onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined} disabled={participants.length === 0}>
-                            <SelectTrigger 
+                            <ResponsiveSelect onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined}>
+                              <ResponsiveSelectTrigger
                                 id={`payer-${receipt.id}`}
                                 className={cn(
-                                "w-full",
-                                isPayerMissing && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive"
+                                  "w-full",
+                                  isPayerMissing && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive"
                                 )}
-                            >
-                                <SelectValue placeholder={participants.length > 0 ? "Select a payer" : "Add participants first"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                            </SelectContent>
-                            </Select>
+                                disabled={participants.length === 0}
+                              >
+                                {receipt.payerId ? (
+                                  participants.find((p) => p.id === receipt.payerId)?.name
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    {participants.length > 0 ? "Select a payer" : "Add participants first"}
+                                  </span>
+                                )}
+                              </ResponsiveSelectTrigger>
+                              <ResponsiveSelectContent>
+                                <ResponsiveSelectLabel>Select a Payer</ResponsiveSelectLabel>
+                                {participants.map((p) => (
+                                  <ResponsiveSelectItem key={p.id} value={p.id}>
+                                    {p.name}
+                                  </ResponsiveSelectItem>
+                                ))}
+                              </ResponsiveSelectContent>
+                            </ResponsiveSelect>
                         </div>
                         <div className="w-full sm:w-auto space-y-1.5">
                             <Label>Currency</Label>
-                            <Select onValueChange={(currency) => handleUpdateReceipt({ currency })} value={receipt.currency}>
-                            <SelectTrigger className="w-full sm:w-[120px]"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="USD">USD</SelectItem>
-                                <SelectItem value="EUR">EUR</SelectItem>
-                                <SelectItem value="GBP">GBP</SelectItem>
-                                <SelectItem value="CAD">CAD</SelectItem>
-                                <SelectItem value="AUD">AUD</SelectItem>
-                                <SelectItem value="JPY">JPY</SelectItem>
-                                <SelectItem value="INR">INR</SelectItem>
-                                <SelectItem value="CNY">CNY</SelectItem>
-                                <SelectItem value="CHF">CHF</SelectItem>
-                                <SelectItem value="NZD">NZD</SelectItem>
-                            </SelectContent>
-                            </Select>
+                             <ResponsiveSelect onValueChange={(currency) => handleUpdateReceipt({ currency })} value={receipt.currency}>
+                              <ResponsiveSelectTrigger className="w-full sm:w-[120px]">
+                                {receipt.currency}
+                              </ResponsiveSelectTrigger>
+                              <ResponsiveSelectContent>
+                                <ResponsiveSelectLabel>Select Currency</ResponsiveSelectLabel>
+                                <ResponsiveSelectItem value="USD">USD</ResponsiveSelectItem>
+                                <ResponsiveSelectItem value="EUR">EUR</ResponsiveSelectItem>
+                                <ResponsiveSelectItem value="GBP">GBP</ResponsiveSelectItem>
+                                <ResponsiveSelectItem value="CAD">CAD</ResponsiveSelectItem>
+                                <ResponsiveSelectItem value="AUD">AUD</ResponsiveSelectItem>
+                                <ResponsiveSelectItem value="JPY">JPY</ResponsiveSelectItem>
+                                <ResponsiveSelectItem value="INR">INR</ResponsiveSelectItem>
+                                <ResponsiveSelectItem value="CNY">CNY</ResponsiveSelectItem>
+                                <ResponsiveSelectItem value="CHF">CHF</ResponsiveSelectItem>
+                                <ResponsiveSelectItem value="NZD">NZD</ResponsiveSelectItem>
+                              </ResponsiveSelectContent>
+                            </ResponsiveSelect>
                         </div>
                     </div>
                     
