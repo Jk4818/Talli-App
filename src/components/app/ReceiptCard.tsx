@@ -59,12 +59,15 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
 
   const hasConflict = receiptTotal < 0;
+  const isPayerMissing = !receipt.payerId;
+  const hasError = isPayerMissing || hasConflict;
 
   useEffect(() => {
-    if (hasConflict) {
+    // Automatically expand the discounts section if there's a conflict
+    if (hasConflict && isCardOpen) {
       setOpenAccordion('discounts');
     }
-  }, [hasConflict]);
+  }, [hasConflict, isCardOpen]);
 
   const handleScanReceipt = () => {
     if (receipt.imageDataUri && user) {
@@ -108,7 +111,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     <>
       <ReceiptImageViewer receipt={receipt} isOpen={isViewerOpen} onOpenChange={setIsViewerOpen} />
       <Collapsible open={isCardOpen} onOpenChange={setIsCardOpen}>
-        <Card className='bg-card/50 overflow-hidden'>
+        <Card className={cn('bg-card/50 overflow-hidden', hasError && 'border-destructive')}>
             <div className="flex items-start p-6">
                 <CardHeader className="flex-1 p-0">
                   <div className="flex flex-wrap sm:flex-nowrap justify-between items-start gap-2">
@@ -173,14 +176,23 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                   </div>
                   {receipt.status === 'processed' && (
                     <CardDescription className='flex items-center gap-2 mt-1.5'>
-                      <span>Subtotal: {formatCurrency(subtotal, receipt.currency)}</span>
-                      {receipt.overallConfidence !== undefined && (
-                        <AccessibleTooltip content={<p>The AI was {receipt.overallConfidence}% confident in its analysis of this receipt.</p>}>
-                          <span className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium'>
-                            <Sparkles className='h-3.5 w-3.5 text-primary' />
-                            <span>AI Confidence: {receipt.overallConfidence}%</span>
-                          </span>
-                        </AccessibleTooltip>
+                      {hasError && !isCardOpen ? (
+                        <div className="text-destructive font-medium flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Action required - expand to resolve</span>
+                        </div>
+                      ) : (
+                        <>
+                          <span>Subtotal: {formatCurrency(subtotal, receipt.currency)}</span>
+                          {receipt.overallConfidence !== undefined && (
+                            <AccessibleTooltip content={<p>The AI was {receipt.overallConfidence}% confident in its analysis of this receipt.</p>}>
+                              <span className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium'>
+                                <Sparkles className='h-3.5 w-3.5 text-primary' />
+                                <span>AI Confidence: {receipt.overallConfidence}%</span>
+                              </span>
+                            </AccessibleTooltip>
+                          )}
+                        </>
                       )}
                     </CardDescription>
                   )}
@@ -199,33 +211,6 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                     <span className='sr-only'>{isCardOpen ? "Collapse" : "Expand"}</span>
                 </CollapsibleTrigger>
             </div>
-            
-            {receipt.status === 'processed' && (
-              <div className="px-6 pb-6 -mt-4">
-                  <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 mb-1 text-sm font-medium">
-                      Payer
-                      {!receipt.payerId && (
-                          <AccessibleTooltip content={<p>A payer must be assigned to this receipt.</p>}>
-                              <AlertCircle className="h-4 w-4 text-destructive" />
-                          </AccessibleTooltip>
-                      )}
-                  </Label>
-                  <Select onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined} disabled={participants.length === 0}>
-                    <SelectTrigger 
-                      id={`payer-${receipt.id}`}
-                      className={cn(
-                        "w-full sm:max-w-xs",
-                        !receipt.payerId && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive"
-                      )}
-                    >
-                      <SelectValue placeholder={participants.length > 0 ? "Select a payer" : "Add participants first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-              </div>
-            )}
           
             <CollapsibleContent>
               {hasConflict && receipt.status === 'processed' && (
@@ -242,6 +227,31 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
               {receipt.status === 'processed' && (
                 <>
                   <CardContent className="space-y-4">
+                     <div className="space-y-1.5">
+                        <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 text-sm font-medium">
+                            Payer
+                            {isPayerMissing && (
+                                <AccessibleTooltip content={<p>A payer must be assigned to this receipt.</p>}>
+                                    <AlertCircle className="h-4 w-4 text-destructive" />
+                                </AccessibleTooltip>
+                            )}
+                        </Label>
+                        <Select onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined} disabled={participants.length === 0}>
+                          <SelectTrigger 
+                            id={`payer-${receipt.id}`}
+                            className={cn(
+                              "w-full sm:max-w-xs",
+                              isPayerMissing && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive"
+                            )}
+                          >
+                            <SelectValue placeholder={participants.length > 0 ? "Select a payer" : "Add participants first"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                     <div>
                       <Label>Currency</Label>
                       <Select onValueChange={(currency) => handleUpdateReceipt({ currency })} value={receipt.currency}>
