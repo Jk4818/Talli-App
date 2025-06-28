@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useSelector } from "react-redux";
+import { type RootState } from "@/lib/redux/store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +30,7 @@ import { cn } from "@/lib/utils";
 type DropDrawerContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
-  isMobile: boolean;
+  isMobile: boolean | null;
 };
 
 const DropDrawerContext = React.createContext<DropDrawerContextValue | null>(null);
@@ -51,7 +52,7 @@ const DropDrawer = ({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) => {
-  const isMobile = useIsMobile();
+  const isMobile = useSelector((state: RootState) => state.ui.isMobile);
   const [internalOpen, setInternalOpen] = React.useState(false);
 
   const effectiveOpen = open ?? internalOpen;

@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useIsMobile } from "@/hooks/use-mobile"
+import { useSelector } from "react-redux"
+import { type RootState } from "@/lib/redux/store"
 import {
   Popover,
   PopoverContent,
@@ -26,19 +27,14 @@ export function AccessibleTooltip({
   popoverContentProps,
   tooltipContentProps,
 }: AccessibleTooltipProps) {
-  const [isMounted, setIsMounted] = React.useState(false)
-  const isMobile = useIsMobile()
+  const isMobile = useSelector((state: RootState) => state.ui.isMobile);
 
-  React.useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  // On the server or during initial hydration, only render the trigger.
-  if (!isMounted) {
+  // On the server, isMobile is null. Render nothing but the trigger
+  // to prevent hydration mismatches.
+  if (isMobile === null) {
     return <>{children}</>
   }
 
-  // Once mounted on the client, render the appropriate component.
   if (isMobile) {
     return (
       <Popover>

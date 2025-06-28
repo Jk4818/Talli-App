@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Spline } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Node {
   id: string;
@@ -41,10 +40,10 @@ const getInitials = (name: string) => {
 
 export default function ItemSplitDiagram() {
   const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
+  const isMobile = useSelector((state: RootState) => state.ui.isMobile);
   const containerRef = useRef<HTMLDivElement>(null);
   const [nodePositions, setNodePositions] = useState<Record<string, NodePositions>>({});
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
-  const isMobile = useIsMobile();
 
   const formatCurrency = (amount: number) => (amount / 100).toLocaleString(undefined, { style: 'currency', currency: globalCurrency });
 

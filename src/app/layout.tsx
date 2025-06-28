@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/lib/firebase/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { UIStateInitializer } from '@/components/UIStateInitializer';
 
 export const metadata: Metadata = {
   title: 'Talli - Effortless Bill Splitting',
@@ -27,10 +28,12 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <AuthProvider>
           <ReduxProvider>
-            <TooltipProvider>
-              {children}
-              <Toaster />
-            </TooltipProvider>
+            <UIStateInitializer>
+              <TooltipProvider>
+                {children}
+                <Toaster />
+              </TooltipProvider>
+            </UIStateInitializer>
           </ReduxProvider>
         </AuthProvider>
         <SpeedInsights />
