@@ -12,7 +12,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -30,6 +30,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '../ui/collapsible';
 
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
@@ -38,12 +39,11 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const dispatch = useDispatch<AppDispatch>();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>(undefined);
+  const [isCardOpen, setIsCardOpen] = useState(false);
 
   const discounts = receipt.discounts || [];
-  const serviceCharge = receipt.serviceCharge || { type: 'fixed', value: 0 };
-
   const hasDiscountConfidence = discounts.some(d => d.confidence !== undefined);
-  const hasServiceChargeConfidence = serviceCharge.confidence !== undefined;
+  const hasServiceChargeConfidence = receipt.serviceCharge?.confidence !== undefined;
 
   const subtotal = items
     .filter(i => i.receiptId === receipt.id)
@@ -52,9 +52,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const totalDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
   const subtotalAfterDiscounts = subtotal - totalDiscounts;
 
-  const serviceChargeAmount = serviceCharge.type === 'fixed'
-    ? serviceCharge.value
-    : Math.round(subtotalAfterDiscounts * (serviceCharge.value / 100));
+  const serviceChargeAmount = receipt.serviceCharge?.type === 'fixed'
+    ? receipt.serviceCharge.value
+    : Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
   
   const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
 
@@ -85,7 +85,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   };
 
   const handleUpdateServiceCharge = (updates: Partial<ServiceCharge>) => {
-    dispatch(updateServiceCharge({ receiptId: receipt.id, serviceCharge: { ...serviceCharge, ...updates } }));
+    dispatch(updateServiceCharge({ receiptId: receipt.id, serviceCharge: { ...receipt.serviceCharge, ...updates } as ServiceCharge }));
   };
 
   const formatCurrency = (amount: number, currencyCode: string) => {
@@ -97,8 +97,8 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   }
 
   const serviceChargeDisplay =
-    serviceCharge.type === 'percentage' && serviceCharge.value > 0
-      ? `(${serviceCharge.value}% → ${formatCurrency(
+    receipt.serviceCharge?.type === 'percentage' && receipt.serviceCharge.value > 0
+      ? `(${receipt.serviceCharge.value}% → ${formatCurrency(
           serviceChargeAmount,
           receipt.currency
         )})`
@@ -107,271 +107,284 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   return (
     <>
       <ReceiptImageViewer receipt={receipt} isOpen={isViewerOpen} onOpenChange={setIsViewerOpen} />
-      <Card className='bg-card/50'>
-        <CardHeader>
-          <div className="flex flex-wrap sm:flex-nowrap justify-between items-start gap-2">
-            <Input 
-              defaultValue={receipt.name}
-              onBlur={(e) => handleUpdateReceipt({ name: e.target.value })}
-              className="text-lg font-semibold border-0 shadow-none -ml-3 focus-visible:ring-1 focus-visible:ring-ring flex-1"
-              maxLength={50}
-            />
-            <div className='flex items-center gap-2 flex-shrink-0'>
-              {receipt.imageDataUri && (
-                <Button variant="outline" size="icon" onClick={() => setIsViewerOpen(true)}>
-                    <ImageIcon className="h-5 w-5" />
-                    <span className="sr-only">View Receipt Image</span>
-                </Button>
-              )}
-              {receipt.status === 'unprocessed' && (
-                isDemoSession ? (
-                    <AccessibleTooltip content={<p>AI scanning is disabled in demo mode.</p>}>
-                        <span tabIndex={0}>
-                            <Button disabled className="pointer-events-none">
+      <Collapsible open={isCardOpen} onOpenChange={setIsCardOpen}>
+        <Card className='bg-card/50 overflow-hidden'>
+            <div className="flex items-start p-6">
+                <CardHeader className="flex-1 p-0">
+                  <div className="flex flex-wrap sm:flex-nowrap justify-between items-start gap-2">
+                    <Input 
+                      defaultValue={receipt.name}
+                      onBlur={(e) => handleUpdateReceipt({ name: e.target.value })}
+                      className="text-lg font-semibold border-0 shadow-none -ml-3 focus-visible:ring-1 focus-visible:ring-ring flex-1"
+                      maxLength={50}
+                    />
+                    <div className='flex items-center gap-2 flex-shrink-0'>
+                      {receipt.imageDataUri && (
+                        <Button variant="outline" size="icon" onClick={() => setIsViewerOpen(true)}>
+                            <ImageIcon className="h-5 w-5" />
+                            <span className="sr-only">View Receipt Image</span>
+                        </Button>
+                      )}
+                      {receipt.status === 'unprocessed' && (
+                        isDemoSession ? (
+                            <AccessibleTooltip content={<p>AI scanning is disabled in demo mode.</p>}>
+                                <span tabIndex={0}>
+                                    <Button disabled className="pointer-events-none">
+                                        <Sparkles className="mr-2 h-4 w-4" />
+                                        Scan with AI
+                                    </Button>
+                                </span>
+                            </AccessibleTooltip>
+                        ) : (
+                            <Button onClick={handleScanReceipt} disabled={!user}>
                                 <Sparkles className="mr-2 h-4 w-4" />
                                 Scan with AI
                             </Button>
-                        </span>
-                    </AccessibleTooltip>
-                ) : (
-                    <Button onClick={handleScanReceipt} disabled={!user}>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Scan with AI
-                    </Button>
-                )
-              )}
-              {receipt.status === 'processing' && (
-                <Button disabled>
-                  <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                  Scanning...
-                </Button>
-              )}
-              {receipt.status !== 'processing' && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon">
-                        <Trash2 className="h-5 w-5" />
-                        <span className="sr-only">Remove Receipt</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action will permanently delete the receipt "{receipt.name}" and all of its associated items. This cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleRemoveReceipt}>Continue</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
-          </div>
-          {receipt.status === 'processed' && (
-            <CardDescription className='flex items-center gap-2'>
-              <span>Subtotal: {formatCurrency(subtotal, receipt.currency)}</span>
-              {receipt.overallConfidence !== undefined && (
-                <AccessibleTooltip content={<p>The AI was {receipt.overallConfidence}% confident in its analysis of this receipt.</p>}>
-                  <span className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium'>
-                    <Sparkles className='h-3.5 w-3.5 text-primary' />
-                    <span>AI Confidence: {receipt.overallConfidence}%</span>
-                  </span>
-                </AccessibleTooltip>
-              )}
-            </CardDescription>
-          )}
-          {receipt.status === 'failed' && receipt.error && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Scan Failed</AlertTitle>
-              <AlertDescription>
-                {receipt.error}
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardHeader>
-        {hasConflict && receipt.status === 'processed' && (
-            <div className='px-6 pb-6'>
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Receipt Conflict</AlertTitle>
-                    <AlertDescription>
-                        This receipt's total is negative. Please adjust the values in the expanded "Discounts" section below, or correct the item costs in the list at the bottom of the page.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        )}
-        {receipt.status === 'processed' && (
-          <>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 mb-1">
-                      Payer
-                      {!receipt.payerId && receipt.status === 'processed' && (
-                          <AccessibleTooltip content={<p>This receipt needs a payer.</p>}>
-                              <AlertCircle className="h-4 w-4 text-destructive" />
-                          </AccessibleTooltip>
+                        )
                       )}
-                  </Label>
-                  <Select onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined}>
-                    <SelectTrigger 
-                      id={`payer-${receipt.id}`}
-                      className={cn(!receipt.payerId && receipt.status === 'processed' && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive")}
-                    >
-                      <SelectValue placeholder="Select a payer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Currency</Label>
-                  <Select onValueChange={(currency) => handleUpdateReceipt({ currency })} value={receipt.currency}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="CAD">CAD</SelectItem>
-                      <SelectItem value="AUD">AUD</SelectItem>
-                      <SelectItem value="JPY">JPY</SelectItem>
-                      <SelectItem value="INR">INR</SelectItem>
-                      <SelectItem value="CNY">CNY</SelectItem>
-                      <SelectItem value="CHF">CHF</SelectItem>
-                      <SelectItem value="NZD">NZD</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              {receipt.currency !== globalCurrency && (
-                <div className="space-y-2">
-                  <Label>Exchange Rate to {globalCurrency}</Label>
-                  <div className='flex items-center gap-2'>
-                    <span className='text-sm text-muted-foreground'>1 {receipt.currency} =</span>
-                    <Input 
-                      type="text"
-                      inputMode="decimal"
-                      placeholder='e.g. 1.25'
-                      defaultValue={receipt.exchangeRate}
-                      onBlur={(e) => handleUpdateReceipt({ exchangeRate: parseFloat(e.target.value) || undefined })}
-                      className='max-w-[120px]'
-                    />
-                    <span className='text-sm text-muted-foreground'>{globalCurrency}</span>
-                  </div>
-                </div>
-              )}
-
-              <Accordion type="single" collapsible className="w-full" value={openAccordion} onValueChange={setOpenAccordion}>
-                <AccordionItem value="discounts">
-                  <AccordionTrigger className='hover:no-underline'>
-                    <div className="flex items-center gap-2">
-                      <span>Discounts ({formatCurrency(totalDiscounts, receipt.currency)})</span>
-                      {hasDiscountConfidence && (
-                          <AccessibleTooltip content={
-                            <div className="p-1 space-y-1 text-xs max-w-xs">
-                                <p className="font-bold mb-1">AI Confidence Scores</p>
-                                {discounts.filter(d => d.confidence !== undefined).map(d => (
-                                    <div key={d.id} className="flex justify-between gap-4">
-                                        <span className="truncate pr-2">{d.name}:</span>
-                                        <span className="flex-shrink-0">{d.confidence}%</span>
-                                    </div>
-                                ))}
-                            </div>
-                          }>
-                              <div className="p-1 -mr-1 rounded-full" onClick={(e) => e.stopPropagation()}>
-                                  <Sparkles className="h-4 w-4 text-primary" />
-                              </div>
-                          </AccessibleTooltip>
+                      {receipt.status === 'processing' && (
+                        <Button disabled>
+                          <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                          Scanning...
+                        </Button>
+                      )}
+                      {receipt.status !== 'processing' && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon">
+                                <Trash2 className="h-5 w-5" />
+                                <span className="sr-only">Remove Receipt</span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action will permanently delete the receipt "{receipt.name}" and all of its associated items. This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleRemoveReceipt}>Continue</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       )}
                     </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-2 pt-2">
-                    {discounts.map(discount => (
-                      <div key={discount.id} className="flex items-center gap-2">
-                        <Input 
-                          placeholder="Discount name"
-                          defaultValue={discount.name}
-                          onBlur={(e) => handleDiscountChange(discount.id, { name: e.target.value })}
-                          className="flex-1"
-                        />
-                        <Input 
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="0.00"
-                          defaultValue={(discount.amount / 100).toFixed(2)}
-                          onBlur={(e) => handleDiscountChange(discount.id, { amount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
-                          className="w-28 text-right"
-                        />
-                        <Button variant="ghost" size="icon" onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={() => dispatch(addDiscount({ receiptId: receipt.id }))}>
-                      <Plus className="h-4 w-4 mr-2"/> Add Discount
+                  </div>
+                  {receipt.status === 'processed' && (
+                    <CardDescription className='flex items-center gap-2 mt-1.5'>
+                      <span>Subtotal: {formatCurrency(subtotal, receipt.currency)}</span>
+                      {receipt.overallConfidence !== undefined && (
+                        <AccessibleTooltip content={<p>The AI was {receipt.overallConfidence}% confident in its analysis of this receipt.</p>}>
+                          <span className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium'>
+                            <Sparkles className='h-3.5 w-3.5 text-primary' />
+                            <span>AI Confidence: {receipt.overallConfidence}%</span>
+                          </span>
+                        </AccessibleTooltip>
+                      )}
+                    </CardDescription>
+                  )}
+                  {receipt.status === 'failed' && receipt.error && (
+                    <Alert variant="destructive" className="mt-4">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Scan Failed</AlertTitle>
+                      <AlertDescription>
+                        {receipt.error}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardHeader>
+                <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="icon" className="-mr-2 -my-2 flex-shrink-0">
+                        <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", isCardOpen && "rotate-180")} />
+                        <span className='sr-only'>{isCardOpen ? "Collapse" : "Expand"}</span>
                     </Button>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="service-charge">
-                    <AccordionTrigger className='hover:no-underline'>
-                        <div className="flex items-center gap-2">
-                            <span>Service Charge / Tip {serviceChargeDisplay}</span>
-                            {hasServiceChargeConfidence && (
-                                <AccessibleTooltip content={<p className="text-xs">AI Confidence: {serviceCharge.confidence}%</p>}>
-                                    <div className="p-1 -mr-1 rounded-full" onClick={(e) => e.stopPropagation()}>
-                                        <Sparkles className="h-4 w-4 text-primary" />
-                                    </div>
+                </CollapsibleTrigger>
+            </div>
+          
+            <CollapsibleContent>
+              {hasConflict && receipt.status === 'processed' && (
+                  <div className='px-6 pb-6'>
+                      <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Receipt Conflict</AlertTitle>
+                          <AlertDescription>
+                              This receipt's total is negative. Please adjust the values in the expanded "Discounts" section below, or correct the item costs in the list at the bottom of the page.
+                          </AlertDescription>
+                      </Alert>
+                  </div>
+              )}
+              {receipt.status === 'processed' && (
+                <>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 mb-1">
+                            Payer
+                            {!receipt.payerId && receipt.status === 'processed' && (
+                                <AccessibleTooltip content={<p>This receipt needs a payer.</p>}>
+                                    <AlertCircle className="h-4 w-4 text-destructive" />
                                 </AccessibleTooltip>
                             )}
-                        </div>
-                    </AccordionTrigger>
-                  <AccordionContent className="pt-4">
-                    <div className="flex items-center gap-6">
-                      <RadioGroup 
-                        value={serviceCharge.type} 
-                        onValueChange={(type: 'fixed' | 'percentage') => handleUpdateServiceCharge({ type, value: 0 })}
-                        className="flex items-center gap-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="percentage" id={`sc-type-percentage-${receipt.id}`} />
-                          <Label htmlFor={`sc-type-percentage-${receipt.id}`}>Percentage (%)</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="fixed" id={`sc-type-fixed-${receipt.id}`} />
-                          <Label htmlFor={`sc-type-fixed-${receipt.id}`}>Fixed ({receipt.currency})</Label>
-                        </div>
-                      </RadioGroup>
-                      <Input
-                        key={`${receipt.id}-${serviceCharge.type}`} // Force re-render on type change
-                        type="text"
-                        inputMode="decimal"
-                        defaultValue={serviceCharge.type === 'fixed' ? (serviceCharge.value / 100).toFixed(2) : serviceCharge.value}
-                        onBlur={(e) => handleUpdateServiceCharge({ 
-                          value: serviceCharge.type === 'fixed' 
-                            ? Math.round(parseFloat(e.target.value) * 100) || 0
-                            : parseFloat(e.target.value) || 0
-                        })}
-                        className="w-28 text-right"
-                      />
+                        </Label>
+                        <Select onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined}>
+                          <SelectTrigger 
+                            id={`payer-${receipt.id}`}
+                            className={cn(!receipt.payerId && receipt.status === 'processed' && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive")}
+                          >
+                            <SelectValue placeholder="Select a payer" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Currency</Label>
+                        <Select onValueChange={(currency) => handleUpdateReceipt({ currency })} value={receipt.currency}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="EUR">EUR</SelectItem>
+                            <SelectItem value="GBP">GBP</SelectItem>
+                            <SelectItem value="CAD">CAD</SelectItem>
+                            <SelectItem value="AUD">AUD</SelectItem>
+                            <SelectItem value="JPY">JPY</SelectItem>
+                            <SelectItem value="INR">INR</SelectItem>
+                            <SelectItem value="CNY">CNY</SelectItem>
+                            <SelectItem value="CHF">CHF</SelectItem>
+                            <SelectItem value="NZD">NZD</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-            <CardFooter>
-              <div className="w-full text-right font-bold text-lg">
-                Receipt Total: {formatCurrency(receiptTotal, receipt.currency)}
-              </div>
-            </CardFooter>
-          </>
-        )}
-      </Card>
+                    
+                    {receipt.currency !== globalCurrency && (
+                      <div className="space-y-2">
+                        <Label>Exchange Rate to {globalCurrency}</Label>
+                        <div className='flex items-center gap-2'>
+                          <span className='text-sm text-muted-foreground'>1 {receipt.currency} =</span>
+                          <Input 
+                            type="text"
+                            inputMode="decimal"
+                            placeholder='e.g. 1.25'
+                            defaultValue={receipt.exchangeRate}
+                            onBlur={(e) => handleUpdateReceipt({ exchangeRate: parseFloat(e.target.value) || undefined })}
+                            className='max-w-[120px]'
+                          />
+                          <span className='text-sm text-muted-foreground'>{globalCurrency}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <Accordion type="single" collapsible className="w-full" value={openAccordion} onValueChange={setOpenAccordion}>
+                      <AccordionItem value="discounts">
+                        <AccordionTrigger className='hover:no-underline'>
+                          <div className="flex items-center justify-between w-full">
+                              <span className="flex items-center gap-2">
+                                  Discounts ({formatCurrency(totalDiscounts, receipt.currency)})
+                                  {hasDiscountConfidence && (
+                                      <AccessibleTooltip content={
+                                        <div className="p-1 space-y-1 text-xs max-w-xs">
+                                            <p className="font-bold mb-1">AI Confidence Scores</p>
+                                            {discounts.filter(d => d.confidence !== undefined).map(d => (
+                                                <div key={d.id} className="flex justify-between gap-4">
+                                                    <span className="truncate pr-2">{d.name}:</span>
+                                                    <span className="flex-shrink-0">{d.confidence}%</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                      }>
+                                        <Sparkles className="h-4 w-4 text-primary" />
+                                      </AccessibleTooltip>
+                                  )}
+                              </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-2 pt-2">
+                          {discounts.map(discount => (
+                            <div key={discount.id} className="flex items-center gap-2">
+                              <Input 
+                                placeholder="Discount name"
+                                defaultValue={discount.name}
+                                onBlur={(e) => handleDiscountChange(discount.id, { name: e.target.value })}
+                                className="flex-1"
+                              />
+                              <Input 
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="0.00"
+                                defaultValue={(discount.amount / 100).toFixed(2)}
+                                onBlur={(e) => handleDiscountChange(discount.id, { amount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
+                                className="w-28 text-right"
+                              />
+                              <Button variant="ghost" size="icon" onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button variant="outline" size="sm" onClick={() => dispatch(addDiscount({ receiptId: receipt.id }))}>
+                            <Plus className="h-4 w-4 mr-2"/> Add Discount
+                          </Button>
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="service-charge">
+                          <AccordionTrigger className='hover:no-underline'>
+                              <div className="flex items-center justify-between w-full">
+                                  <span className="flex items-center gap-2">
+                                      Service Charge / Tip {serviceChargeDisplay}
+                                      {hasServiceChargeConfidence && (
+                                          <AccessibleTooltip content={<p className="text-xs">AI Confidence: {receipt.serviceCharge.confidence}%</p>}>
+                                              <Sparkles className="h-4 w-4 text-primary" />
+                                          </AccessibleTooltip>
+                                      )}
+                                  </span>
+                              </div>
+                          </AccordionTrigger>
+                        <AccordionContent className="pt-4">
+                          <div className="flex items-center gap-6">
+                            <RadioGroup 
+                              value={receipt.serviceCharge.type} 
+                              onValueChange={(type: 'fixed' | 'percentage') => handleUpdateServiceCharge({ type, value: 0 })}
+                              className="flex items-center gap-4"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="percentage" id={`sc-type-percentage-${receipt.id}`} />
+                                <Label htmlFor={`sc-type-percentage-${receipt.id}`}>Percentage (%)</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="fixed" id={`sc-type-fixed-${receipt.id}`} />
+                                <Label htmlFor={`sc-type-fixed-${receipt.id}`}>Fixed ({receipt.currency})</Label>
+                              </div>
+                            </RadioGroup>
+                            <Input
+                              key={`${receipt.id}-${receipt.serviceCharge.type}`} // Force re-render on type change
+                              type="text"
+                              inputMode="decimal"
+                              defaultValue={receipt.serviceCharge.type === 'fixed' ? (receipt.serviceCharge.value / 100).toFixed(2) : receipt.serviceCharge.value}
+                              onBlur={(e) => handleUpdateServiceCharge({ 
+                                value: receipt.serviceCharge.type === 'fixed' 
+                                  ? Math.round(parseFloat(e.target.value) * 100) || 0
+                                  : parseFloat(e.target.value) || 0
+                              })}
+                              className="w-28 text-right"
+                            />
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </CardContent>
+                  <CardFooter>
+                    <div className="w-full text-right font-bold text-lg">
+                      Receipt Total: {formatCurrency(receiptTotal, receipt.currency)}
+                    </div>
+                  </CardFooter>
+                </>
+              )}
+            </CollapsibleContent>
+        </Card>
+      </Collapsible>
     </>
   );
 }
