@@ -18,11 +18,9 @@ const initialState: SessionState = {
   currentAssignmentIndex: 0,
 };
 
-// This thunk now reads the file and creates a receipt "shell".
-// The status of the shell depends on whether we are in a demo session.
-export const addReceiptFromFile = createAsyncThunk(
-  'session/addReceiptFromFile',
-  async ({ file, isDemo }: { file: File; isDemo: boolean }, { rejectWithValue }) => {
+export const uploadAndProcessReceipt = createAsyncThunk(
+  'session/uploadAndProcessReceipt',
+  async ({ file, user }: { file: File; user: AuthUser | null }, { rejectWithValue }) => {
     try {
       const imageDataUri = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -30,29 +28,25 @@ export const addReceiptFromFile = createAsyncThunk(
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(file);
       });
-      // All new uploads are unprocessed.
-      const status = 'unprocessed';
-      return { name: file.name, imageDataUri, status };
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Could not read file.');
-    }
-  }
-);
 
+      if (!user) {
+        throw new Error('User authentication is required to process receipts.');
+      }
 
-// This thunk now takes a receipt ID, its data URI, and the user to process.
-export const processReceipt = createAsyncThunk(
-  'session/processReceipt',
-  async ({ receiptId, imageDataUri, user }: { receiptId: string; imageDataUri: string; user: AuthUser | null }, { rejectWithValue }) => {
-    try {
       const extractedData = await extractReceiptData({ receiptDataUri: imageDataUri, user });
-      return { receiptId, ...extractedData };
+      
+      return {
+        name: file.name,
+        imageDataUri,
+        ...extractedData
+      };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during AI processing.';
+      const errorMessage = error instanceof Error ? error.message : 'Could not process file.';
       return rejectWithValue(errorMessage);
     }
   }
 );
+
 
 export const loadDemoData = createAction('session/loadDemoData');
 
@@ -299,55 +293,49 @@ const sessionSlice = createSlice({
         const demoState = { ...MOCK_DATA, status: 'succeeded' as const, error: null, isDemoSession: true };
         return { ...initialState, ...demoState, paidSettlements: {}, step: 1 };
       })
-      .addCase(addReceiptFromFile.fulfilled, (state, action) => {
+      .addCase(uploadAndProcessReceipt.pending, (state, action) => {
+        const { file } = action.meta.arg;
         const newReceipt: Receipt = {
-          id: `receipt_${new Date().getTime()}`,
-          name: action.payload.name,
-          imageDataUri: action.payload.imageDataUri,
-          status: action.payload.status as 'unprocessed' | 'processed',
+          id: action.meta.requestId,
+          name: file.name,
+          status: 'processing',
           payerId: null,
           discounts: [],
           serviceCharge: { type: 'fixed', value: 0 },
           currency: state.globalCurrency,
         };
         state.receipts.push(newReceipt);
+        state.status = 'loading';
+        state.error = null;
       })
-      .addCase(processReceipt.pending, (state, action) => {
-        const receipt = state.receipts.find(r => r.id === action.meta.arg.receiptId);
+      .addCase(uploadAndProcessReceipt.fulfilled, (state, action) => {
+        const receipt = state.receipts.find(r => r.id === action.meta.requestId);
         if (receipt) {
-          receipt.status = 'processing';
-          receipt.error = null;
-          state.error = null;
-        }
-      })
-      .addCase(processReceipt.fulfilled, (state, action) => {
-        const { receiptId } = action.payload;
-        const receipt = state.receipts.find(r => r.id === receiptId);
-        if (receipt) {
-          // Remove any existing items associated with this receipt before adding new ones
-          state.items = state.items.filter(item => item.receiptId !== receiptId);
-
-          const serviceChargeTotal = action.payload.serviceCharges.reduce((sum, sc) => sum + sc.amount, 0);
-          const serviceChargeConfidence = action.payload.serviceCharges.length > 0 ? action.payload.serviceCharges.reduce((sum, sc) => sum + (sc.confidence || 0), 0) / action.payload.serviceCharges.length : undefined;
+          const payload = action.payload;
+          receipt.status = 'processed';
+          receipt.imageDataUri = payload.imageDataUri;
+          receipt.currency = payload.currency || state.globalCurrency;
+          receipt.overallConfidence = payload.overallConfidence;
           
-          receipt.discounts = action.payload.discounts.map((d, i) => ({
+          receipt.discounts = payload.discounts.map((d, i) => ({
             ...d, 
-            id: `d_${receiptId}_${i}`, 
+            id: `d_${receipt.id}_${i}`, 
             amount: Math.round(d.amount * 100),
             confidence: d.confidence
           }));
+          
+          const serviceChargeTotal = payload.serviceCharges.reduce((sum, sc) => sum + sc.amount, 0);
+          const serviceChargeConfidence = payload.serviceCharges.length > 0 ? payload.serviceCharges.reduce((sum, sc) => sum + (sc.confidence || 0), 0) / payload.serviceCharges.length : undefined;
+          
           receipt.serviceCharge = { 
             type: 'fixed', 
             value: Math.round(serviceChargeTotal * 100),
             confidence: serviceChargeConfidence ? Math.round(serviceChargeConfidence) : undefined
           };
-          receipt.currency = action.payload.currency || state.globalCurrency;
-          receipt.status = 'processed';
-          receipt.overallConfidence = action.payload.overallConfidence;
 
-          const newItems: Item[] = action.payload.items.map((item, index) => ({
-            id: `item_${receiptId}_${index}`,
-            receiptId: receiptId,
+          const newItems: Item[] = payload.items.map((item, index) => ({
+            id: `item_${receipt.id}_${index}`,
+            receiptId: receipt.id,
             name: item.name,
             cost: Math.round(item.cost * 100),
             assignees: [],
@@ -359,13 +347,16 @@ const sessionSlice = createSlice({
 
           state.items.push(...newItems);
         }
+        state.status = 'succeeded';
       })
-      .addCase(processReceipt.rejected, (state, action) => {
-        const receipt = state.receipts.find(r => r.id === action.meta.arg.receiptId);
+      .addCase(uploadAndProcessReceipt.rejected, (state, action) => {
+        const receipt = state.receipts.find(r => r.id === action.meta.requestId);
         if (receipt) {
           receipt.status = 'failed';
           receipt.error = action.payload as string;
         }
+        state.status = 'failed';
+        state.error = action.payload as string;
       });
   }
 });

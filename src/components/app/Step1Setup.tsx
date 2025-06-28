@@ -6,7 +6,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { FilePlus2, ReceiptText, Users, RefreshCw, Upload, AlertTriangle, Sparkles, Plus, AlertCircle } from 'lucide-react';
-import { addReceiptFromFile, setGlobalCurrency, resetSession, addManualReceipt, restoreSession } from '@/lib/redux/slices/sessionSlice';
+import { setGlobalCurrency, resetSession, addManualReceipt, restoreSession, uploadAndProcessReceipt } from '@/lib/redux/slices/sessionSlice';
 import ReceiptCard from './ReceiptCard';
 import ItemListEditor from './ItemListEditor';
 import { useToast } from '@/hooks/use-toast';
@@ -33,7 +33,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
-import { useRouter } from 'next/navigation';
 import type { SessionState } from '@/lib/types';
 import {
   ResponsiveSelect,
@@ -42,15 +41,15 @@ import {
   ResponsiveSelectLabel,
   ResponsiveSelectTrigger,
 } from '../ui/responsive-select';
+import { useAuth } from '@/lib/firebase/auth';
 
 const MAX_RECEIPTS = 3;
 
 export default function Step1Setup() {
   const session = useSelector((state: RootState) => state.session);
   const { participants, receipts, items, error, globalCurrency, isDemoSession } = session;
-
+  const { user } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
-  const router = useRouter();
   const { toast } = useToast();
   
   const receiptFileInputRef = React.useRef<HTMLInputElement>(null);
@@ -99,8 +98,8 @@ export default function Step1Setup() {
       return;
     }
     const file = event.target.files?.[0];
-    if (file) {
-      dispatch(addReceiptFromFile({file, isDemo: isDemoSession}));
+    if (file && user) {
+      dispatch(uploadAndProcessReceipt({file, user: { email: user.email, email_verified: user.emailVerified }}));
     }
     if (receiptFileInputRef.current) {
       receiptFileInputRef.current.value = '';
@@ -188,6 +187,15 @@ export default function Step1Setup() {
   };
   
   const isSessionActive = participants.length > 0 || receipts.length > 0 || items.length > 0;
+  
+  const isUploadDisabled = isReceiptLimitReached || isDemoSession || !user;
+  const uploadTooltipMessage = isReceiptLimitReached 
+    ? receiptLimitMessage 
+    : isDemoSession 
+      ? 'Receipt uploads are disabled in demo mode.' 
+      : !user 
+        ? 'You must be logged in to upload receipts.' 
+        : 'Upload a receipt image';
 
   return (
     <motion.div 
@@ -306,8 +314,8 @@ export default function Step1Setup() {
                               <DropDrawerItem onClick={handleAddManually} disabled={isReceiptLimitReached} icon={<FilePlus2 className="h-4 w-4" />}>
                                 Add Manually
                               </DropDrawerItem>
-                              <DropDrawerItem onClick={handleUploadClick} disabled={isReceiptLimitReached} icon={<Sparkles className="h-4 w-4" />}>
-                                  Upload Receipt
+                              <DropDrawerItem onClick={handleUploadClick} disabled={isUploadDisabled} icon={<Sparkles className="h-4 w-4" />}>
+                                  Upload & Scan
                               </DropDrawerItem>
                           </DropDrawerContent>
                       </DropDrawer>
@@ -322,11 +330,11 @@ export default function Step1Setup() {
                           </Button>
                         </span>
                       </AccessibleTooltip>
-                      <AccessibleTooltip content={<p>{receiptLimitMessage}</p>}>
+                      <AccessibleTooltip content={<p>{uploadTooltipMessage}</p>}>
                         <span tabIndex={0} className="flex-1">
-                          <Button onClick={handleUploadClick} size="sm" className="w-full" disabled={isReceiptLimitReached}>
+                          <Button onClick={handleUploadClick} size="sm" className="w-full" disabled={isUploadDisabled}>
                               <Sparkles className="mr-2 h-4 w-4" />
-                              Upload Receipt
+                              Upload & Scan
                           </Button>
                         </span>
                       </AccessibleTooltip>
@@ -349,7 +357,7 @@ export default function Step1Setup() {
             ) : (
               <div className="text-center py-12 border-2 border-dashed rounded-lg">
                 <p className="text-muted-foreground">No receipts uploaded yet.</p>
-                <p className="text-sm text-muted-foreground">Click "Upload" to get started.</p>
+                <p className="text-sm text-muted-foreground">Click "Upload & Scan" to get started.</p>
               </div>
             )}
           </CardContent>

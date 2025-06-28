@@ -6,7 +6,7 @@ import { type Receipt, type Discount, type ServiceCharge } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
-import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, processReceipt, removeReceipt } from '@/lib/redux/slices/sessionSlice';
+import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, removeReceipt } from '@/lib/redux/slices/sessionSlice';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -16,7 +16,6 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/lib/firebase/auth';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,8 +39,7 @@ import {
 
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
-  const { participants, items, globalCurrency, isDemoSession } = useSelector((state: RootState) => state.session);
-  const { user } = useAuth();
+  const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>(undefined);
@@ -74,16 +72,6 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
       setOpenAccordion('discounts');
     }
   }, [hasConflict, isCardOpen]);
-
-  const handleScanReceipt = () => {
-    if (receipt.imageDataUri && user) {
-      dispatch(processReceipt({ 
-        receiptId: receipt.id, 
-        imageDataUri: receipt.imageDataUri,
-        user: { email: user.email, email_verified: user.emailVerified }
-      }));
-    }
-  };
   
   const handleRemoveReceipt = () => {
     dispatch(removeReceipt(receipt.id));
@@ -133,22 +121,6 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                             <ImageIcon className="h-5 w-5" />
                             <span className="sr-only">View Receipt Image</span>
                         </Button>
-                      )}
-                      {receipt.status === 'unprocessed' && !isDemoSession && (
-                        <Button onClick={handleScanReceipt} disabled={!user}>
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            Scan with AI
-                        </Button>
-                      )}
-                      {receipt.status === 'unprocessed' && isDemoSession && (
-                        <AccessibleTooltip content={<p>AI scanning is disabled in demo mode.</p>}>
-                            <span tabIndex={0}>
-                                <Button disabled className="pointer-events-none">
-                                    <Sparkles className="mr-2 h-4 w-4" />
-                                    Scan with AI
-                                </Button>
-                            </span>
-                        </AccessibleTooltip>
                       )}
                       {receipt.status === 'processing' && (
                         <Button disabled>
