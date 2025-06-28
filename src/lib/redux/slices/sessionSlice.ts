@@ -30,7 +30,7 @@ export const addReceiptFromFile = createAsyncThunk(
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(file);
       });
-      // All new uploads are unprocessed, the UI will gate AI scanning in demo mode.
+      // All new uploads are unprocessed.
       const status = 'unprocessed';
       return { name: file.name, imageDataUri, status };
     } catch (error) {
@@ -297,8 +297,7 @@ const sessionSlice = createSlice({
     builder
       .addCase(loadDemoData, (state) => {
         const demoState = { ...MOCK_DATA, status: 'succeeded' as const, error: null, isDemoSession: true };
-        const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'unprocessed' as const}));
-        return { ...initialState, ...demoState, receipts: processedDemoReceipts, paidSettlements: {}, step: 1 };
+        return { ...initialState, ...demoState, paidSettlements: {}, step: 1 };
       })
       .addCase(addReceiptFromFile.fulfilled, (state, action) => {
         const newReceipt: Receipt = {
