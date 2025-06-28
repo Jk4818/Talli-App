@@ -266,25 +266,25 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
 
               <Accordion type="single" collapsible className="w-full" value={openAccordion} onValueChange={setOpenAccordion}>
                 <AccordionItem value="discounts">
-                  <AccordionTrigger className='justify-between hover:no-underline'>
+                  <AccordionTrigger className='hover:no-underline'>
                       <div className="flex items-center gap-2">
                         {receipt.discounts && receipt.discounts.length > 0 && <Sparkles className="h-4 w-4 text-primary" />}
                         <span>Discounts ({formatCurrency(totalDiscounts, receipt.currency)})</span>
+                        {receipt.discounts && receipt.discounts.some(d => d.confidence !== undefined) && (
+                          <AccessibleTooltip content={
+                              <div className="p-1 space-y-1 text-xs">
+                                  <p className="font-bold mb-1">AI Confidence Scores</p>
+                                  {receipt.discounts.map(d => (
+                                      d.confidence !== undefined && <div key={d.id} className="flex justify-between gap-4"><span>{d.name}:</span><span>{d.confidence}%</span></div>
+                                  ))}
+                              </div>
+                          }>
+                              <div role="button" aria-label="View confidence scores" className="p-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                          </AccessibleTooltip>
+                        )}
                       </div>
-                      {receipt.discounts && receipt.discounts.some(d => d.confidence !== undefined) && (
-                        <AccessibleTooltip content={
-                            <div className="p-1 space-y-1 text-xs">
-                                <p className="font-bold mb-1">AI Confidence Scores</p>
-                                {receipt.discounts.map(d => (
-                                    d.confidence !== undefined && <div key={d.id} className="flex justify-between gap-4"><span>{d.name}:</span><span>{d.confidence}%</span></div>
-                                ))}
-                            </div>
-                        }>
-                            <div role="button" aria-label="View confidence scores" className="p-1 -mr-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                        </AccessibleTooltip>
-                      )}
                   </AccordionTrigger>
                   <AccordionContent className="space-y-2 pt-2">
                     {discounts.map(discount => (
@@ -314,23 +314,23 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="service-charge">
-                    <AccordionTrigger className='justify-between hover:no-underline'>
+                    <AccordionTrigger className='hover:no-underline'>
                         <div className="flex items-center gap-2">
                             {serviceCharge.value > 0 && <Sparkles className="h-4 w-4 text-primary" />}
                             <span>Service Charge / Tip {serviceChargeDisplay}</span>
+                            {serviceCharge.confidence !== undefined && (
+                                <AccessibleTooltip content={
+                                    <div className="p-1 space-y-1 text-xs">
+                                        <p className="font-bold mb-1">AI Confidence Score</p>
+                                        <div className="flex justify-between gap-4"><span>Service Charge:</span><span>{serviceCharge.confidence}%</span></div>
+                                    </div>
+                                }>
+                                    <div role="button" aria-label="View confidence score" className="p-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                </AccessibleTooltip>
+                            )}
                         </div>
-                        {serviceCharge.confidence !== undefined && (
-                            <AccessibleTooltip content={
-                                <div className="p-1 space-y-1 text-xs">
-                                    <p className="font-bold mb-1">AI Confidence Score</p>
-                                    <div className="flex justify-between gap-4"><span>Service Charge:</span><span>{serviceCharge.confidence}%</span></div>
-                                </div>
-                            }>
-                                <div role="button" aria-label="View confidence score" className="p-1 -mr-1 rounded-full hover:bg-muted-foreground/10" onClick={(e) => e.stopPropagation()}>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                            </AccessibleTooltip>
-                        )}
                     </AccordionTrigger>
                   <AccordionContent className="pt-4">
                     <div className="flex items-center gap-6">
