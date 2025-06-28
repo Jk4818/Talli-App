@@ -259,71 +259,71 @@ export default function Step1Setup() {
                 </div>
             </div>
           </CardHeader>
-          <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 px-6 pb-4">
-              <div className="flex items-center gap-2">
-                  <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
-                  <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
-                  <SelectTrigger id="global-currency" className="w-[90px] h-9">
-                      <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                    <SelectItem value="CAD">CAD</SelectItem>
-                    <SelectItem value="AUD">AUD</SelectItem>
-                    <SelectItem value="JPY">JPY</SelectItem>
-                    <SelectItem value="INR">INR</SelectItem>
-                    <SelectItem value="CNY">CNY</SelectItem>
-                    <SelectItem value="CHF">CHF</SelectItem>
-                    <SelectItem value="NZD">NZD</SelectItem>
-                  </SelectContent>
-                  </Select>
-              </div>
-
-              {/* Responsive actions */}
-              <div className="flex flex-1 justify-end">
-                {/* Mobile Dropdown */}
-                <div className="sm:hidden">
-                    <DropDrawer>
-                        <DropDrawerTrigger asChild>
-                            <Button size="sm" disabled={isReceiptLimitReached}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add
-                            </Button>
-                        </DropDrawerTrigger>
-                        <DropDrawerContent>
-                            <DropDrawerItem onClick={handleAddManually} disabled={isReceiptLimitReached} icon={<FilePlus2 className="h-4 w-4" />}>
-                               Add Manually
-                            </DropDrawerItem>
-                             <DropDrawerItem onClick={handleUploadClick} disabled={isReceiptLimitReached} icon={<Sparkles className="h-4 w-4" />}>
-                                Upload Receipt
-                            </DropDrawerItem>
-                        </DropDrawerContent>
-                    </DropDrawer>
-                </div>
-                {/* Desktop Buttons */}
-                <div className="hidden sm:flex flex-1 items-center gap-2">
-                    <AccessibleTooltip content={<p>{receiptLimitMessage}</p>}>
-                      <span tabIndex={0} className="flex-1">
-                        <Button onClick={handleAddManually} size="sm" variant='outline' className="w-full" disabled={isReceiptLimitReached}>
-                            <FilePlus2 className="mr-2 h-4 w-4" />
-                            Add Manually
-                        </Button>
-                      </span>
-                    </AccessibleTooltip>
-                     <AccessibleTooltip content={<p>{receiptLimitMessage}</p>}>
-                      <span tabIndex={0} className="flex-1">
-                        <Button onClick={handleUploadClick} size="sm" className="w-full" disabled={isReceiptLimitReached}>
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            Upload Receipt
-                        </Button>
-                      </span>
-                    </AccessibleTooltip>
-                </div>
-              </div>
-          </div>
           <CardContent>
+            <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4">
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="global-currency" className="text-sm shrink-0">Settle in:</Label>
+                    <Select value={globalCurrency} onValueChange={handleGlobalCurrencyChange}>
+                    <SelectTrigger id="global-currency" className="w-[90px] h-9">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="GBP">GBP</SelectItem>
+                      <SelectItem value="CAD">CAD</SelectItem>
+                      <SelectItem value="AUD">AUD</SelectItem>
+                      <SelectItem value="JPY">JPY</SelectItem>
+                      <SelectItem value="INR">INR</SelectItem>
+                      <SelectItem value="CNY">CNY</SelectItem>
+                      <SelectItem value="CHF">CHF</SelectItem>
+                      <SelectItem value="NZD">NZD</SelectItem>
+                    </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Responsive actions */}
+                <div className="flex flex-1 justify-end">
+                  {/* Mobile Dropdown */}
+                  <div className="sm:hidden">
+                      <DropDrawer>
+                          <DropDrawerTrigger asChild>
+                              <Button size="sm" disabled={isReceiptLimitReached}>
+                                  <Plus className="mr-2 h-4 w-4" />
+                                  Add
+                              </Button>
+                          </DropDrawerTrigger>
+                          <DropDrawerContent>
+                              <DropDrawerItem onClick={handleAddManually} disabled={isReceiptLimitReached} icon={<FilePlus2 className="h-4 w-4" />}>
+                                Add Manually
+                              </DropDrawerItem>
+                              <DropDrawerItem onClick={handleUploadClick} disabled={isReceiptLimitReached} icon={<Sparkles className="h-4 w-4" />}>
+                                  Upload Receipt
+                              </DropDrawerItem>
+                          </DropDrawerContent>
+                      </DropDrawer>
+                  </div>
+                  {/* Desktop Buttons */}
+                  <div className="hidden sm:flex flex-1 items-center gap-2">
+                      <AccessibleTooltip content={<p>{receiptLimitMessage}</p>}>
+                        <span tabIndex={0} className="flex-1">
+                          <Button onClick={handleAddManually} size="sm" variant='outline' className="w-full" disabled={isReceiptLimitReached}>
+                              <FilePlus2 className="mr-2 h-4 w-4" />
+                              Add Manually
+                          </Button>
+                        </span>
+                      </AccessibleTooltip>
+                      <AccessibleTooltip content={<p>{receiptLimitMessage}</p>}>
+                        <span tabIndex={0} className="flex-1">
+                          <Button onClick={handleUploadClick} size="sm" className="w-full" disabled={isReceiptLimitReached}>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              Upload Receipt
+                          </Button>
+                        </span>
+                      </AccessibleTooltip>
+                  </div>
+                </div>
+            </div>
             {isReceiptLimitReached && (
               <Alert variant="default" className="mb-4">
                   <AlertCircle className="h-4 w-4" />
