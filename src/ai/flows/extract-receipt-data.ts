@@ -86,7 +86,12 @@ const extractReceiptDataFlow = ai.defineFlow(
   },
   async (input) => {
     assertAuth(input.user);
-    const {output} = await extractReceiptDataPrompt(input);
-    return output!;
+    const response = await extractReceiptDataPrompt(input);
+    
+    // Log the raw LLM output for easier debugging.
+    // This can be viewed in the Genkit Inspector or the terminal running the dev server.
+    console.log('Raw AI Response for receipt:', response.output);
+
+    return response.output!;
   }
 );
