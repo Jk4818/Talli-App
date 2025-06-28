@@ -26,15 +26,19 @@ export function AccessibleTooltip({
   popoverContentProps,
   tooltipContentProps,
 }: AccessibleTooltipProps) {
+  const [isMounted, setIsMounted] = React.useState(false)
   const isMobile = useIsMobile()
 
-  // On the server, isMobile is undefined. We only render the trigger.
-  // On the client, it becomes true/false, and we render the correct component.
-  // This avoids the hydration mismatch and the state update loop.
-  if (isMobile === undefined) {
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // On the server or during initial hydration, only render the trigger.
+  if (!isMounted) {
     return <>{children}</>
   }
 
+  // Once mounted on the client, render the appropriate component.
   if (isMobile) {
     return (
       <Popover>
