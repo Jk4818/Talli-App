@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/lib/firebase/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { UIStateInitializer } from '@/components/UIStateInitializer';
+import { Analytics } from '@vercel/analytics/react';
 
 export const metadata: Metadata = {
   title: 'Talli - Effortless Bill Splitting',
@@ -37,6 +38,7 @@ export default function RootLayout({
           </ReduxProvider>
         </AuthProvider>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );

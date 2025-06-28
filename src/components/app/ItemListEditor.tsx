@@ -164,17 +164,16 @@ export default function ItemListEditor() {
                   >
                     <div className="flex justify-between items-start gap-4">
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-semibold leading-snug truncate">{item.name}</h3>
-                                {item.confidence !== undefined && (
-                                    <AccessibleTooltip content={<p>{item.confidence}% AI Confidence</p>}>
-                                        <Sparkles className="h-4 w-4 text-primary/80 shrink-0" />
-                                    </AccessibleTooltip>
-                                )}
-                            </div>
+                            <h3 className="font-semibold leading-snug truncate">{item.name}</h3>
                             <p className="text-sm text-muted-foreground truncate" title={receipt?.name || 'N/A'}>
                                 From: {receipt?.name || 'N/A'}
                             </p>
+                            {item.confidence !== undefined && (
+                                <div className="flex items-center gap-1.5 mt-1 text-xs text-primary/90 font-medium">
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                    <span>AI Confidence: {item.confidence}%</span>
+                                </div>
+                            )}
                         </div>
                         <div className="text-right flex-shrink-0">
                             <p className="font-mono text-xl font-bold text-foreground">
