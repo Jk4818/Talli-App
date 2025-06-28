@@ -155,7 +155,7 @@ export default function ItemListEditor() {
                 return (
                   <div
                     key={item.id}
-                    className="group rounded-lg border bg-background p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                    className="group rounded-lg border bg-card p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
                     onClick={() => setEditingItem(item)}
                     tabIndex={0}
                     onKeyDown={(e) => {
