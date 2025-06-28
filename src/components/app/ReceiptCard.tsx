@@ -125,22 +125,21 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                             <span className="sr-only">View Receipt Image</span>
                         </Button>
                       )}
-                      {receipt.status === 'unprocessed' && (
-                        isDemoSession ? (
-                            <AccessibleTooltip content={<p>AI scanning is disabled in demo mode.</p>}>
-                                <span tabIndex={0}>
-                                    <Button disabled className="pointer-events-none">
-                                        <Sparkles className="mr-2 h-4 w-4" />
-                                        Scan with AI
-                                    </Button>
-                                </span>
-                            </AccessibleTooltip>
-                        ) : (
-                            <Button onClick={handleScanReceipt} disabled={!user}>
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                Scan with AI
-                            </Button>
-                        )
+                      {receipt.status === 'unprocessed' && !isDemoSession && (
+                        <Button onClick={handleScanReceipt} disabled={!user}>
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Scan with AI
+                        </Button>
+                      )}
+                      {receipt.status === 'unprocessed' && isDemoSession && (
+                        <AccessibleTooltip content={<p>AI scanning is disabled in demo mode.</p>}>
+                            <span tabIndex={0}>
+                                <Button disabled className="pointer-events-none">
+                                    <Sparkles className="mr-2 h-4 w-4" />
+                                    Scan with AI
+                                </Button>
+                            </span>
+                        </AccessibleTooltip>
                       )}
                       {receipt.status === 'processing' && (
                         <Button disabled>
@@ -195,11 +194,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                     </Alert>
                   )}
                 </CardHeader>
-                <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="icon" className="-mr-2 -my-2 flex-shrink-0">
-                        <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", isCardOpen && "rotate-180")} />
-                        <span className='sr-only'>{isCardOpen ? "Collapse" : "Expand"}</span>
-                    </Button>
+                <CollapsibleTrigger className="flex-shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring -mr-2">
+                    <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", isCardOpen && "rotate-180")} />
+                    <span className='sr-only'>{isCardOpen ? "Collapse" : "Expand"}</span>
                 </CollapsibleTrigger>
             </div>
           
@@ -282,8 +279,8 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                       <AccordionItem value="discounts">
                         <AccordionTrigger className='hover:no-underline'>
                           <div className="flex items-center justify-between w-full">
-                              <span className="flex items-center gap-2">
-                                  Discounts ({formatCurrency(totalDiscounts, receipt.currency)})
+                              <div className="flex items-center gap-2">
+                                  <span>Discounts ({formatCurrency(totalDiscounts, receipt.currency)})</span>
                                   {hasDiscountConfidence && (
                                       <AccessibleTooltip content={
                                         <div className="p-1 space-y-1 text-xs max-w-xs">
@@ -296,10 +293,16 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                             ))}
                                         </div>
                                       }>
-                                        <Sparkles className="h-4 w-4 text-primary" />
+                                        <Sparkles
+                                            className="h-4 w-4 text-primary"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                            }}
+                                        />
                                       </AccessibleTooltip>
                                   )}
-                              </span>
+                              </div>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-2 pt-2">
@@ -332,14 +335,20 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                       <AccordionItem value="service-charge">
                           <AccordionTrigger className='hover:no-underline'>
                               <div className="flex items-center justify-between w-full">
-                                  <span className="flex items-center gap-2">
-                                      Service Charge / Tip {serviceChargeDisplay}
+                                  <div className="flex items-center gap-2">
+                                      <span>Service Charge / Tip {serviceChargeDisplay}</span>
                                       {hasServiceChargeConfidence && (
                                           <AccessibleTooltip content={<p className="text-xs">AI Confidence: {receipt.serviceCharge.confidence}%</p>}>
-                                              <Sparkles className="h-4 w-4 text-primary" />
+                                              <Sparkles
+                                                className="h-4 w-4 text-primary"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                }}
+                                              />
                                           </AccessibleTooltip>
                                       )}
-                                  </span>
+                                  </div>
                               </div>
                           </AccordionTrigger>
                         <AccordionContent className="pt-4">
