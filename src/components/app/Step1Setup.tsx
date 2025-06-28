@@ -13,11 +13,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  DropDrawer,
+  DropDrawerContent,
+  DropDrawerItem,
+  DropDrawerTrigger,
+} from '@/components/ui/dropdrawer';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -285,24 +285,22 @@ export default function Step1Setup() {
               <div className="flex flex-1 justify-end">
                 {/* Mobile Dropdown */}
                 <div className="sm:hidden">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                    <DropDrawer>
+                        <DropDrawerTrigger asChild>
                             <Button size="sm" disabled={isReceiptLimitReached}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleAddManually} disabled={isReceiptLimitReached}>
-                                <FilePlus2 className="mr-2 h-4 w-4" />
-                                <span>Add Manually</span>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem onClick={handleUploadClick} disabled={isReceiptLimitReached}>
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                <span>Upload Receipt</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DropDrawerTrigger>
+                        <DropDrawerContent>
+                            <DropDrawerItem onClick={handleAddManually} disabled={isReceiptLimitReached} icon={<FilePlus2 className="h-4 w-4" />}>
+                               Add Manually
+                            </DropDrawerItem>
+                             <DropDrawerItem onClick={handleUploadClick} disabled={isReceiptLimitReached} icon={<Sparkles className="h-4 w-4" />}>
+                                Upload Receipt
+                            </DropDrawerItem>
+                        </DropDrawerContent>
+                    </DropDrawer>
                 </div>
                 {/* Desktop Buttons */}
                 <div className="hidden sm:flex flex-1 items-center gap-2">

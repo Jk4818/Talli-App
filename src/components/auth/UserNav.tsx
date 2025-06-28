@@ -4,14 +4,14 @@ import { useAuth } from '@/lib/firebase/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+  DropDrawer,
+  DropDrawerContent,
+  DropDrawerGroup,
+  DropDrawerItem,
+  DropDrawerLabel,
+  DropDrawerSeparator,
+  DropDrawerTrigger,
+} from '../ui/dropdrawer';
 import { LogOut, User as UserIcon } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 
@@ -36,30 +36,29 @@ export function UserNav() {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <DropDrawer>
+      <DropDrawerTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? 'User'} />
             <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
           </Avatar>
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
+      </DropDrawerTrigger>
+      <DropDrawerContent className="w-56" align="end">
+        <DropDrawerLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.displayName}</p>
             <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
           </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem onClick={signOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropDrawerLabel>
+        <DropDrawerSeparator />
+        <DropDrawerGroup>
+          <DropDrawerItem onClick={signOut} icon={<LogOut className="h-4 w-4" />}>
+            Log out
+          </DropDrawerItem>
+        </DropDrawerGroup>
+      </DropDrawerContent>
+    </DropDrawer>
   );
 }

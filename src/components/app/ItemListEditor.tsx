@@ -7,19 +7,18 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles } from 'lucide-react';
+import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles, Check } from 'lucide-react';
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
 import { Item } from '@/lib/types';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  DropDrawer,
+  DropDrawerContent,
+  DropDrawerItem,
+  DropDrawerLabel,
+  DropDrawerSeparator,
+  DropDrawerTrigger,
+} from '@/components/ui/dropdrawer';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { Badge } from '../ui/badge';
@@ -119,25 +118,23 @@ export default function ItemListEditor() {
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              <DropDrawer>
+                <DropDrawerTrigger asChild>
                   <Button variant="outline" className='flex-1 sm:flex-none'>
-                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                    <ArrowUpDown className="h-4 w-4" />
                     Sort
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup value={sortKey} onValueChange={(value) => setSortKey(value as any)}>
-                    <DropdownMenuRadioItem value="default">Default</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="cost-asc">Cost (Low to High)</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="cost-desc">Cost (High to Low)</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </DropDrawerTrigger>
+                <DropDrawerContent align="end">
+                  <DropDrawerLabel>Sort by</DropDrawerLabel>
+                  <DropDrawerSeparator />
+                    <DropDrawerItem onClick={() => setSortKey('default')} icon={sortKey === 'default' ? <Check className="h-4 w-4" /> : <div className="w-4 h-4"/>}>Default</DropDrawerItem>
+                    <DropDrawerItem onClick={() => setSortKey('name-asc')} icon={sortKey === 'name-asc' ? <Check className="h-4 w-4" /> : <div className="w-4 h-4"/>}>Name (A-Z)</DropDrawerItem>
+                    <DropDrawerItem onClick={() => setSortKey('name-desc')} icon={sortKey === 'name-desc' ? <Check className="h-4 w-4" /> : <div className="w-4 h-4"/>}>Name (Z-A)</DropDrawerItem>
+                    <DropDrawerItem onClick={() => setSortKey('cost-asc')} icon={sortKey === 'cost-asc' ? <Check className="h-4 w-4" /> : <div className="w-4 h-4"/>}>Cost (Low to High)</DropDrawerItem>
+                    <DropDrawerItem onClick={() => setSortKey('cost-desc')} icon={sortKey === 'cost-desc' ? <Check className="h-4 w-4" /> : <div className="w-4 h-4"/>}>Cost (High to Low)</DropDrawerItem>
+                </DropDrawerContent>
+              </DropDrawer>
               <Button onClick={handleAddNewItem} disabled={receipts.length === 0} className='flex-1 sm:flex-none'>
                   Add Item
               </Button>
@@ -155,7 +152,7 @@ export default function ItemListEditor() {
                 return (
                   <div
                     key={item.id}
-                    className="group rounded-lg border bg-card p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                    className="group rounded-lg border bg-card/50 p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
                     onClick={() => setEditingItem(item)}
                     tabIndex={0}
                     onKeyDown={(e) => {
