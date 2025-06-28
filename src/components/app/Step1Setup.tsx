@@ -17,6 +17,7 @@ import {
   DropDrawerContent,
   DropDrawerItem,
   DropDrawerTrigger,
+  DropDrawerLabel,
 } from '@/components/ui/dropdrawer';
 import {
   AlertDialog,
@@ -294,6 +295,7 @@ export default function Step1Setup() {
                               </Button>
                           </DropDrawerTrigger>
                           <DropDrawerContent>
+                              <DropDrawerLabel>Add Receipt</DropDrawerLabel>
                               <DropDrawerItem onClick={handleAddManually} disabled={isReceiptLimitReached} icon={<FilePlus2 className="h-4 w-4" />}>
                                 Add Manually
                               </DropDrawerItem>
