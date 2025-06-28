@@ -88,10 +88,15 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
             </Label>
             <Input
               id="cost"
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               value={cost}
-              onChange={(e) => setCost(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
+                    setCost(value);
+                }
+              }}
               className="col-span-3"
             />
           </div>

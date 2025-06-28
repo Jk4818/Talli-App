@@ -1,3 +1,4 @@
+
 import { createSlice, createAsyncThunk, type PayloadAction, createAction } from '@reduxjs/toolkit';
 import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge } from '@/lib/types';
 import { MOCK_DATA } from '@/lib/mock-data';
@@ -10,7 +11,7 @@ const initialState: SessionState = {
   receipts: [],
   items: [],
   paidSettlements: {},
-  globalCurrency: 'USD',
+  globalCurrency: 'GBP',
   status: 'idle',
   error: null,
   isDemoSession: false,
@@ -296,7 +297,7 @@ const sessionSlice = createSlice({
     builder
       .addCase(loadDemoData, (state) => {
         const demoState = { ...MOCK_DATA, status: 'succeeded' as const, error: null, isDemoSession: true };
-        const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'processed' as const}));
+        const processedDemoReceipts = demoState.receipts.map(r => ({...r, status: 'unprocessed' as const}));
         return { ...initialState, ...demoState, receipts: processedDemoReceipts, paidSettlements: {}, step: 1 };
       })
       .addCase(addReceiptFromFile.fulfilled, (state, action) => {

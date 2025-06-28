@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -68,9 +69,15 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
         dispatch(setPercentageAssignment({ itemId, participantId, percentage: 0 }));
         return;
     }
+     // Only allow integer values
+    if (!/^\d*$/.test(value)) {
+        return;
+    }
     const percentage = parseInt(value, 10);
-    if (!isNaN(percentage) && percentage >= 0 && percentage <= 100) {
-        dispatch(setPercentageAssignment({ itemId, participantId, percentage }));
+    if (!isNaN(percentage)) {
+        // Clamp value between 0 and 100
+        const clampedPercentage = Math.max(0, Math.min(100, percentage));
+        dispatch(setPercentageAssignment({ itemId, participantId, percentage: clampedPercentage }));
     }
   }
   
@@ -209,7 +216,8 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
                         {splitMode === 'percentage' && isChecked && (
                             <div className="relative w-20">
                                 <Input
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     value={item?.percentageAssignments[p.id] || ''}
                                     onChange={e => handlePercentageChange(p.id, e.target.value)}
                                     className="pr-6 text-right"

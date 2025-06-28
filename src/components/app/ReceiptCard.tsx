@@ -12,7 +12,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, Info } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -255,9 +255,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                   <div className='flex items-center gap-2'>
                     <span className='text-sm text-muted-foreground'>1 {receipt.currency} =</span>
                     <Input 
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       placeholder='e.g. 1.25'
-                      step="0.0001"
                       defaultValue={receipt.exchangeRate}
                       onBlur={(e) => handleUpdateReceipt({ exchangeRate: parseFloat(e.target.value) || undefined })}
                       className='max-w-[120px]'
@@ -284,7 +284,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                 ))}
                             </div>
                           }>
-                              <Sparkles className="h-4 w-4 text-primary" />
+                              <div className="p-1 -mr-1 rounded-full" onClick={(e) => e.stopPropagation()}>
+                                  <Sparkles className="h-4 w-4 text-primary" />
+                              </div>
                           </AccessibleTooltip>
                       )}
                     </div>
@@ -299,10 +301,10 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                           className="flex-1"
                         />
                         <Input 
-                          type="number"
-                          step="0.01"
+                          type="text"
+                          inputMode="decimal"
                           placeholder="0.00"
-                          defaultValue={discount.amount / 100}
+                          defaultValue={(discount.amount / 100).toFixed(2)}
                           onBlur={(e) => handleDiscountChange(discount.id, { amount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
                           className="w-28 text-right"
                         />
@@ -322,7 +324,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                             <span>Service Charge / Tip {serviceChargeDisplay}</span>
                             {hasServiceChargeConfidence && (
                                 <AccessibleTooltip content={<p className="text-xs">AI Confidence: {serviceCharge.confidence}%</p>}>
-                                    <Sparkles className="h-4 w-4 text-primary" />
+                                    <div className="p-1 -mr-1 rounded-full" onClick={(e) => e.stopPropagation()}>
+                                        <Sparkles className="h-4 w-4 text-primary" />
+                                    </div>
                                 </AccessibleTooltip>
                             )}
                         </div>
@@ -345,8 +349,8 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                       </RadioGroup>
                       <Input
                         key={`${receipt.id}-${serviceCharge.type}`} // Force re-render on type change
-                        type="number"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         defaultValue={serviceCharge.type === 'fixed' ? (serviceCharge.value / 100).toFixed(2) : serviceCharge.value}
                         onBlur={(e) => handleUpdateServiceCharge({ 
                           value: serviceCharge.type === 'fixed' 
