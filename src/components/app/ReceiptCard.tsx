@@ -199,6 +199,33 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                     <span className='sr-only'>{isCardOpen ? "Collapse" : "Expand"}</span>
                 </CollapsibleTrigger>
             </div>
+            
+            {receipt.status === 'processed' && (
+              <div className="px-6 pb-6 -mt-4">
+                  <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 mb-1 text-sm font-medium">
+                      Payer
+                      {!receipt.payerId && (
+                          <AccessibleTooltip content={<p>A payer must be assigned to this receipt.</p>}>
+                              <AlertCircle className="h-4 w-4 text-destructive" />
+                          </AccessibleTooltip>
+                      )}
+                  </Label>
+                  <Select onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined} disabled={participants.length === 0}>
+                    <SelectTrigger 
+                      id={`payer-${receipt.id}`}
+                      className={cn(
+                        "w-full sm:max-w-xs",
+                        !receipt.payerId && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive"
+                      )}
+                    >
+                      <SelectValue placeholder={participants.length > 0 ? "Select a payer" : "Add participants first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+              </div>
+            )}
           
             <CollapsibleContent>
               {hasConflict && receipt.status === 'processed' && (
@@ -215,46 +242,23 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
               {receipt.status === 'processed' && (
                 <>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 mb-1">
-                            Payer
-                            {!receipt.payerId && receipt.status === 'processed' && (
-                                <AccessibleTooltip content={<p>This receipt needs a payer.</p>}>
-                                    <AlertCircle className="h-4 w-4 text-destructive" />
-                                </AccessibleTooltip>
-                            )}
-                        </Label>
-                        <Select onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined}>
-                          <SelectTrigger 
-                            id={`payer-${receipt.id}`}
-                            className={cn(!receipt.payerId && receipt.status === 'processed' && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive")}
-                          >
-                            <SelectValue placeholder="Select a payer" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>Currency</Label>
-                        <Select onValueChange={(currency) => handleUpdateReceipt({ currency })} value={receipt.currency}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="USD">USD</SelectItem>
-                            <SelectItem value="EUR">EUR</SelectItem>
-                            <SelectItem value="GBP">GBP</SelectItem>
-                            <SelectItem value="CAD">CAD</SelectItem>
-                            <SelectItem value="AUD">AUD</SelectItem>
-                            <SelectItem value="JPY">JPY</SelectItem>
-                            <SelectItem value="INR">INR</SelectItem>
-                            <SelectItem value="CNY">CNY</SelectItem>
-                            <SelectItem value="CHF">CHF</SelectItem>
-                            <SelectItem value="NZD">NZD</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div>
+                      <Label>Currency</Label>
+                      <Select onValueChange={(currency) => handleUpdateReceipt({ currency })} value={receipt.currency}>
+                        <SelectTrigger className="w-full sm:max-w-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="GBP">GBP</SelectItem>
+                          <SelectItem value="CAD">CAD</SelectItem>
+                          <SelectItem value="AUD">AUD</SelectItem>
+                          <SelectItem value="JPY">JPY</SelectItem>
+                          <SelectItem value="INR">INR</SelectItem>
+                          <SelectItem value="CNY">CNY</SelectItem>
+                          <SelectItem value="CHF">CHF</SelectItem>
+                          <SelectItem value="NZD">NZD</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     {receipt.currency !== globalCurrency && (
