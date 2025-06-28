@@ -43,7 +43,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const dispatch = useDispatch<AppDispatch>();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>(undefined);
-  const [isCardOpen, setIsCardOpen] = useState(false);
+
+  const isPayerMissing = !receipt.payerId;
+  const [isCardOpen, setIsCardOpen] = useState(isPayerMissing);
 
   const discounts = receipt.discounts || [];
   const hasDiscountConfidence = discounts.some(d => d.confidence !== undefined);
@@ -63,8 +65,14 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
 
   const hasConflict = receiptTotal < 0;
-  const isPayerMissing = !receipt.payerId;
-  const hasError = isPayerMissing || hasConflict;
+
+  useEffect(() => {
+    // This effect ensures that if the payer status changes to missing
+    // (e.g., a participant is deleted), the card will open to prompt the user.
+    if (isPayerMissing) {
+      setIsCardOpen(true);
+    }
+  }, [isPayerMissing]);
 
   useEffect(() => {
     // Automatically expand the discounts section if there's a conflict
@@ -105,7 +113,11 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     <>
       <ReceiptImageViewer receipt={receipt} isOpen={isViewerOpen} onOpenChange={setIsViewerOpen} />
       <Collapsible open={isCardOpen} onOpenChange={setIsCardOpen}>
-        <Card className={cn('bg-card/50 overflow-hidden', hasError && 'border-destructive')}>
+        <Card className={cn(
+          'bg-card/50 overflow-hidden', 
+          hasConflict && 'border-destructive',
+          isPayerMissing && !hasConflict && 'border-primary'
+        )}>
             <div className="flex items-start p-6">
                 <CardHeader className="flex-1 p-0">
                   <div className="flex flex-wrap sm:flex-nowrap justify-between items-start gap-2">
@@ -154,10 +166,15 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                   </div>
                   {receipt.status === 'processed' && (
                     <CardDescription className='flex items-center gap-2 mt-1.5'>
-                      {hasError && !isCardOpen ? (
+                      {!isCardOpen && hasConflict ? (
                         <div className="text-destructive font-medium flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" />
-                          <span>Action required - expand to resolve</span>
+                          <span>Receipt conflict - expand to resolve</span>
+                        </div>
+                      ) : !isCardOpen && isPayerMissing ? (
+                         <div className="text-primary font-medium flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Payer needed - expand to assign</span>
                         </div>
                       ) : (
                         <>
