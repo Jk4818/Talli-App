@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -7,13 +8,12 @@ import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowRight, ChevronDown, Printer } from 'lucide-react';
+import { ArrowRight, Printer } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { calculateSplits } from '@/lib/splitter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 
@@ -50,11 +50,10 @@ const ReportSkeleton = () => (
 
 
 const BreakdownCard = ({ participant, currency }: { participant: ParticipantSummary, currency: string }) => {
-    const [isOpen, setIsOpen] = useState(false);
     const hasBreakdown = participant.breakdown.items.length > 0 || participant.breakdown.discounts.length > 0 || participant.breakdown.serviceCharges.length > 0;
     
     return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="break-inside-avoid">
+        <div className="break-inside-avoid">
             <Card>
                 <div className="p-4">
                     <div className="flex items-center gap-3">
@@ -91,45 +90,38 @@ const BreakdownCard = ({ participant, currency }: { participant: ParticipantSumm
                 {hasBreakdown && (
                     <>
                         <Separator />
-                        <CollapsibleTrigger asChild>
-                            <button className="flex w-full items-center justify-between p-3 text-sm text-muted-foreground hover:bg-muted/50">
-                                <span>Itemized Breakdown</span>
-                                <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
-                            </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                            <div className="p-4 pt-0 text-xs">
-                                <div className="space-y-2 rounded-md border p-2">
-                                    <div className="grid grid-cols-2 gap-1 font-semibold">
-                                        <span>Description</span>
-                                        <span className="text-right">Amount</span>
-                                    </div>
-                                    <Separator />
-                                    {participant.breakdown.items.map((item, i) => (
-                                        <div key={`item-${i}`} className="grid grid-cols-2 gap-1">
-                                            <span className="truncate pr-2">{item.description}</span>
-                                            <span className="text-right font-mono">{formatCurrency(item.amount, currency)}</span>
-                                        </div>
-                                    ))}
-                                    {participant.breakdown.discounts.map((disc, i) => (
-                                        <div key={`disc-${i}`} className="grid grid-cols-2 gap-1 text-destructive">
-                                            <span className="truncate pr-2">{disc.description}</span>
-                                            <span className="text-right font-mono">{formatCurrency(disc.amount, currency)}</span>
-                                        </div>
-                                    ))}
-                                    {participant.breakdown.serviceCharges.map((sc, i) => (
-                                        <div key={`sc-${i}`} className="grid grid-cols-2 gap-1">
-                                            <span className="truncate pr-2">{sc.description}</span>
-                                            <span className="text-right font-mono">{formatCurrency(sc.amount, currency)}</span>
-                                        </div>
-                                    ))}
+                        <div className="p-4">
+                            <h5 className="text-sm font-semibold mb-2">Itemized Share</h5>
+                            <div className="space-y-2 rounded-md border p-2 text-xs">
+                                <div className="grid grid-cols-2 gap-1 font-semibold">
+                                    <span>Description</span>
+                                    <span className="text-right">Your Share</span>
                                 </div>
+                                <Separator />
+                                {participant.breakdown.items.map((item, i) => (
+                                    <div key={`item-${i}`} className="grid grid-cols-2 gap-1">
+                                        <span>{item.description}</span>
+                                        <span className="text-right font-mono">{formatCurrency(item.amount, currency)}</span>
+                                    </div>
+                                ))}
+                                {participant.breakdown.discounts.map((disc, i) => (
+                                    <div key={`disc-${i}`} className="grid grid-cols-2 gap-1 text-destructive">
+                                        <span>{disc.description}</span>
+                                        <span className="text-right font-mono">{formatCurrency(disc.amount, currency)}</span>
+                                    </div>
+                                ))}
+                                {participant.breakdown.serviceCharges.map((sc, i) => (
+                                    <div key={`sc-${i}`} className="grid grid-cols-2 gap-1">
+                                        <span>{sc.description}</span>
+                                        <span className="text-right font-mono">{formatCurrency(sc.amount, currency)}</span>
+                                    </div>
+                                ))}
                             </div>
-                        </CollapsibleContent>
+                        </div>
                     </>
                 )}
             </Card>
-        </Collapsible>
+        </div>
     )
 }
 
@@ -352,9 +344,9 @@ export default function ReportPage() {
                                   <Avatar className="h-8 w-8 text-xs">
                                     <AvatarFallback>{fromParticipant ? getInitials(fromParticipant.name) : '?'}</AvatarFallback>
                                   </Avatar>
-                                  <span className="truncate">{s.from}</span>
+                                  <span className="flex-1 min-w-0">{s.from}</span>
                                   <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                  <span className="truncate">{s.to}</span>
+                                  <span className="flex-1 min-w-0">{s.to}</span>
                                   <Avatar className="h-8 w-8 text-xs">
                                     <AvatarFallback>{toParticipant ? getInitials(toParticipant.name) : '?'}</AvatarFallback>
                                   </Avatar>
@@ -382,3 +374,5 @@ export default function ReportPage() {
     </>
   );
 }
+
+    
