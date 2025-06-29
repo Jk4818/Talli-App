@@ -22,6 +22,7 @@ import {
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { Badge } from '../ui/badge';
+import { formatCurrency } from '@/lib/utils';
 
 
 export default function ItemListEditor() {
@@ -177,7 +178,7 @@ export default function ItemListEditor() {
                         </div>
                         <div className="text-right flex-shrink-0">
                             <p className="font-mono text-xl font-bold text-foreground">
-                                {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
+                                {formatCurrency(item.cost, currency)}
                             </p>
                             {item.assignees.length > 0 && (
                                 <Badge variant="secondary" className="capitalize mt-1">
