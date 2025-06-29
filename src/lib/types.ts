@@ -50,6 +50,12 @@ export interface Settlement {
   paid: boolean;
 }
 
+export interface BreakdownEntry {
+  description: string;
+  amount: number; // in cents, negative for discounts
+  receiptId: string;
+}
+
 export interface ParticipantSummary {
   id: string;
   name: string;
@@ -57,6 +63,11 @@ export interface ParticipantSummary {
   totalShare: number;
   totalServiceChargeShare: number;
   balance: number;
+  breakdown: {
+    items: BreakdownEntry[];
+    discounts: BreakdownEntry[];
+    serviceCharges: BreakdownEntry[];
+  };
 }
 
 export interface SplitSummary {

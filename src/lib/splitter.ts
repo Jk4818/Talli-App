@@ -1,4 +1,4 @@
-import { SessionState, ParticipantSummary, Settlement, SplitSummary } from './types';
+import { SessionState, ParticipantSummary, Settlement, SplitSummary, BreakdownEntry } from './types';
 
 // A helper function to distribute a total amount based on shares, handling rounding.
 // Returns a map of participantId -> distributedAmount
@@ -62,10 +62,10 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       totalShare: 0,
       totalServiceChargeShare: 0,
       balance: 0,
+      breakdown: { items: [], discounts: [], serviceCharges: [] },
     });
   });
 
-  // This map will track which participants have paid extra pennies due to rounding.
   const participantRoundingDebt = new Map<string, number>();
   participants.forEach(p => participantRoundingDebt.set(p.id, 0));
 
@@ -77,22 +77,19 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   const participantIdToName = new Map(participants.map(p => [p.id, p.name]));
 
 
-  // Calculate each participant's total share from all receipts
   receipts.forEach(receipt => {
     const rate = (receipt.currency !== globalCurrency && receipt.exchangeRate) ? receipt.exchangeRate : 1;
     const itemsOnReceipt = items.filter(i => i.receiptId === receipt.id);
-
-    // Calculate participant shares of the item costs on this receipt
     const participantSharesOnReceipt = new Map<string, number>();
     participants.forEach(p => participantSharesOnReceipt.set(p.id, 0));
 
+    // 1. Calculate and store item shares for each participant on this receipt
     itemsOnReceipt.forEach(item => {
       if (item.cost <= 0 || item.assignees.length === 0) return;
       
       const itemShares = new Map<string, number>();
       let itemCausedRounding = false;
       const adjustments: { participantName: string, amount: number }[] = [];
-      
       let fallbackToEqual = item.splitMode === 'equal';
 
       if (item.splitMode === 'percentage') {
@@ -100,29 +97,20 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
           if (totalPercentage === 100) {
               const calculatedShares: {id: string, share: number}[] = [];
               let distributedAmount = 0;
-
-              // Calculate everyone's floored share first
               item.assignees.forEach(pid => {
                   const percentage = item.percentageAssignments[pid] || 0;
                   const share = Math.floor((item.cost * percentage) / 100);
                   distributedAmount += share;
                   calculatedShares.push({ id: pid, share });
               });
-
               let remainder = item.cost - distributedAmount;
-
               if (remainder > 0) {
                   roundingOccurred = true;
                   itemCausedRounding = true;
-
-                  // Sort the assignees by who has paid the least in rounding so far.
                   const assigneesSortedByDebt = calculatedShares.sort((a, b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0));
-                  
-                  // Distribute the remainder pennies.
                   for (let i = 0; i < remainder; i++) {
                       const assigneeToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
                       assigneeToAdjust.share += 1;
-
                       const pidToAdjust = assigneeToAdjust.id;
                       participantRoundingDebt.set(pidToAdjust, (participantRoundingDebt.get(pidToAdjust) || 0) + 1);
                       adjustments.push({ participantName: participantIdToName.get(pidToAdjust)!, amount: 1 });
@@ -151,24 +139,13 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
             }
             const baseShare = Math.floor(item.cost / item.assignees.length);
             let remainder = item.cost % item.assignees.length;
-
-            item.assignees.forEach(id => {
-                itemShares.set(id, baseShare);
-            });
-
+            item.assignees.forEach(id => itemShares.set(id, baseShare));
             if (remainder > 0) {
-                // Sort assignees by who has paid the least in rounding so far.
                 const assigneesSortedByDebt = [...item.assignees].sort((a, b) => (participantRoundingDebt.get(a) || 0) - (participantRoundingDebt.get(b) || 0));
-
-                // Distribute the remainder pennies to those with the lowest debt.
                 for (let i = 0; i < remainder; i++) {
                     const pidToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
                     itemShares.set(pidToAdjust, (itemShares.get(pidToAdjust) || 0) + 1);
-                    
-                    // Update their global rounding debt accumulator.
                     participantRoundingDebt.set(pidToAdjust, (participantRoundingDebt.get(pidToAdjust) || 0) + 1);
-                    
-                    // For the UI breakdown.
                     adjustments.push({ participantName: participantIdToName.get(pidToAdjust)!, amount: 1 });
                 }
             }
@@ -176,57 +153,55 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       }
 
       if (itemCausedRounding) {
-        roundedItems.push({
-            name: item.name,
-            cost: item.cost,
-            assigneesCount: item.assignees.length,
-            adjustments: adjustments,
-        });
+        roundedItems.push({ name: item.name, cost: item.cost, assigneesCount: item.assignees.length, adjustments });
       }
 
       itemShares.forEach((share, pid) => {
+        const summary = finalSummaries.get(pid)!;
+        summary.breakdown.items.push({ description: item.name, amount: Math.round(share * rate), receiptId: receipt.id });
         participantSharesOnReceipt.set(pid, (participantSharesOnReceipt.get(pid) || 0) + share);
       });
     });
 
     const receiptSubtotal = [...participantSharesOnReceipt.values()].reduce((sum, s) => sum + s, 0);
-    if (receiptSubtotal === 0) return;
+    totalItemCost += Math.round(receiptSubtotal * rate);
 
-    const localDiscounts = (receipt.discounts || []).reduce((sum, d) => sum + d.amount, 0);
-    const subtotalAfterDiscounts = receiptSubtotal - localDiscounts;
+    // 2. Distribute discounts and service charges based on item shares
+    (receipt.discounts || []).forEach(discount => {
+      totalDiscounts += Math.round(discount.amount * rate);
+      const distributedDiscount = distributeAmount(discount.amount, participantSharesOnReceipt);
+      distributedDiscount.forEach((amount, pid) => {
+        finalSummaries.get(pid)!.breakdown.discounts.push({
+          description: discount.name,
+          amount: -Math.round(amount * rate),
+          receiptId: receipt.id,
+        });
+      });
+    });
+
+    const subtotalAfterDiscounts = receiptSubtotal - (receipt.discounts || []).reduce((sum, d) => sum + d.amount, 0);
     let localServiceCharge = 0;
     if (receipt.serviceCharge?.type === 'fixed') {
         localServiceCharge = receipt.serviceCharge.value;
     } else if (receipt.serviceCharge?.type === 'percentage') {
         const exactServiceCharge = subtotalAfterDiscounts * (receipt.serviceCharge.value / 100);
         localServiceCharge = Math.round(exactServiceCharge);
-        if (exactServiceCharge !== localServiceCharge) {
-            roundingOccurred = true;
-        }
+        if (exactServiceCharge !== localServiceCharge) roundingOccurred = true;
     }
     
-    const distributedDiscounts = distributeAmount(localDiscounts, participantSharesOnReceipt);
-    const distributedServiceCharge = distributeAmount(localServiceCharge, participantSharesOnReceipt);
-
-    participants.forEach(p => {
-        const pid = p.id;
-        const subtotalShare = participantSharesOnReceipt.get(pid) || 0;
-        const discountShare = distributedDiscounts.get(pid) || 0;
-        const serviceChargeShare = distributedServiceCharge.get(pid) || 0;
-
-        const finalReceiptShareLocal = subtotalShare - discountShare + serviceChargeShare;
-        const finalReceiptShareGlobal = Math.round(finalReceiptShareLocal * rate);
-
-        const summary = finalSummaries.get(pid)!;
-        summary.totalShare += finalReceiptShareGlobal;
-        summary.totalServiceChargeShare += Math.round(serviceChargeShare * rate);
-    });
-
-    totalItemCost += Math.round(receiptSubtotal * rate);
-    totalDiscounts += Math.round(localDiscounts * rate);
     totalServiceCharge += Math.round(localServiceCharge * rate);
+    if (localServiceCharge > 0) {
+      const distributedServiceCharge = distributeAmount(localServiceCharge, participantSharesOnReceipt);
+      distributedServiceCharge.forEach((amount, pid) => {
+        const summary = finalSummaries.get(pid)!;
+        const serviceChargeShare = Math.round(amount * rate);
+        summary.breakdown.serviceCharges.push({ description: 'Service Charge / Tip', amount: serviceChargeShare, receiptId: receipt.id });
+        summary.totalServiceChargeShare += serviceChargeShare;
+      });
+    }
   });
 
+  // 3. Calculate total paid by each participant
   let totalPaid = 0;
   receipts.forEach(receipt => {
     if (!receipt.payerId) return;
@@ -251,6 +226,14 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     totalPaid += receiptTotalInGlobal;
   });
 
+  // 4. Calculate final share from breakdown and apply session-wide rounding if necessary
+  finalSummaries.forEach(summary => {
+    const itemsTotal = summary.breakdown.items.reduce((s, i) => s + i.amount, 0);
+    const discountsTotal = summary.breakdown.discounts.reduce((s, d) => s + d.amount, 0);
+    const serviceChargesTotal = summary.breakdown.serviceCharges.reduce((s, sc) => s + sc.amount, 0);
+    summary.totalShare = itemsTotal + discountsTotal + serviceChargesTotal;
+  });
+
   const grandTotal = totalPaid;
   let totalCalculatedShare = [...finalSummaries.values()].reduce((sum, s) => sum + s.totalShare, 0);
   let roundingDifference = grandTotal - totalCalculatedShare;
@@ -259,25 +242,23 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   if (roundingDifference !== 0) {
     roundingOccurred = true;
     const payers = [...finalSummaries.values()].filter(s => s.totalPaid > 0).sort((a,b) => b.totalPaid - a.totalPaid);
-    // Find who has paid the least rounding pennies to apply the final adjustment to.
     const personToAdjust = (payers.length > 0 ? payers : [...finalSummaries.values()]).sort((a,b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0))[0];
 
     if (personToAdjust) {
         const summaryToAdjust = finalSummaries.get(personToAdjust.id);
         if(summaryToAdjust){
             summaryToAdjust.totalShare += roundingDifference;
-            roundingAdjustment = {
-                amount: roundingDifference,
-                participantName: summaryToAdjust.name
-            };
+            roundingAdjustment = { amount: roundingDifference, participantName: summaryToAdjust.name };
         }
     }
   }
 
+  // 5. Final balance calculation
   finalSummaries.forEach(summary => {
     summary.balance = summary.totalPaid - summary.totalShare;
   });
 
+  // 6. Generate settlements
   const settlements: Settlement[] = [];
   const debtors = [...finalSummaries.values()].filter(s => s.balance < -0.5).map(s => ({ ...s }));
   const creditors = [...finalSummaries.values()].filter(s => s.balance > 0.5).map(s => ({ ...s }));

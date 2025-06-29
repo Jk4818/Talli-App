@@ -1,17 +1,21 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { type SessionState } from '@/lib/types';
+import { type SessionState, type ParticipantSummary } from '@/lib/types';
 import { Logo } from '@/components/Logo';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowRight, Printer } from 'lucide-react';
+import { ArrowRight, ChevronDown, Printer } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { calculateSplits } from '@/lib/splitter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+
 
 const getInitials = (name: string) => {
   const names = name.split(' ');
@@ -44,6 +48,90 @@ const ReportSkeleton = () => (
     </div>
 );
 
+
+const BreakdownCard = ({ participant, currency }: { participant: ParticipantSummary, currency: string }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const hasBreakdown = participant.breakdown.items.length > 0 || participant.breakdown.discounts.length > 0 || participant.breakdown.serviceCharges.length > 0;
+    
+    return (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="break-inside-avoid">
+            <Card>
+                <div className="p-4">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 text-base">
+                            <AvatarFallback>{getInitials(participant.name)}</AvatarFallback>
+                        </Avatar>
+                        <h4 className="font-headline text-lg font-semibold">{participant.name}</h4>
+                    </div>
+                    <div className="mt-4 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Total Paid:</span>
+                            <span className="font-medium">{formatCurrency(participant.totalPaid, currency)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Total Share:</span>
+                            <span className="font-medium">{formatCurrency(participant.totalShare, currency)}</span>
+                        </div>
+                        <Separator className="my-2" />
+                        <div className="flex justify-between font-semibold text-base">
+                            <span>Balance:</span>
+                            <span className={cn(
+                                participant.balance > 0 && "text-accent-foreground",
+                                participant.balance < 0 && "text-destructive"
+                            )}>
+                                {formatCurrency(Math.abs(participant.balance), currency)}
+                                <span className="ml-2 text-xs text-muted-foreground font-normal">
+                                    {participant.balance > 0 ? 'is owed' : participant.balance < 0 ? 'owes' : 'settled'}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {hasBreakdown && (
+                    <>
+                        <Separator />
+                        <CollapsibleTrigger asChild>
+                            <button className="flex w-full items-center justify-between p-3 text-sm text-muted-foreground hover:bg-muted/50">
+                                <span>Itemized Breakdown</span>
+                                <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                            </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div className="p-4 pt-0 text-xs">
+                                <div className="space-y-2 rounded-md border p-2">
+                                    <div className="grid grid-cols-2 gap-1 font-semibold">
+                                        <span>Description</span>
+                                        <span className="text-right">Amount</span>
+                                    </div>
+                                    <Separator />
+                                    {participant.breakdown.items.map((item, i) => (
+                                        <div key={`item-${i}`} className="grid grid-cols-2 gap-1">
+                                            <span className="truncate pr-2">{item.description}</span>
+                                            <span className="text-right font-mono">{formatCurrency(item.amount, currency)}</span>
+                                        </div>
+                                    ))}
+                                    {participant.breakdown.discounts.map((disc, i) => (
+                                        <div key={`disc-${i}`} className="grid grid-cols-2 gap-1 text-destructive">
+                                            <span className="truncate pr-2">{disc.description}</span>
+                                            <span className="text-right font-mono">{formatCurrency(disc.amount, currency)}</span>
+                                        </div>
+                                    ))}
+                                    {participant.breakdown.serviceCharges.map((sc, i) => (
+                                        <div key={`sc-${i}`} className="grid grid-cols-2 gap-1">
+                                            <span className="truncate pr-2">{sc.description}</span>
+                                            <span className="text-right font-mono">{formatCurrency(sc.amount, currency)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </CollapsibleContent>
+                    </>
+                )}
+            </Card>
+        </Collapsible>
+    )
+}
 
 export default function ReportPage() {
   const [session, setSession] = useState<SessionState | null>(null);
@@ -148,13 +236,9 @@ export default function ReportPage() {
           .no-print {
             display: none;
           }
-          .receipt-card, .settlement-section {
+          .report-section, .receipt-card {
             break-inside: avoid;
-          }
-          .settlement-section {
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid hsl(var(--border));
+            page-break-inside: avoid;
           }
         }
       `}</style>
@@ -181,7 +265,7 @@ export default function ReportPage() {
 
             <Separator className="my-6" />
 
-            <section>
+            <section className="report-section">
                 <h2 className="text-xl font-headline font-bold mb-3">Participants</h2>
                 <div className="flex flex-wrap gap-4">
                     {participants.map(p => (
@@ -197,7 +281,7 @@ export default function ReportPage() {
             
             <Separator className="my-6" />
 
-            <section className="space-y-6">
+            <section className="space-y-6 report-section">
                 <h2 className="text-xl font-headline font-bold">Receipts</h2>
                 {receipts.map(receipt => {
                     const receiptItems = items.filter(i => i.receiptId === receipt.id);
@@ -241,7 +325,20 @@ export default function ReportPage() {
                 })}
             </section>
 
-            <section className="settlement-section">
+            <Separator className="my-6" />
+
+            <section className="report-section">
+                <h2 className="text-xl font-headline font-bold mb-4">Participant Summaries</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {summary.participantSummaries.map((p) => (
+                        <BreakdownCard key={p.id} participant={p} currency={globalCurrency} />
+                    ))}
+                </div>
+            </section>
+
+            <Separator className="my-6" />
+
+            <section className="report-section">
                 <h2 className="text-2xl font-headline font-bold mb-4">Final Settlement</h2>
                 <div className="space-y-4">
                      <ul className="space-y-3">
