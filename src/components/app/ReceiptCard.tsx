@@ -94,8 +94,25 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   };
 
   const formatCurrency = (amount: number, currencyCode: string) => {
-    return (amount / 100).toLocaleString(undefined, { style: 'currency', currency: currencyCode });
-  }
+    // Sanitize common symbols to ISO codes
+    let sanitizedCode = currencyCode?.toUpperCase().trim() || 'USD'; // Default to USD if null/undefined
+    if (sanitizedCode === '£' || sanitizedCode === 'POUND' || sanitizedCode === 'POUNDS' || sanitizedCode === 'STERLING') {
+      sanitizedCode = 'GBP';
+    } else if (sanitizedCode === '$' || sanitizedCode === 'DOLLAR' || sanitizedCode === 'DOLLARS') {
+      sanitizedCode = 'USD';
+    } else if (sanitizedCode === '€' || sanitizedCode === 'EURO' || sanitizedCode === 'EUROS') {
+      sanitizedCode = 'EUR';
+    }
+
+    try {
+      // Attempt to format with the sanitized code
+      return (amount / 100).toLocaleString(undefined, { style: 'currency', currency: sanitizedCode });
+    } catch (e) {
+      // If it still fails, log the error and fallback to a default currency (e.g., USD)
+      console.error(`Failed to format currency with code: '${currencyCode}' (Sanitized: '${sanitizedCode}'). Falling back to USD.`, e);
+      return (amount / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+    }
+  };
   
   const handleDiscountChange = (id: string, updates: Partial<Discount>) => {
     dispatch(updateDiscount({ receiptId: receipt.id, discount: { id, ...updates } }));
@@ -116,7 +133,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
         <Card className={cn(
           'bg-card/50 overflow-hidden', 
           hasConflict && 'border-destructive',
-          isPayerMissing && !hasConflict && 'border-primary'
+          isPayerMissing && !hasConflict && isCardOpen && 'border-primary'
         )}>
             <div className="flex items-start p-6">
                 <CardHeader className="flex-1 p-0">
