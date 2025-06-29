@@ -114,7 +114,7 @@ export default function Step3Summary() {
   const handleDownloadReport = () => {
     try {
       localStorage.setItem('splitzy_report_session', JSON.stringify(sessionState));
-      window.open('/app/report', '_blank');
+      window.open('/report', '_blank');
     } catch (error) {
       console.error("Failed to save session for report:", error);
       toast({
