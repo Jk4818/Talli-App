@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import BillSplitSummary from './BillSplitSummary';
 import { Button } from '../ui/button';
 import { resetSession, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
-import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight, MessageSquareText, Copy } from 'lucide-react';
+import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight, MessageSquareText, Copy, FileText, Braces, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -31,6 +31,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import SmartSummaryCard from './SmartSummaryCard';
+import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerSeparator, DropDrawerTrigger } from '../ui/dropdrawer';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
@@ -110,12 +111,18 @@ export default function Step3Summary() {
     }
   };
 
-  const handleReset = () => {
-    dispatch(resetSession());
-    toast({
-      title: 'Session Cleared',
-      description: 'All session data has been removed.',
-    });
+  const handleDownloadReport = () => {
+    try {
+      localStorage.setItem('splitzy_report_session', JSON.stringify(sessionState));
+      window.open('/app/report', '_blank');
+    } catch (error) {
+      console.error("Failed to save session for report:", error);
+      toast({
+        variant: "destructive",
+        title: "Report Failed",
+        description: "Could not prepare the report data. Your browser may be blocking local storage."
+      });
+    }
   };
 
   const handleExport = () => {
@@ -141,6 +148,14 @@ export default function Step3Summary() {
         description: "Could not export the session data."
       });
     }
+  };
+  
+  const handleReset = () => {
+    dispatch(resetSession());
+    toast({
+      title: 'Session Cleared',
+      description: 'All session data has been removed.',
+    });
   };
 
   const handleTogglePaid = (settlementId: string) => {
@@ -171,28 +186,48 @@ export default function Step3Summary() {
       exit="exit"
     >
         <motion.div variants={fadeInUp} className="flex flex-wrap justify-end gap-2">
-            <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export Session</Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <RefreshCw className="mr-2 h-4 w-4" /> Reset Session
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete all participants, receipts, and item assignments from the current session. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleReset}>
-                    Yes, Reset Session
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <DropDrawer>
+                <DropDrawerTrigger asChild>
+                    <Button variant="outline">
+                        <MoreHorizontal className="mr-2 h-4 w-4" /> Actions
+                    </Button>
+                </DropDrawerTrigger>
+                <DropDrawerContent>
+                    <DropDrawerLabel>Session Actions</DropDrawerLabel>
+                    <DropDrawerItem onClick={handleDownloadReport} icon={<FileText className="h-4 w-4"/>}>
+                        Download PDF Report
+                    </DropDrawerItem>
+                    <DropDrawerItem onClick={handleExport} icon={<Braces className="h-4 w-4"/>}>
+                        Export Session Data
+                    </DropDrawerItem>
+                    <DropDrawerSeparator />
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                             <DropDrawerItem
+                                onSelect={(e) => e.preventDefault()}
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                icon={<RefreshCw className="h-4 w-4"/>}
+                            >
+                                Reset Session
+                            </DropDrawerItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                This will permanently delete all participants, receipts, and item assignments from the current session. This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleReset}>
+                                Yes, Reset Session
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </DropDrawerContent>
+            </DropDrawer>
         </motion.div>
       <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
