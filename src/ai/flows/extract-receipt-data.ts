@@ -48,7 +48,7 @@ const ExtractReceiptDataOutputSchema = z.object({
   items: z.array(ItemSchema).describe('The list of items extracted from the receipt.'),
   discounts: z.array(DiscountSchema).describe('The list of discounts extracted from the receipt.'),
   serviceCharges: z.array(ServiceChargeSchema).describe('The list of service charges extracted from the receipt.'),
-  currency: z.string().describe('The currency of the receipt.'),
+  currency: z.string().length(3).describe('The 3-letter ISO 4217 currency code of the receipt (e.g., USD, GBP, EUR).'),
   overallConfidence: z.number().min(0).max(100).optional().describe('An overall confidence score (0-100) for the entire receipt extraction, considering image quality and text legibility.'),
 });
 
@@ -68,7 +68,7 @@ You will receive an image of a receipt. Your task is to analyze the image and ex
 1.  A list of all individual items, including their name and cost.
 2.  A list of all discounts applied, including the discount name and the amount.
 3.  A list of all service charges or tips, including a description and the amount.
-4.  The currency of the receipt (e.g., USD, GBP, EUR).
+4.  The currency of the receipt as a 3-letter ISO 4217 code (e.g., USD, GBP, EUR).
 5.  For each item, discount, and service charge, provide a confidence score from 0 to 100 on how certain you are about the accuracy of the extracted text and numbers. A low score indicates blurry text, unusual formatting, or ambiguity.
 6.  Provide an overall confidence score for the entire receipt, taking into account the image quality, clarity, and how easy it was to read.
 
