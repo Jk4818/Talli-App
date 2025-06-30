@@ -75,7 +75,7 @@ export default function ItemListEditor() {
     }
   };
 
-  const handleSaveItem = (updates: { name: string, cost: number, receiptId: string }) => {
+  const handleSaveItem = (updates: Partial<Item>) => {
     if (editingItem) {
       dispatch(updateItem({ id: editingItem.id, ...updates }));
     }
@@ -149,6 +149,8 @@ export default function ItemListEditor() {
                 const currency = receipt?.currency || globalCurrency;
                 const assignedParticipants = item.assignees.map(pid => participantMap.get(pid)).filter(Boolean) as {id: string, name: string}[];
                 const MAX_AVATARS = 5;
+                const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+                const effectiveCost = item.cost - totalItemDiscount;
 
                 return (
                   <div
@@ -178,8 +180,13 @@ export default function ItemListEditor() {
                         </div>
                         <div className="text-right flex-shrink-0">
                             <p className="font-mono text-xl font-bold text-foreground">
-                                {formatCurrency(item.cost, currency)}
+                                {formatCurrency(effectiveCost, currency)}
                             </p>
+                            {totalItemDiscount > 0 && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    (was {formatCurrency(item.cost, currency)})
+                                </p>
+                            )}
                             {item.assignees.length > 0 && (
                                 <Badge variant="secondary" className="capitalize mt-1">
                                     {getSplitModeIcon(item.splitMode)}
