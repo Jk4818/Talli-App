@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Trash2, Plus, Sparkles, Check, X } from 'lucide-react';
+import { Trash2, Plus, Sparkles, Check, X, Pencil, Layers } from 'lucide-react';
 import {
   ResponsiveSelect,
   ResponsiveSelectContent,
@@ -31,12 +31,14 @@ import { Separator } from '../ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/lib/redux/store';
-import { applySuggestedDiscount, ignoreSuggestedDiscount } from '@/lib/redux/slices/sessionSlice';
+import { applySuggestedDiscount, ignoreSuggestedDiscount, reassignSuggestedDiscount } from '@/lib/redux/slices/sessionSlice';
 import { Badge } from '../ui/badge';
+import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerTrigger } from '../ui/dropdrawer';
 
 
 interface ItemEditDialogProps {
   item: Item | null;
+  items: Item[];
   receipts: Receipt[];
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -45,7 +47,7 @@ interface ItemEditDialogProps {
   pendingSuggestion: { receiptId: string; discount: Discount } | null;
 }
 
-export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, onSave, onDelete, pendingSuggestion }: ItemEditDialogProps) {
+export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenChange, onSave, onDelete, pendingSuggestion }: ItemEditDialogProps) {
   const [name, setName] = useState('');
   const [cost, setCost] = useState('');
   const [receiptId, setReceiptId] = useState('');
@@ -114,6 +116,17 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
     }
   };
 
+  const handleReassignSuggestion = (newTargetItemId: string) => {
+    if (pendingSuggestion) {
+      dispatch(reassignSuggestedDiscount({
+        receiptId: pendingSuggestion.receiptId,
+        discountId: pendingSuggestion.discount.id,
+        newTargetItemId: newTargetItemId,
+      }));
+      onOpenChange(false); // Close dialog after action
+    }
+  };
+
   if (!item) return null;
 
   const currentReceipt = receipts.find(r => r.id === receiptId);
@@ -145,12 +158,36 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
                 <p>
                     AI suggests applying the <span className='font-medium'>&quot;{pendingSuggestion.discount.name}&quot;</span> discount (-{formatCurrency(pendingSuggestion.discount.amount, currentReceiptCurrency)}) to this item.
                 </p>
-                <div className="grid grid-cols-2 gap-2">
-                    <Button size="sm" onClick={handleApplySuggestion}>
-                        <Check className="mr-1.5 h-4 w-4" /> Apply Discount
-                    </Button>
-                    <Button size="sm" variant="secondary" onClick={handleIgnoreSuggestion}>
-                        <X className="mr-1.5 h-4 w-4" /> This is incorrect
+                <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button size="sm" className="w-full" onClick={handleApplySuggestion}>
+                            <Check className="mr-1.5 h-4 w-4" /> Apply
+                        </Button>
+                        <DropDrawer>
+                            <DropDrawerTrigger asChild>
+                                <Button size="sm" variant="secondary" className="w-full">
+                                    <Pencil className="mr-1.5 h-4 w-4" /> Reassign
+                                </Button>
+                            </DropDrawerTrigger>
+                            <DropDrawerContent>
+                                <DropDrawerLabel>Reassign to another item</DropDrawerLabel>
+                                {items.filter(i => i.receiptId === pendingSuggestion.receiptId && i.id !== item.id)
+                                .map(otherItem => (
+                                    <DropDrawerItem 
+                                        key={otherItem.id}
+                                        onClick={() => handleReassignSuggestion(otherItem.id)}
+                                    >
+                                        {otherItem.name}
+                                    </DropDrawerItem>
+                                ))}
+                                {items.filter(i => i.receiptId === pendingSuggestion.receiptId && i.id !== item.id).length === 0 && (
+                                  <DropDrawerItem disabled>No other items on this receipt</DropDrawerItem>
+                                )}
+                            </DropDrawerContent>
+                        </DropDrawer>
+                    </div>
+                    <Button size="sm" variant="ghost" className="w-full" onClick={handleIgnoreSuggestion}>
+                        <Layers className="mr-1.5 h-4 w-4" /> Convert to Receipt-Wide Discount
                     </Button>
                 </div>
             </div>

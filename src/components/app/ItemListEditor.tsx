@@ -267,6 +267,7 @@ export default function ItemListEditor() {
       </Card>
       <ItemEditDialog 
         item={editingItem}
+        items={items}
         receipts={receipts}
         isOpen={!!editingItem}
         onOpenChange={(open) => {
