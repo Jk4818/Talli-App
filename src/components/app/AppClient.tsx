@@ -65,9 +65,16 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     return items.some(item => !receiptIds.has(item.receiptId));
   }, [items, receipts]);
 
+  const hasPendingSuggestions = useMemo(() => {
+    return receipts.some(r => (r.discounts || []).some(d => d.suggestedItemId));
+  }, [receipts]);
+
   const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
   
   const step1TooltipMessage = useMemo(() => {
+    if (hasPendingSuggestions) {
+      return 'Please resolve all AI discount suggestions before continuing.';
+    }
     if (hasConflictingReceipts) {
       return 'Please resolve all receipt conflicts before continuing.';
     }
@@ -84,7 +91,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
         return 'A payer must be assigned to every receipt.';
     }
     return 'Please complete all setup steps to continue.';
-  }, [hasConflictingReceipts, participants.length, receipts, hasOrphanedItems]);
+  }, [hasConflictingReceipts, participants.length, receipts, hasOrphanedItems, hasPendingSuggestions]);
 
   const isStep2Complete = useMemo(() => {
     return items.every(item => {
@@ -140,7 +147,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
           </div>
           <div>
             {step === 1 && (
-              !isStep1Complete || hasConflictingReceipts || hasOrphanedItems ? (
+              !isStep1Complete || hasConflictingReceipts || hasOrphanedItems || hasPendingSuggestions ? (
                 <AccessibleTooltip content={<p>{step1TooltipMessage}</p>}>
                   {/* The span wrapper is crucial for the tooltip to work on a disabled button */}
                   <span tabIndex={0}>

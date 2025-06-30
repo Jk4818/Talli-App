@@ -190,15 +190,15 @@ export default function ItemListEditor() {
                             <p className="text-sm text-muted-foreground truncate" title={receipt?.name || 'N/A'}>
                                 From: {receipt?.name || 'N/A'}
                             </p>
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <div className="flex items-center gap-x-3 gap-y-1 mt-1 flex-wrap">
                                 {item.confidence !== undefined && (
-                                    <div className="flex items-center gap-1.5 text-xs text-primary/90 font-medium">
-                                        <Sparkles className="h-3.5 w-3.5" />
-                                        <span>AI Confidence: {item.confidence}%</span>
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                                        <Sparkles className="h-3 w-3 text-primary" />
+                                        <span>{item.confidence}%</span>
                                     </div>
                                 )}
                                 {suggestion && (
-                                    <AccessibleTooltip content={<p>AI has a discount suggestion for this item.</p>}>
+                                    <AccessibleTooltip content={<p>AI has a discount suggestion for this item. Click to review.</p>}>
                                         <div className="flex items-center gap-1.5 text-xs text-primary/90 font-medium">
                                             <Sparkles className="h-3.5 w-3.5" />
                                             <span>Suggestion</span>
