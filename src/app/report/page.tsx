@@ -136,9 +136,14 @@ export default function ReportPage() {
   const [date, setDate] = useState('');
 
   useEffect(() => {
+    const sessionKey = 'splitzy_report_session';
     try {
-      const savedState = localStorage.getItem('splitzy_report_session');
+      const savedState = sessionStorage.getItem(sessionKey);
       if (savedState) {
+        // Once we read the data, we remove it to ensure refreshing the page
+        // doesn't show stale data. This makes the report truly ephemeral.
+        sessionStorage.removeItem(sessionKey);
+
         const parsedState = JSON.parse(savedState) as Partial<SessionState>;
         // Basic validation
         if (parsedState && parsedState.participants && parsedState.items && parsedState.receipts) {

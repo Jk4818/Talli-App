@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -113,14 +114,14 @@ export default function Step3Summary() {
 
   const handleDownloadReport = () => {
     try {
-      localStorage.setItem('splitzy_report_session', JSON.stringify(sessionState));
+      sessionStorage.setItem('splitzy_report_session', JSON.stringify(sessionState));
       window.open('/report', '_blank');
     } catch (error) {
       console.error("Failed to save session for report:", error);
       toast({
         variant: "destructive",
         title: "Report Failed",
-        description: "Could not prepare the report data. Your browser may be blocking local storage."
+        description: "Could not prepare the report data. Your browser may be blocking session storage."
       });
     }
   };
