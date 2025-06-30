@@ -54,6 +54,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const [cost, setCost] = useState('');
   const [receiptId, setReceiptId] = useState('');
   const [discounts, setDiscounts] = useState<Discount[]>([]);
+  const [discountAmountStrings, setDiscountAmountStrings] = useState<Record<string, string>>({});
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
@@ -61,7 +62,14 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
       setName(item.name);
       setCost((item.cost / 100).toFixed(2));
       setReceiptId(item.receiptId);
-      setDiscounts(JSON.parse(JSON.stringify(item.discounts || []))); // Deep copy
+      const initialDiscounts = JSON.parse(JSON.stringify(item.discounts || []));
+      setDiscounts(initialDiscounts);
+      
+      const initialAmountStrings: Record<string, string> = {};
+      (initialDiscounts as Discount[]).forEach(d => {
+        initialAmountStrings[d.id] = (d.amount / 100).toFixed(2);
+      });
+      setDiscountAmountStrings(initialAmountStrings);
     }
   }, [item]);
 
@@ -81,27 +89,43 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   };
 
   const handleAddDiscount = () => {
-    setDiscounts(prev => [...prev, {
+    const newDiscount = {
         id: `d_item_${item?.id}_${Date.now()}`,
         name: 'New Discount',
         amount: 0,
-    }]);
-  };
-  
-  const handleDiscountChange = (id: string, field: 'name' | 'amount', value: string) => {
-    setDiscounts(prev => prev.map(d => {
-      if (d.id === id) {
-        if (field === 'amount') {
-          return { ...d, amount: Math.round(parseFloat(value) * 100) || 0 };
-        }
-        return { ...d, [field]: value };
-      }
-      return d;
+    };
+    setDiscounts(prev => [...prev, newDiscount]);
+    setDiscountAmountStrings(prev => ({
+        ...prev,
+        [newDiscount.id]: '0.00'
     }));
   };
+  
+  const handleDiscountNameChange = (id: string, value: string) => {
+    setDiscounts(prev => prev.map(d => (d.id === id ? { ...d, name: value } : d)));
+  };
+
+  const handleDiscountAmountStringChange = (id: string, value: string) => {
+    if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
+      setDiscountAmountStrings(prev => ({ ...prev, [id]: value }));
+    }
+  };
+
+  const handleDiscountAmountBlur = (id: string) => {
+    const valueStr = discountAmountStrings[id] || '';
+    const amountInCents = valueStr ? Math.round(parseFloat(valueStr) * 100) : 0;
+    setDiscounts(prev => prev.map(d => (d.id === id ? { ...d, amount: amountInCents } : d)));
+    setDiscountAmountStrings(prev => ({ ...prev, [id]: (amountInCents / 100).toFixed(2) }));
+  };
+
 
   const handleRemoveDiscount = (id: string) => {
     setDiscounts(prev => prev.filter(d => d.id !== id));
+    setDiscountAmountStrings(prev => {
+        const newState = {...prev};
+        delete newState[id];
+        return newState;
+    });
   };
   
   const handleApplySuggestion = () => {
@@ -291,27 +315,35 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
               <Label>Item Discounts</Label>
               <div className="mt-2 space-y-2">
                 {discounts.map(discount => (
-                    <div key={discount.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <Input 
-                        placeholder="Discount name"
-                        value={discount.name}
-                        onChange={(e) => handleDiscountChange(discount.id, 'name', e.target.value)}
-                        className="flex-1"
-                      />
-                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div key={discount.id} className="flex flex-wrap items-end gap-2 rounded-md border p-3 bg-secondary/30">
+                    <div className='space-y-1.5 flex-1 min-w-[150px]'>
+                        <Label htmlFor={`item-discount-name-${discount.id}`} className="text-xs text-muted-foreground">Discount Name</Label>
                         <Input 
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="0.00"
-                          value={(discount.amount / 100).toFixed(2)}
-                          onChange={(e) => handleDiscountChange(discount.id, 'amount', e.target.value)}
-                          className="flex-1 sm:w-28 text-right"
+                            id={`item-discount-name-${discount.id}`}
+                            placeholder="Discount name"
+                            value={discount.name}
+                            onChange={(e) => handleDiscountNameChange(discount.id, e.target.value)}
                         />
-                        <Button variant="ghost" size="icon" onClick={() => handleRemoveDiscount(discount.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </div>
+                    <div className="flex items-end gap-2">
+                        <div className='space-y-1.5'>
+                            <Label htmlFor={`item-discount-amount-${discount.id}`} className="text-xs text-muted-foreground">Amount</Label>
+                            <Input 
+                                id={`item-discount-amount-${discount.id}`}
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="0.00"
+                                value={discountAmountStrings[discount.id] ?? ''}
+                                onChange={(e) => handleDiscountAmountStringChange(discount.id, e.target.value)}
+                                onBlur={() => handleDiscountAmountBlur(discount.id)}
+                                className="w-28 text-right"
+                            />
+                        </div>
+                        <Button variant="ghost" size="icon" className="mb-[1px]" onClick={() => handleRemoveDiscount(discount.id)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                  </div>
                 ))}
                  <Button variant="outline" size="sm" onClick={handleAddDiscount} className="w-full">
                     <Plus className="h-4 w-4 mr-2"/> Add Item Discount

@@ -422,25 +422,32 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                               )
                             } else {
                               return (
-                                <div key={discount.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
-                                  <Input 
-                                    placeholder="Discount name"
-                                    defaultValue={discount.name}
-                                    onBlur={(e) => handleDiscountChange(discount.id, { name: e.target.value })}
-                                    className="flex-1"
-                                  />
-                                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    <Input 
-                                      type="text"
-                                      inputMode="decimal"
-                                      placeholder="0.00"
-                                      defaultValue={(discount.amount / 100).toFixed(2)}
-                                      onBlur={(e) => handleDiscountChange(discount.id, { amount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
-                                      className="flex-1 sm:w-28 text-right"
-                                    />
-                                    <Button variant="ghost" size="icon" onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                <div key={discount.id} className="flex flex-wrap items-end gap-2 rounded-md border p-3 bg-secondary/30">
+                                  <div className='space-y-1.5 flex-1 min-w-[150px]'>
+                                      <Label htmlFor={`receipt-discount-name-${discount.id}`} className="text-xs text-muted-foreground">Discount Name</Label>
+                                      <Input
+                                          id={`receipt-discount-name-${discount.id}`}
+                                          placeholder="e.g. 20% Off"
+                                          defaultValue={discount.name}
+                                          onBlur={(e) => handleDiscountChange(discount.id, { name: e.target.value })}
+                                      />
+                                  </div>
+                                  <div className="flex items-end gap-2">
+                                      <div className='space-y-1.5'>
+                                          <Label htmlFor={`receipt-discount-amount-${discount.id}`} className="text-xs text-muted-foreground">Amount ({receipt.currency})</Label>
+                                          <Input
+                                              id={`receipt-discount-amount-${discount.id}`}
+                                              type="text"
+                                              inputMode="decimal"
+                                              placeholder="0.00"
+                                              defaultValue={(discount.amount / 100).toFixed(2)}
+                                              onBlur={(e) => handleDiscountChange(discount.id, { amount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
+                                              className="w-28 text-right"
+                                          />
+                                      </div>
+                                      <Button variant="ghost" size="icon" className="mb-[1px]" onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
+                                          <Trash2 className="h-4 w-4" />
+                                      </Button>
                                   </div>
                                 </div>
                               )
