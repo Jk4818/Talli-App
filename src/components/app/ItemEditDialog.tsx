@@ -168,7 +168,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const originalCostInCents = Math.round(parseFloat(cost) * 100) || 0;
   const totalItemDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
   const effectiveCost = originalCostInCents - totalItemDiscounts;
-  const isSuggestionConflict = pendingSuggestion && item && pendingSuggestion.discount.amount > item.cost;
+  const isSuggestionConflict = !!(pendingSuggestion && item && pendingSuggestion.discount.amount > item.cost);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
