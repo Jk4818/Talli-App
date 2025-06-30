@@ -2,16 +2,16 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Item } from '@/lib/types';
+import { type Item, type Discount } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import UserAssignments from './UserAssignments';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Pencil, AlertCircle, Tag } from 'lucide-react';
+import { Pencil, AlertCircle, Tag, Sparkles, Check, X } from 'lucide-react';
 import ItemEditDialog from './ItemEditDialog';
-import { updateItem, removeItem } from '@/lib/redux/slices/sessionSlice';
+import { updateItem, removeItem, applySuggestedDiscount, ignoreSuggestedDiscount } from '@/lib/redux/slices/sessionSlice';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { formatCurrency } from '@/lib/utils';
 
@@ -21,9 +21,10 @@ interface ItemAssignmentCardProps {
   totalItems: number;
   hasIssue?: boolean;
   issueText?: string;
+  pendingSuggestion?: { receiptId: string; discount: Discount };
 }
 
-export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIssue, issueText }: ItemAssignmentCardProps) {
+export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIssue, issueText, pendingSuggestion }: ItemAssignmentCardProps) {
   const { receipts } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const receipt = receipts.find(r => r.id === item.receiptId);
@@ -37,6 +38,18 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
     dispatch(removeItem(itemId));
   };
   
+  const handleApplySuggestion = () => {
+    if (pendingSuggestion) {
+      dispatch(applySuggestedDiscount({ receiptId: pendingSuggestion.receiptId, discountId: pendingSuggestion.discount.id }));
+    }
+  };
+
+  const handleIgnoreSuggestion = () => {
+    if (pendingSuggestion) {
+      dispatch(ignoreSuggestedDiscount({ receiptId: pendingSuggestion.receiptId, discountId: pendingSuggestion.discount.id }));
+    }
+  };
+
   const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
   const effectiveCost = item.cost - totalItemDiscount;
 
@@ -78,6 +91,28 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
           </div>
         </CardHeader>
         <CardContent>
+          {pendingSuggestion && (
+            <div className="mb-4 p-3 rounded-md bg-accent/30 border border-primary/20 space-y-3 text-sm">
+                <div className="flex justify-between items-start">
+                    <div className='flex items-center gap-2 font-semibold text-accent-foreground'>
+                        <Sparkles className="h-4 w-4" />
+                        AI Discount Suggestion
+                    </div>
+                    {pendingSuggestion.discount.confidence && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {pendingSuggestion.discount.confidence}%</Badge>}
+                </div>
+                <p>
+                    A discount for <span className='font-medium'>&quot;{pendingSuggestion.discount.name}&quot;</span> (-{formatCurrency(pendingSuggestion.discount.amount, receipt?.currency || 'USD')}) might apply to this item.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                    <Button size="sm" onClick={handleApplySuggestion}>
+                        <Check className="mr-1.5 h-4 w-4" /> Apply Discount
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={handleIgnoreSuggestion}>
+                        <X className="mr-1.5 h-4 w-4" /> Ignore
+                    </Button>
+                </div>
+            </div>
+          )}
           <p className="text-sm font-medium mb-2">Who is sharing this item?</p>
           <UserAssignments itemId={item.id} />
         </CardContent>
