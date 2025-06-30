@@ -11,7 +11,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, X } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, X, Layers } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -345,14 +345,16 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                       </div>
                                       {discount.confidence !== undefined && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {discount.confidence}%</Badge>}
                                   </div>
-                                  <p className="text-sm text-center text-accent-foreground/80">AI suggests this applies to: <span className="font-semibold text-accent-foreground">{suggestedItem.name}</span></p>
+                                  <p className="text-sm text-center text-accent-foreground/80">AI suggests applying this to <strong className="text-accent-foreground">{suggestedItem.name}</strong>.</p>
                                   <div className="flex gap-2 pt-1">
                                       <Button size="sm" className="flex-1" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                        <Check className="mr-2 h-4 w-4" /> Apply
+                                        <Check className="mr-2 h-4 w-4" /> Apply to Item
                                       </Button>
-                                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                        <X className="mr-2 h-4 w-4" /> Ignore
-                                      </Button>
+                                      <AccessibleTooltip content={<p>Moves this discount to the 'Receipt-Wide' list where you can edit it.</p>}>
+                                        <Button size="sm" variant="secondary" className="flex-1" onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
+                                          <Layers className="mr-2 h-4 w-4" /> Reclassify
+                                        </Button>
+                                      </AccessibleTooltip>
                                   </div>
                                 </div>
                               )
