@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles, Check } from 'lucide-react';
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
-import { Item } from '@/lib/types';
+import { Item, Discount } from '@/lib/types';
 import {
   DropDrawer,
   DropDrawerContent,
@@ -32,8 +32,21 @@ export default function ItemListEditor() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<'default' | 'name-asc' | 'name-desc' | 'cost-asc' | 'cost-desc'>('default');
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [pendingSuggestion, setPendingSuggestion] = useState<{ receiptId: string; discount: Discount } | null>(null);
 
   const participantMap = useMemo(() => new Map(participants.map(p => [p.id, p])), [participants]);
+
+  const pendingSuggestionsMap = useMemo(() => {
+    const suggestions = new Map<string, { receiptId: string; discount: Discount }>();
+    receipts.forEach(receipt => {
+      (receipt.discounts || []).forEach(discount => {
+        if (discount.suggestedItemId) {
+          suggestions.set(discount.suggestedItemId, { receiptId: receipt.id, discount });
+        }
+      });
+    });
+    return suggestions;
+  }, [receipts]);
 
   const getInitials = (name: string) => {
     const names = name.split(' ');
@@ -85,6 +98,11 @@ export default function ItemListEditor() {
     dispatch(removeItem(itemId));
   };
   
+  const handleEditClick = (item: Item) => {
+    setEditingItem(item);
+    setPendingSuggestion(pendingSuggestionsMap.get(item.id) || null);
+  };
+
   const getSplitModeIcon = (mode: Item['splitMode']) => {
     switch(mode) {
         case 'equal': return <Scale className="h-3 w-3" />;
@@ -151,17 +169,18 @@ export default function ItemListEditor() {
                 const MAX_AVATARS = 5;
                 const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
                 const effectiveCost = item.cost - totalItemDiscount;
+                const suggestion = pendingSuggestionsMap.get(item.id);
 
                 return (
                   <div
                     key={item.id}
                     className="group rounded-lg border bg-card/50 p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
-                    onClick={() => setEditingItem(item)}
+                    onClick={() => handleEditClick(item)}
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        setEditingItem(item);
+                        handleEditClick(item);
                       }
                     }}
                   >
@@ -171,12 +190,22 @@ export default function ItemListEditor() {
                             <p className="text-sm text-muted-foreground truncate" title={receipt?.name || 'N/A'}>
                                 From: {receipt?.name || 'N/A'}
                             </p>
-                            {item.confidence !== undefined && (
-                                <div className="flex items-center gap-1.5 mt-1 text-xs text-primary/90 font-medium">
-                                    <Sparkles className="h-3.5 w-3.5" />
-                                    <span>AI Confidence: {item.confidence}%</span>
-                                </div>
-                            )}
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                {item.confidence !== undefined && (
+                                    <div className="flex items-center gap-1.5 text-xs text-primary/90 font-medium">
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                        <span>AI Confidence: {item.confidence}%</span>
+                                    </div>
+                                )}
+                                {suggestion && (
+                                    <AccessibleTooltip content={<p>AI has a discount suggestion for this item.</p>}>
+                                        <div className="flex items-center gap-1.5 text-xs text-primary/90 font-medium">
+                                            <Sparkles className="h-3.5 w-3.5" />
+                                            <span>Suggestion</span>
+                                        </div>
+                                    </AccessibleTooltip>
+                                )}
+                            </div>
                         </div>
                         <div className="text-right flex-shrink-0">
                             <p className="font-mono text-xl font-bold text-foreground">
@@ -237,9 +266,15 @@ export default function ItemListEditor() {
         item={editingItem}
         receipts={receipts}
         isOpen={!!editingItem}
-        onOpenChange={(open) => !open && setEditingItem(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingItem(null);
+            setPendingSuggestion(null);
+          }
+        }}
         onSave={handleSaveItem}
         onDelete={handleDeleteItem}
+        pendingSuggestion={pendingSuggestion}
       />
     </>
   );

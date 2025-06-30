@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Sparkles, Check, X } from 'lucide-react';
 import {
   ResponsiveSelect,
   ResponsiveSelectContent,
@@ -29,6 +29,10 @@ import {
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { formatCurrency } from '@/lib/utils';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/lib/redux/store';
+import { applySuggestedDiscount, ignoreSuggestedDiscount } from '@/lib/redux/slices/sessionSlice';
+import { Badge } from '../ui/badge';
 
 
 interface ItemEditDialogProps {
@@ -38,13 +42,15 @@ interface ItemEditDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   onSave: (updates: Partial<Item>) => void;
   onDelete: (itemId: string) => void;
+  pendingSuggestion: { receiptId: string; discount: Discount } | null;
 }
 
-export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, onSave, onDelete }: ItemEditDialogProps) {
+export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, onSave, onDelete, pendingSuggestion }: ItemEditDialogProps) {
   const [name, setName] = useState('');
   const [cost, setCost] = useState('');
   const [receiptId, setReceiptId] = useState('');
   const [discounts, setDiscounts] = useState<Discount[]>([]);
+  const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
     if (item) {
@@ -94,11 +100,28 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
     setDiscounts(prev => prev.filter(d => d.id !== id));
   };
   
+  const handleApplySuggestion = () => {
+    if (pendingSuggestion) {
+      dispatch(applySuggestedDiscount({ receiptId: pendingSuggestion.receiptId, discountId: pendingSuggestion.discount.id }));
+      onOpenChange(false); // Close dialog after action
+    }
+  };
+
+  const handleIgnoreSuggestion = () => {
+    if (pendingSuggestion) {
+      dispatch(ignoreSuggestedDiscount({ receiptId: pendingSuggestion.receiptId, discountId: pendingSuggestion.discount.id }));
+      onOpenChange(false); // Close dialog after action
+    }
+  };
+
   if (!item) return null;
 
-  const currentReceiptCurrency = receipts.find(r => r.id === receiptId)?.currency || 'USD';
+  const currentReceipt = receipts.find(r => r.id === receiptId);
+  const currentReceiptCurrency = currentReceipt?.currency || 'USD';
+  
+  const originalCostInCents = Math.round(parseFloat(cost) * 100) || 0;
   const totalItemDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
-  const effectiveCost = item.cost - totalItemDiscounts;
+  const effectiveCost = originalCostInCents - totalItemDiscounts;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -110,6 +133,28 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-1 pr-6 -mr-6">
+          {pendingSuggestion && (
+             <div className="mb-4 p-3 rounded-md bg-accent/30 border border-primary/20 space-y-3 text-sm">
+                <div className="flex justify-between items-start">
+                    <div className='flex items-center gap-2 font-semibold text-accent-foreground'>
+                        <Sparkles className="h-4 w-4" />
+                        AI Discount Suggestion
+                    </div>
+                    {pendingSuggestion.discount.confidence && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {pendingSuggestion.discount.confidence}%</Badge>}
+                </div>
+                <p>
+                    AI suggests applying the <span className='font-medium'>&quot;{pendingSuggestion.discount.name}&quot;</span> discount (-{formatCurrency(pendingSuggestion.discount.amount, currentReceiptCurrency)}) to this item.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                    <Button size="sm" onClick={handleApplySuggestion}>
+                        <Check className="mr-1.5 h-4 w-4" /> Apply Discount
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={handleIgnoreSuggestion}>
+                        <X className="mr-1.5 h-4 w-4" /> This is incorrect
+                    </Button>
+                </div>
+            </div>
+          )}
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">

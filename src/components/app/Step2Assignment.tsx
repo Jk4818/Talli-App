@@ -15,7 +15,6 @@ import { Progress } from '../ui/progress';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
 import { formatCurrency } from '@/lib/utils';
-import { type Discount } from '@/lib/types';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -36,18 +35,6 @@ export default function Step2Assignment() {
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-
-  const pendingSuggestions = useMemo(() => {
-    const suggestions = new Map<string, { receiptId: string; discount: Discount }>();
-    receipts.forEach(receipt => {
-      (receipt.discounts || []).forEach(discount => {
-        if (discount.suggestedItemId) {
-          suggestions.set(discount.suggestedItemId, { receiptId: receipt.id, discount });
-        }
-      });
-    });
-    return suggestions;
-  }, [receipts]);
 
   const itemsRequiringAttention = useMemo(() => {
     return itemsWithCost
@@ -157,7 +144,6 @@ export default function Step2Assignment() {
                               totalItems={itemsWithCost.length} 
                               hasIssue={issueItems.has(item.id)}
                               issueText={issueItems.get(item.id)}
-                              pendingSuggestion={pendingSuggestions.get(item.id)}
                             />
                         </div>
                         ))}
