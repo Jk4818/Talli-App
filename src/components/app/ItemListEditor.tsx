@@ -22,7 +22,7 @@ import {
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { Badge } from '../ui/badge';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 
 
 export default function ItemListEditor() {
@@ -174,7 +174,10 @@ export default function ItemListEditor() {
                 return (
                   <div
                     key={item.id}
-                    className="group rounded-lg border bg-card/50 p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                    className={cn(
+                        "group rounded-lg border bg-card/50 p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer",
+                        suggestion && "border-primary/50 ring-2 ring-primary/20 shadow-md"
+                    )}
                     onClick={() => handleEditClick(item)}
                     tabIndex={0}
                     onKeyDown={(e) => {
@@ -199,10 +202,10 @@ export default function ItemListEditor() {
                                 )}
                                 {suggestion && (
                                     <AccessibleTooltip content={<p>AI has a discount suggestion for this item. Click to review.</p>}>
-                                        <div className="flex items-center gap-1.5 text-xs text-primary/90 font-medium">
-                                            <Sparkles className="h-3.5 w-3.5" />
-                                            <span>Suggestion</span>
-                                        </div>
+                                        <Badge variant="outline" className="border-primary/50 text-primary font-medium">
+                                            <Sparkles className="h-3 w-3 mr-1.5" />
+                                            Suggestion
+                                        </Badge>
                                     </AccessibleTooltip>
                                 )}
                             </div>
