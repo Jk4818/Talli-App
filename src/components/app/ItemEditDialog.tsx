@@ -291,24 +291,26 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
               <Label>Item Discounts</Label>
               <div className="mt-2 space-y-2">
                 {discounts.map(discount => (
-                    <div key={discount.id} className="flex items-center gap-2">
+                    <div key={discount.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
                       <Input 
                         placeholder="Discount name"
                         value={discount.name}
                         onChange={(e) => handleDiscountChange(discount.id, 'name', e.target.value)}
                         className="flex-1"
                       />
-                      <Input 
-                        type="text"
-                        inputMode="decimal"
-                        placeholder="0.00"
-                        value={(discount.amount / 100).toFixed(2)}
-                        onChange={(e) => handleDiscountChange(discount.id, 'amount', e.target.value)}
-                        className="w-28 text-right"
-                      />
-                      <Button variant="ghost" size="icon" onClick={() => handleRemoveDiscount(discount.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Input 
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0.00"
+                          value={(discount.amount / 100).toFixed(2)}
+                          onChange={(e) => handleDiscountChange(discount.id, 'amount', e.target.value)}
+                          className="flex-1 sm:w-28 text-right"
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => handleRemoveDiscount(discount.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                 ))}
                  <Button variant="outline" size="sm" onClick={handleAddDiscount} className="w-full">
