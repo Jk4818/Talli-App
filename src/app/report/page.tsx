@@ -369,14 +369,14 @@ export default function ReportPage() {
                         return (
                           <li key={s.id} className="rounded-lg border bg-background p-4">
                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                              <div className="flex items-center gap-3 font-medium text-base">
-                                  <Avatar className="h-8 w-8 text-xs">
+                              <div className="flex flex-1 min-w-0 items-center gap-3 font-medium text-base">
+                                  <Avatar className="h-8 w-8 text-xs shrink-0">
                                     <AvatarFallback>{fromParticipant ? getInitials(fromParticipant.name) : '?'}</AvatarFallback>
                                   </Avatar>
-                                  <span className="flex-1 min-w-0 break-words">{s.from}</span>
+                                  <span className="flex-1 min-w-0 truncate">{s.from}</span>
                                   <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                  <span className="flex-1 min-w-0 break-words">{s.to}</span>
-                                  <Avatar className="h-8 w-8 text-xs">
+                                  <span className="flex-1 min-w-0 truncate">{s.to}</span>
+                                  <Avatar className="h-8 w-8 text-xs shrink-0">
                                     <AvatarFallback>{toParticipant ? getInitials(toParticipant.name) : '?'}</AvatarFallback>
                                   </Avatar>
                               </div>
