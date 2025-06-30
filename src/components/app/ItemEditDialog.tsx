@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Trash2, Plus, Sparkles, Check, X, Pencil, Layers } from 'lucide-react';
+import { Trash2, Plus, Sparkles, Check, X, Pencil, Layers, AlertCircle } from 'lucide-react';
 import {
   ResponsiveSelect,
   ResponsiveSelectContent,
@@ -31,9 +31,11 @@ import { Separator } from '../ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/lib/redux/store';
-import { applySuggestedDiscount, ignoreSuggestedDiscount, reassignSuggestedDiscount } from '@/lib/redux/slices/sessionSlice';
+import { applySuggestedDiscount, ignoreSuggestedDiscount, reassignSuggestedDiscount, removeDiscount } from '@/lib/redux/slices/sessionSlice';
 import { Badge } from '../ui/badge';
 import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerTrigger } from '../ui/dropdrawer';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { AccessibleTooltip } from '../ui/accessible-tooltip';
 
 
 interface ItemEditDialogProps {
@@ -127,6 +129,13 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
     }
   };
 
+  const handleRemoveSuggestion = () => {
+    if (pendingSuggestion) {
+      dispatch(removeDiscount({ receiptId: pendingSuggestion.receiptId, discountId: pendingSuggestion.discount.id }));
+      onOpenChange(false);
+    }
+  };
+
   if (!item) return null;
 
   const currentReceipt = receipts.find(r => r.id === receiptId);
@@ -135,6 +144,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const originalCostInCents = Math.round(parseFloat(cost) * 100) || 0;
   const totalItemDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
   const effectiveCost = originalCostInCents - totalItemDiscounts;
+  const isSuggestionConflict = pendingSuggestion && item && pendingSuggestion.discount.amount > item.cost;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -155,14 +165,29 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                     </div>
                     {pendingSuggestion.discount.confidence && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {pendingSuggestion.discount.confidence}%</Badge>}
                 </div>
+
+                {isSuggestionConflict && (
+                    <Alert variant="destructive" className="my-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Potential Conflict</AlertTitle>
+                        <AlertDescription>
+                            Applying this discount would make the item cost negative. Please reassign or remove it.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 <p>
                     AI suggests applying the <span className='font-medium'>&quot;{pendingSuggestion.discount.name}&quot;</span> discount (-{formatCurrency(pendingSuggestion.discount.amount, currentReceiptCurrency)}) to this item.
                 </p>
                 <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">
-                        <Button size="sm" className="w-full" onClick={handleApplySuggestion}>
-                            <Check className="mr-1.5 h-4 w-4" /> Apply
-                        </Button>
+                        <AccessibleTooltip content={isSuggestionConflict ? "Cannot apply discount greater than item cost." : "Apply this discount to the item"}>
+                            <span className="w-full" tabIndex={0}>
+                                <Button size="sm" className="w-full" onClick={handleApplySuggestion} disabled={isSuggestionConflict}>
+                                    <Check className="mr-1.5 h-4 w-4" /> Apply
+                                </Button>
+                            </span>
+                        </AccessibleTooltip>
                         <DropDrawer>
                             <DropDrawerTrigger asChild>
                                 <Button size="sm" variant="secondary" className="w-full">
@@ -189,6 +214,25 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                     <Button size="sm" variant="ghost" className="w-full" onClick={handleIgnoreSuggestion}>
                         <Layers className="mr-1.5 h-4 w-4" /> Convert to Receipt-Wide Discount
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" className="w-full">
+                          <Trash2 className="h-4 w-4 mr-1.5" /> Remove Discount
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently remove the AI-suggested &quot;{pendingSuggestion.discount.name}&quot; discount. This action cannot be undone.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleRemoveSuggestion}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </div>
           )}

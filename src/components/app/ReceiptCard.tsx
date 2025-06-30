@@ -180,10 +180,10 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                           <span>Payer needed - expand to assign</span>
                         </div>
                       ) : !isCardOpen && hasSuggestions ? (
-                        <div className="text-primary font-medium flex items-center gap-2">
-                          <Sparkles className="h-4 w-4" />
-                          <span>AI has suggestions - expand to review</span>
-                        </div>
+                        <Badge variant="outline" className="border-primary/50 text-primary font-medium">
+                            <Sparkles className="h-3 w-3 mr-1.5" />
+                            AI Suggestions Pending
+                        </Badge>
                       ) : (
                         <>
                           <span>Subtotal: {formatCurrency(subtotal, receipt.currency)}</span>
@@ -343,8 +343,18 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                             const suggestedItem = discount.suggestedItemId ? items.find(i => i.id === discount.suggestedItemId) : null;
     
                             if (suggestedItem) {
+                              const isConflict = discount.amount > suggestedItem.cost;
                               return (
                                 <div key={discount.id} className="p-3 rounded-md bg-accent/30 border border-primary/20 space-y-3">
+                                  {isConflict && (
+                                    <Alert variant="destructive" className="my-2">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertTitle>Potential Conflict</AlertTitle>
+                                        <AlertDescription>
+                                            Applying this discount would make the item cost negative. Please reassign or remove it.
+                                        </AlertDescription>
+                                    </Alert>
+                                  )}
                                   <div>
                                       <div className="flex justify-between items-start">
                                           <div>
@@ -359,9 +369,13 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                   </div>
                                   <div className="space-y-2">
                                       <div className="grid grid-cols-2 gap-2">
-                                          <Button size="sm" className="w-full" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                            <Check className="mr-1.5 h-4 w-4" /> Apply
-                                          </Button>
+                                          <AccessibleTooltip content={isConflict ? "Cannot apply discount greater than item cost." : "Apply this discount to the item"}>
+                                            <span className="w-full" tabIndex={0}>
+                                              <Button size="sm" className="w-full" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))} disabled={isConflict}>
+                                                <Check className="mr-1.5 h-4 w-4" /> Apply
+                                              </Button>
+                                            </span>
+                                          </AccessibleTooltip>
                                           <DropDrawer>
                                               <DropDrawerTrigger asChild>
                                                   <Button size="sm" variant="secondary" className="w-full">
@@ -381,11 +395,28 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                               </DropDrawerContent>
                                           </DropDrawer>
                                       </div>
-                                      <AccessibleTooltip content={<p>This makes the discount editable in the 'Receipt-Wide' list.</p>}>
-                                          <Button size="sm" variant="ghost" className="w-full" onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                            <Layers className="mr-1.5 h-4 w-4" /> Convert to Receipt-Wide Discount
+                                      <Button size="sm" variant="ghost" className="w-full" onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
+                                        <Layers className="mr-1.5 h-4 w-4" /> Convert to Receipt-Wide Discount
+                                      </Button>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button size="sm" variant="destructive" className="w-full">
+                                            <Trash2 className="h-4 w-4 mr-1.5" /> Remove Discount
                                           </Button>
-                                      </AccessibleTooltip>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  This will permanently remove the AI-suggested &quot;{discount.name}&quot; discount. This action cannot be undone.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
                                   </div>
                                 </div>
                               )
