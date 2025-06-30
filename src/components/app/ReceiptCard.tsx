@@ -432,7 +432,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                           onBlur={(e) => handleDiscountChange(discount.id, { name: e.target.value })}
                                       />
                                   </div>
-                                  <div className="flex items-end gap-2">
+                                  <div className="flex w-full items-end justify-between gap-2 sm:w-auto sm:justify-start">
                                       <div className='space-y-1.5'>
                                           <Label htmlFor={`receipt-discount-amount-${discount.id}`} className="text-xs text-muted-foreground">Amount ({receipt.currency})</Label>
                                           <Input
