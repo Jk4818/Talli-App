@@ -2,6 +2,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { restoreSession } from '@/lib/redux/slices/sessionSlice';
+import { type AppDispatch, type RootState } from '@/lib/redux/store';
 import { type SessionState, type ParticipantSummary } from '@/lib/types';
 import { Logo } from '@/components/Logo';
 import { Separator } from '@/components/ui/separator';
@@ -13,9 +16,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { calculateSplits } from '@/lib/splitter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-
 
 const getInitials = (name: string) => {
   const names = name.split(' ');
@@ -126,7 +128,10 @@ const BreakdownCard = ({ participant, currency }: { participant: ParticipantSumm
 }
 
 export default function ReportPage() {
-  const [session, setSession] = useState<SessionState | null>(null);
+  const dispatch = useDispatch<AppDispatch>();
+  const sessionState = useSelector((state: RootState) => state.session);
+
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [date, setDate] = useState('');
 
@@ -134,10 +139,10 @@ export default function ReportPage() {
     try {
       const savedState = localStorage.getItem('splitzy_report_session');
       if (savedState) {
-        const parsedState = JSON.parse(savedState);
+        const parsedState = JSON.parse(savedState) as Partial<SessionState>;
         // Basic validation
         if (parsedState && parsedState.participants && parsedState.items && parsedState.receipts) {
-          setSession(parsedState);
+          dispatch(restoreSession(parsedState));
         } else {
             throw new Error("Invalid session data found in storage.");
         }
@@ -147,26 +152,29 @@ export default function ReportPage() {
     } catch (e) {
       console.error("Failed to load report session:", e);
       setError(e instanceof Error ? e.message : "An unknown error occurred.");
+    } finally {
+        setIsLoading(false);
     }
+
     setDate(new Date().toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
     }));
-  }, []);
+  }, [dispatch]);
 
   const summary = useMemo(() => {
-    if (!session) return null;
-    return calculateSplits(session);
-  }, [session]);
+    if (sessionState.participants.length === 0) return null;
+    return calculateSplits(sessionState);
+  }, [sessionState]);
 
   const participantMap = useMemo(() => {
-    if (!session) return new Map();
-    return new Map(session.participants.map(p => [p.id, p]));
-  }, [session]);
+    if (sessionState.participants.length === 0) return new Map();
+    return new Map(sessionState.participants.map(p => [p.id, p]));
+  }, [sessionState.participants]);
 
   const getShareDetails = (item: SessionState['items'][0]) => {
-    if (!session) return '';
+    if (sessionState.participants.length === 0) return '';
     const assignees = item.assignees.map(pid => participantMap.get(pid)?.name || '?');
     if (assignees.length === 0) return 'Unassigned';
 
@@ -181,7 +189,7 @@ export default function ReportPage() {
             }).join(', ');
             return `By percentage: ${details}`;
         case 'exact':
-            const receipt = session.receipts.find(r => r.id === item.receiptId);
+            const receipt = sessionState.receipts.find(r => r.id === item.receiptId);
             const currency = receipt?.currency || 'USD';
             const exactDetails = item.assignees.map(pid => {
                 const name = participantMap.get(pid)?.name || '?';
@@ -193,6 +201,10 @@ export default function ReportPage() {
             return assignees.join(', ');
     }
   };
+
+  if (isLoading) {
+      return <ReportSkeleton />;
+  }
 
   if (error) {
       return (
@@ -211,11 +223,11 @@ export default function ReportPage() {
       )
   }
 
-  if (!session || !summary) {
+  if (!summary) {
     return <ReportSkeleton />;
   }
   
-  const { participants, items, receipts, globalCurrency } = session;
+  const { participants, items, receipts, globalCurrency } = sessionState;
 
   return (
     <>
@@ -374,5 +386,3 @@ export default function ReportPage() {
     </>
   );
 }
-
-    
