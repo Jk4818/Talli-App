@@ -102,19 +102,19 @@ const BreakdownCard = ({ participant, currency }: { participant: ParticipantSumm
                                 <Separator />
                                 {participant.breakdown.items.map((item, i) => (
                                     <div key={`item-${i}`} className="grid grid-cols-2 gap-1">
-                                        <span>{item.description}</span>
+                                        <span className="break-words">{item.description}</span>
                                         <span className="text-right font-mono">{formatCurrency(item.amount, currency)}</span>
                                     </div>
                                 ))}
                                 {participant.breakdown.discounts.map((disc, i) => (
                                     <div key={`disc-${i}`} className="grid grid-cols-2 gap-1 text-destructive">
-                                        <span>{disc.description}</span>
+                                        <span className="break-words">{disc.description}</span>
                                         <span className="text-right font-mono">{formatCurrency(disc.amount, currency)}</span>
                                     </div>
                                 ))}
                                 {participant.breakdown.serviceCharges.map((sc, i) => (
                                     <div key={`sc-${i}`} className="grid grid-cols-2 gap-1">
-                                        <span>{sc.description}</span>
+                                        <span className="break-words">{sc.description}</span>
                                         <span className="text-right font-mono">{formatCurrency(sc.amount, currency)}</span>
                                     </div>
                                 ))}
@@ -149,14 +149,14 @@ export default function ReportPage() {
         if (parsedState && parsedState.participants && parsedState.items && parsedState.receipts) {
           dispatch(restoreSession(parsedState));
         } else {
-            throw new Error("Invalid session data found in storage.");
+          setError("Invalid session data found in storage.");
         }
       } else {
-        throw new Error("No session data found. Please generate a report from the app's summary page.");
+        setError("No session data found. Please generate a report from the app's summary page.");
       }
     } catch (e) {
-      console.error("Failed to load report session:", e);
-      setError(e instanceof Error ? e.message : "An unknown error occurred.");
+      // This will catch errors from JSON.parse
+      setError(e instanceof Error ? e.message : "An unknown error occurred while loading the report.");
     } finally {
         setIsLoading(false);
     }
@@ -319,8 +319,8 @@ export default function ReportPage() {
                                     <tbody>
                                         {receiptItems.map(item => (
                                             <tr key={item.id} className="border-b last:border-none">
-                                                <td className="p-2 align-top">{item.name}</td>
-                                                <td className="p-2 align-top text-muted-foreground text-xs">
+                                                <td className="p-2 align-top break-words">{item.name}</td>
+                                                <td className="p-2 align-top text-muted-foreground text-xs break-words">
                                                     {getShareDetails(item)}
                                                 </td>
                                                 <td className="p-2 align-top text-right font-mono">{formatCurrency(item.cost, receipt.currency)}</td>
@@ -361,9 +361,9 @@ export default function ReportPage() {
                                   <Avatar className="h-8 w-8 text-xs">
                                     <AvatarFallback>{fromParticipant ? getInitials(fromParticipant.name) : '?'}</AvatarFallback>
                                   </Avatar>
-                                  <span className="flex-1 min-w-0">{s.from}</span>
+                                  <span className="flex-1 min-w-0 break-words">{s.from}</span>
                                   <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                  <span className="flex-1 min-w-0">{s.to}</span>
+                                  <span className="flex-1 min-w-0 break-words">{s.to}</span>
                                   <Avatar className="h-8 w-8 text-xs">
                                     <AvatarFallback>{toParticipant ? getInitials(toParticipant.name) : '?'}</AvatarFallback>
                                   </Avatar>
