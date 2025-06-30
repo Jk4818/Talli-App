@@ -9,10 +9,11 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import UserAssignments from './UserAssignments';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Pencil, AlertCircle } from 'lucide-react';
+import { Pencil, AlertCircle, Tag } from 'lucide-react';
 import ItemEditDialog from './ItemEditDialog';
 import { updateItem, removeItem } from '@/lib/redux/slices/sessionSlice';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
+import { formatCurrency } from '@/lib/utils';
 
 interface ItemAssignmentCardProps {
   item: Item;
@@ -28,13 +29,16 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
   const receipt = receipts.find(r => r.id === item.receiptId);
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleSave = (updates: { name: string; cost: number; receiptId: string }) => {
+  const handleSave = (updates: Partial<Item>) => {
     dispatch(updateItem({ id: item.id, ...updates }));
   };
 
   const handleDelete = (itemId: string) => {
     dispatch(removeItem(itemId));
   };
+  
+  const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+  const effectiveCost = item.cost - totalItemDiscount;
 
   return (
     <>
@@ -60,15 +64,22 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
                 <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
                   <Pencil className="h-5 w-5" />
                 </Button>
-                <Badge variant="secondary" className="text-lg">
-                    {(item.cost / 100).toLocaleString('en-US', { style: 'currency', currency: receipt?.currency || 'USD' })}
-                </Badge>
+                <div className="text-right">
+                  <Badge variant="secondary" className="text-lg">
+                      {formatCurrency(effectiveCost, receipt?.currency || 'USD')}
+                  </Badge>
+                  {totalItemDiscount > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      (was {formatCurrency(item.cost, receipt?.currency || 'USD')})
+                    </p>
+                  )}
+                </div>
               </div>
           </div>
         </CardHeader>
         <CardContent>
           <p className="text-sm font-medium mb-2">Who is sharing this item?</p>
-          <UserAssignments itemId={item.id} itemCost={item.cost} />
+          <UserAssignments itemId={item.id} />
         </CardContent>
         <CardFooter className="text-sm text-muted-foreground justify-center">
           Item {itemNumber} of {totalItems}

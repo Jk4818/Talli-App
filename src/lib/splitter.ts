@@ -85,7 +85,10 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
 
     // 1. Calculate and store item shares for each participant on this receipt
     itemsOnReceipt.forEach(item => {
-      if (item.cost <= 0 || item.assignees.length === 0) return;
+      const itemTotalDiscount = (item.discounts || []).reduce((sum, d) => sum + d.amount, 0);
+      const effectiveItemCost = item.cost - itemTotalDiscount;
+
+      if (effectiveItemCost <= 0 || item.assignees.length === 0) return;
       
       const itemShares = new Map<string, number>();
       let itemCausedRounding = false;
@@ -99,11 +102,11 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
               let distributedAmount = 0;
               item.assignees.forEach(pid => {
                   const percentage = item.percentageAssignments[pid] || 0;
-                  const share = Math.floor((item.cost * percentage) / 100);
+                  const share = Math.floor((effectiveItemCost * percentage) / 100);
                   distributedAmount += share;
                   calculatedShares.push({ id: pid, share });
               });
-              let remainder = item.cost - distributedAmount;
+              let remainder = effectiveItemCost - distributedAmount;
               if (remainder > 0) {
                   roundingOccurred = true;
                   itemCausedRounding = true;
@@ -122,7 +125,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
           }
       } else if (item.splitMode === 'exact') {
           const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments?.[pid] || 0), 0);
-          if (totalExact === item.cost) {
+          if (totalExact === effectiveItemCost) {
               item.assignees.forEach(pid => {
                   itemShares.set(pid, item.exactAssignments?.[pid] || 0);
               });
@@ -133,12 +136,12 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       
       if (fallbackToEqual) {
         if (item.assignees.length > 0) {
-            if (item.cost % item.assignees.length !== 0) {
+            if (effectiveItemCost % item.assignees.length !== 0) {
                 roundingOccurred = true;
                 itemCausedRounding = true;
             }
-            const baseShare = Math.floor(item.cost / item.assignees.length);
-            let remainder = item.cost % item.assignees.length;
+            const baseShare = Math.floor(effectiveItemCost / item.assignees.length);
+            let remainder = effectiveItemCost % item.assignees.length;
             item.assignees.forEach(id => itemShares.set(id, baseShare));
             if (remainder > 0) {
                 const assigneesSortedByDebt = [...item.assignees].sort((a, b) => (participantRoundingDebt.get(a) || 0) - (participantRoundingDebt.get(b) || 0));
@@ -153,7 +156,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       }
 
       if (itemCausedRounding) {
-        roundedItems.push({ name: item.name, cost: item.cost, assigneesCount: item.assignees.length, adjustments });
+        roundedItems.push({ name: item.name, cost: effectiveItemCost, assigneesCount: item.assignees.length, adjustments });
       }
 
       itemShares.forEach((share, pid) => {
@@ -164,9 +167,10 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     });
 
     const receiptSubtotal = [...participantSharesOnReceipt.values()].reduce((sum, s) => sum + s, 0);
-    totalItemCost += Math.round(receiptSubtotal * rate);
+    totalItemCost += Math.round(itemsOnReceipt.reduce((sum, i) => sum + i.cost, 0) * rate);
+    const totalItemLevelDiscounts = itemsOnReceipt.reduce((sum, i) => sum + (i.discounts || []).reduce((s, d) => s + d.amount, 0), 0);
 
-    // 2. Distribute discounts and service charges based on item shares
+    // 2. Distribute receipt-level discounts and service charges based on item shares
     (receipt.discounts || []).forEach(discount => {
       totalDiscounts += Math.round(discount.amount * rate);
       const distributedDiscount = distributeAmount(discount.amount, participantSharesOnReceipt);
@@ -175,16 +179,18 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
           description: discount.name,
           amount: -Math.round(amount * rate),
           receiptId: receipt.id,
+          isDiscount: true,
         });
       });
     });
+    totalDiscounts += Math.round(totalItemLevelDiscounts * rate);
 
-    const subtotalAfterDiscounts = receiptSubtotal - (receipt.discounts || []).reduce((sum, d) => sum + d.amount, 0);
+    const subtotalAfterReceiptDiscounts = receiptSubtotal - (receipt.discounts || []).reduce((sum, d) => sum + d.amount, 0);
     let localServiceCharge = 0;
     if (receipt.serviceCharge?.type === 'fixed') {
         localServiceCharge = receipt.serviceCharge.value;
     } else if (receipt.serviceCharge?.type === 'percentage') {
-        const exactServiceCharge = subtotalAfterDiscounts * (receipt.serviceCharge.value / 100);
+        const exactServiceCharge = subtotalAfterReceiptDiscounts * (receipt.serviceCharge.value / 100);
         localServiceCharge = Math.round(exactServiceCharge);
         if (exactServiceCharge !== localServiceCharge) roundingOccurred = true;
     }
@@ -208,13 +214,19 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     const rate = (receipt.currency !== globalCurrency && receipt.exchangeRate) ? receipt.exchangeRate : 1;
     const itemsOnReceipt = items.filter(i => i.receiptId === receipt.id);
     const subtotal = itemsOnReceipt.reduce((sum, item) => sum + item.cost, 0);
-    const totalReceiptDiscounts = (receipt.discounts || []).reduce((sum, d) => sum + d.amount, 0);
-    const subtotalAfterDiscounts = subtotal - totalReceiptDiscounts;
+    
+    const totalReceiptLevelDiscounts = (receipt.discounts || []).reduce((sum, d) => sum + d.amount, 0);
+    const totalItemLevelDiscounts = itemsOnReceipt.reduce((sum, i) => sum + (i.discounts || []).reduce((s,d) => s + d.amount, 0), 0);
+
+    const subtotalAfterDiscounts = subtotal - totalReceiptLevelDiscounts - totalItemLevelDiscounts;
+    
     let serviceChargeAmount = 0;
     if (receipt.serviceCharge?.type === 'fixed') {
       serviceChargeAmount = receipt.serviceCharge.value;
     } else if (receipt.serviceCharge?.type === 'percentage') {
-      serviceChargeAmount = Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
+      // Service charge is usually calculated on the subtotal after receipt-level discounts. Item-level discounts are handled at the item line.
+      const serviceChargeBase = subtotal - totalReceiptLevelDiscounts;
+      serviceChargeAmount = Math.round(serviceChargeBase * (receipt.serviceCharge.value / 100));
     }
     const receiptTotalInLocalCurrency = subtotalAfterDiscounts + serviceChargeAmount;
     const receiptTotalInGlobal = Math.round(receiptTotalInLocalCurrency * rate);

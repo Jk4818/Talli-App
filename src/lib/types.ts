@@ -7,7 +7,8 @@ export interface Item {
   id: string;
   receiptId: string;
   name: string;
-  cost: number; // in cents
+  cost: number; // in cents, represents the original, pre-discount cost
+  discounts: Discount[]; // Item-specific discounts
   assignees: string[]; // array of participant IDs
   splitMode: 'equal' | 'percentage' | 'exact';
   percentageAssignments: { [participantId: string]: number }; // participantId -> percentage (e.g. 50 for 50%)
@@ -33,7 +34,7 @@ export interface Receipt {
   id:string;
   name: string;
   payerId: string | null; // participant ID
-  discounts: Discount[];
+  discounts: Discount[]; // Receipt-wide discounts
   serviceCharge: ServiceCharge;
   currency: string;
   exchangeRate?: number;
@@ -55,6 +56,7 @@ export interface BreakdownEntry {
   description: string;
   amount: number; // in cents, negative for discounts
   receiptId: string;
+  isDiscount?: boolean;
 }
 
 export interface ParticipantSummary {

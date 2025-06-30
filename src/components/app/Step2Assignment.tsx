@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
@@ -13,12 +14,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Progress } from '../ui/progress';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
+import { formatCurrency } from '@/lib/utils';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
 
-  const itemsWithCost = useMemo(() => items.filter(item => item.cost > 0), [items]);
+  const itemsWithCost = useMemo(() => {
+    return items.filter(item => {
+      const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+      const effectiveCost = item.cost - totalItemDiscount;
+      return effectiveCost > 0;
+    });
+  }, [items]);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
   
@@ -32,6 +40,9 @@ export default function Step2Assignment() {
     return itemsWithCost
         .map((item, index) => {
             let issue: string | null = null;
+            const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+            const effectiveCost = item.cost - totalItemDiscount;
+
             if (item.assignees.length === 0) {
                 issue = "This item is unassigned.";
             } else if (item.splitMode === 'percentage') {
@@ -41,7 +52,7 @@ export default function Step2Assignment() {
                 }
             } else if (item.splitMode === 'exact') {
                 const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments?.[pid] || 0), 0);
-                if (totalExact !== item.cost) {
+                if (totalExact !== effectiveCost) {
                     issue = "Exact amounts don't add up to the item total.";
                 }
             }
@@ -100,7 +111,7 @@ export default function Step2Assignment() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>No Items to Assign</AlertTitle>
             <AlertDescription>
-                There are no items with a cost greater than zero. You can proceed to the summary or go back to add items.
+                There are no items with an effective cost greater than zero. You can proceed to the summary or go back to add items.
             </AlertDescription>
         </Alert>
     )
@@ -179,13 +190,16 @@ export default function Step2Assignment() {
                                 {itemsRequiringAttention.map(({ item, index, issue }) => {
                                     const receipt = receipts.find(r => r.id === item.receiptId);
                                     const currency = receipt?.currency || globalCurrency;
+                                    const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+                                    const effectiveCost = item.cost - totalItemDiscount;
+
                                     return (
                                         <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                                             <div className="flex-1 space-y-1.5 min-w-0">
                                                 <div className="flex justify-between items-center gap-4">
                                                     <p className="font-medium leading-snug truncate" title={item.name}>{item.name}</p>
                                                     <p className="text-sm font-mono text-muted-foreground whitespace-nowrap shrink-0">
-                                                        {(item.cost / 100).toLocaleString(undefined, { style: 'currency', currency })}
+                                                        {formatCurrency(effectiveCost, currency)}
                                                     </p>
                                                 </div>
                                                 <p className="text-sm text-destructive font-medium">{issue}</p>

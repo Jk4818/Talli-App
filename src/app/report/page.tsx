@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { restoreSession } from '@/lib/redux/slices/sessionSlice';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
-import { type SessionState, type ParticipantSummary } from '@/lib/types';
+import { type SessionState, type ParticipantSummary, type BreakdownEntry } from '@/lib/types';
 import { Logo } from '@/components/Logo';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { calculateSplits } from '@/lib/splitter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 const getInitials = (name: string) => {
@@ -58,14 +58,16 @@ const BreakdownCard = ({ participant, currency }: { participant: ParticipantSumm
     return (
         <div className="break-inside-avoid">
             <Card>
-                <div className="p-4">
+                <CardHeader>
                     <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 text-base">
                             <AvatarFallback>{getInitials(participant.name)}</AvatarFallback>
                         </Avatar>
                         <h4 className="font-headline text-lg font-semibold">{participant.name}</h4>
                     </div>
-                    <div className="mt-4 space-y-2 text-sm">
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Total Paid:</span>
                             <span className="font-medium">{formatCurrency(participant.totalPaid, currency)}</span>
@@ -88,12 +90,10 @@ const BreakdownCard = ({ participant, currency }: { participant: ParticipantSumm
                             </span>
                         </div>
                     </div>
-                </div>
 
-                {hasBreakdown && (
-                    <>
-                        <Separator />
-                        <div className="p-4">
+                    {hasBreakdown && (
+                        <>
+                            <Separator className="my-4" />
                             <h5 className="text-sm font-semibold mb-2">Itemized Share</h5>
                             <div className="space-y-2 rounded-md border p-2 text-xs">
                                 <div className="grid grid-cols-2 gap-1 font-semibold">
@@ -109,7 +109,7 @@ const BreakdownCard = ({ participant, currency }: { participant: ParticipantSumm
                                 ))}
                                 {participant.breakdown.discounts.map((disc, i) => (
                                     <div key={`disc-${i}`} className="grid grid-cols-2 gap-1 text-destructive">
-                                        <span className="break-words">{disc.description}</span>
+                                        <span className="break-words pl-2">↳ {disc.description}</span>
                                         <span className="text-right font-mono">{formatCurrency(disc.amount, currency)}</span>
                                     </div>
                                 ))}
@@ -120,9 +120,9 @@ const BreakdownCard = ({ participant, currency }: { participant: ParticipantSumm
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                    </>
-                )}
+                        </>
+                    )}
+                </CardContent>
             </Card>
         </div>
     )
@@ -157,6 +157,7 @@ export default function ReportPage() {
       }
     } catch (e) {
       // This will catch errors from JSON.parse
+      console.error('Failed to load report session:', e)
       setError(e instanceof Error ? e.message : "An unknown error occurred while loading the report.");
     } finally {
         setIsLoading(false);
@@ -197,6 +198,9 @@ export default function ReportPage() {
         case 'exact':
             const receipt = sessionState.receipts.find(r => r.id === item.receiptId);
             const currency = receipt?.currency || 'USD';
+            const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+            const effectiveCost = item.cost - totalItemDiscount;
+
             const exactDetails = item.assignees.map(pid => {
                 const name = participantMap.get(pid)?.name || '?';
                 const amount = item.exactAssignments[pid] || 0;
@@ -322,7 +326,12 @@ export default function ReportPage() {
                                     <tbody>
                                         {receiptItems.map(item => (
                                             <tr key={item.id} className="border-b last:border-none">
-                                                <td className="p-2 align-top break-words">{item.name}</td>
+                                                <td className="p-2 align-top break-words">
+                                                  {item.name}
+                                                  {(item.discounts || []).map(d => (
+                                                    <div key={d.id} className='text-xs text-destructive'>↳ {d.name} ({formatCurrency(-d.amount, receipt.currency)})</div>
+                                                  ))}
+                                                </td>
                                                 <td className="p-2 align-top text-muted-foreground text-xs break-words">
                                                     {getShareDetails(item)}
                                                 </td>

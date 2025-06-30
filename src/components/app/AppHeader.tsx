@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useSelector, useDispatch } from 'react-redux';
@@ -23,7 +24,10 @@ export function AppHeader() {
   
   const isStep2Complete = useMemo(() => {
     return items.every(item => {
-      if (item.cost === 0) return true;
+      const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+      const effectiveCost = item.cost - totalItemDiscount;
+
+      if (effectiveCost <= 0) return true;
       if (item.assignees.length === 0) return false;
 
       if (item.splitMode === 'percentage') {
@@ -35,7 +39,7 @@ export function AppHeader() {
       if (item.splitMode === 'exact') {
         if (!item.exactAssignments) return false;
         const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments[pid] || 0), 0);
-        return totalExact === item.cost;
+        return totalExact === effectiveCost;
       }
       
       return true; // 'equal' split is always valid if assignees exist.

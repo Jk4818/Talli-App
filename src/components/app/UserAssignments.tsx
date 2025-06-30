@@ -13,14 +13,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from '../ui/input';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 
 interface UserAssignmentsProps {
   itemId: string;
-  itemCost: number; // in cents
 }
 
-export default function UserAssignments({ itemId, itemCost }: UserAssignmentsProps) {
+export default function UserAssignments({ itemId }: UserAssignmentsProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { participants, items, receipts } = useSelector((state: RootState) => state.session);
   const item = items.find(i => i.id === itemId);
@@ -29,6 +29,12 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
   const splitMode = item?.splitMode || 'equal';
 
   const [exactAmountStrings, setExactAmountStrings] = useState<{ [key: string]: string }>({});
+  
+  const itemCost = useMemo(() => {
+    if (!item) return 0;
+    const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+    return item.cost - totalItemDiscount;
+  }, [item]);
 
   // Synchronize local input state with Redux state whenever the item changes
   useEffect(() => {
@@ -114,7 +120,7 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
 
 
   const shares = useMemo(() => {
-    if (!item || assignees.length === 0 || itemCost === 0) return {};
+    if (!item || assignees.length === 0 || itemCost <= 0) return {};
     
     const shares: { [key: string]: number } = {};
 
@@ -166,6 +172,8 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
     }
     return shares;
   }, [item, assignees, itemCost, totalPercentage, totalExactAmount]);
+
+  if (!item) return null;
 
   return (
     <div className="space-y-4">
@@ -242,7 +250,7 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
                         )}
                         {shares[p.id] ? (
                             <span className="font-mono text-sm text-muted-foreground w-20 text-right">
-                                {(shares[p.id] / 100).toLocaleString(undefined, { style: 'currency', currency: receipt?.currency || 'USD' })}
+                                {formatCurrency(shares[p.id], receipt?.currency || 'USD' )}
                             </span>
                         ) : <div className='w-20'/>}
                     </div>
@@ -267,9 +275,9 @@ export default function UserAssignments({ itemId, itemCost }: UserAssignmentsPro
       {splitMode === 'exact' && assignees.length > 0 && totalExactAmount !== itemCost && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Amounts must total {(itemCost / 100).toLocaleString(undefined, { style: 'currency', currency: receipt?.currency || 'USD' })}</AlertTitle>
+          <AlertTitle>Amounts must total {formatCurrency(itemCost, receipt?.currency || 'USD')}</AlertTitle>
           <AlertDescription>
-            Current total: {(totalExactAmount / 100).toLocaleString(undefined, { style: 'currency', currency: receipt?.currency || 'USD' })}. Remaining: {((itemCost - totalExactAmount) / 100).toLocaleString(undefined, { style: 'currency', currency: receipt?.currency || 'USD' })}
+            Current total: {formatCurrency(totalExactAmount, receipt?.currency || 'USD')}. Remaining: {formatCurrency(itemCost - totalExactAmount, receipt?.currency || 'USD')}
           </AlertDescription>
         </Alert>
       )}

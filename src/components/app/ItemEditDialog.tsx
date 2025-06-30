@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Item, Receipt } from '@/lib/types';
+import { Item, Receipt, Discount } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
 import {
   ResponsiveSelect,
   ResponsiveSelectContent,
@@ -26,6 +26,9 @@ import {
   ResponsiveSelectLabel,
   ResponsiveSelectTrigger,
 } from '../ui/responsive-select';
+import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
+import { formatCurrency } from '@/lib/utils';
 
 
 interface ItemEditDialogProps {
@@ -33,7 +36,7 @@ interface ItemEditDialogProps {
   receipts: Receipt[];
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (updates: { name: string; cost: number; receiptId: string }) => void;
+  onSave: (updates: Partial<Item>) => void;
   onDelete: (itemId: string) => void;
 }
 
@@ -41,93 +44,155 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
   const [name, setName] = useState('');
   const [cost, setCost] = useState('');
   const [receiptId, setReceiptId] = useState('');
+  const [discounts, setDiscounts] = useState<Discount[]>([]);
 
   useEffect(() => {
     if (item) {
       setName(item.name);
       setCost((item.cost / 100).toFixed(2));
       setReceiptId(item.receiptId);
+      setDiscounts(JSON.parse(JSON.stringify(item.discounts || []))); // Deep copy
     }
   }, [item]);
 
   const handleSave = () => {
     const costInCents = Math.round(parseFloat(cost) * 100);
-    if (name.trim() && !isNaN(costInCents) && receiptId) {
-      onSave({ name: name.trim(), cost: costInCents, receiptId });
+    if (item && name.trim() && !isNaN(costInCents) && receiptId) {
+      onSave({ id: item.id, name: name.trim(), cost: costInCents, receiptId, discounts });
       onOpenChange(false);
     }
   };
   
-  const handleDelete = () => {
-      if(item) {
-          onDelete(item.id);
-          onOpenChange(false);
-      }
-  }
+  const handleDeleteItem = () => {
+    if(item) {
+      onDelete(item.id);
+      onOpenChange(false);
+    }
+  };
 
+  const handleAddDiscount = () => {
+    setDiscounts(prev => [...prev, {
+        id: `d_item_${item?.id}_${Date.now()}`,
+        name: 'New Discount',
+        amount: 0,
+    }]);
+  };
+  
+  const handleDiscountChange = (id: string, field: 'name' | 'amount', value: string) => {
+    setDiscounts(prev => prev.map(d => {
+      if (d.id === id) {
+        if (field === 'amount') {
+          return { ...d, amount: Math.round(parseFloat(value) * 100) || 0 };
+        }
+        return { ...d, [field]: value };
+      }
+      return d;
+    }));
+  };
+
+  const handleRemoveDiscount = (id: string) => {
+    setDiscounts(prev => prev.filter(d => d.id !== id));
+  };
+  
   if (!item) return null;
+
+  const currentReceiptCurrency = receipts.find(r => r.id === receiptId)?.currency || 'USD';
+  const totalItemDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
+  const effectiveCost = item.cost - totalItemDiscounts;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Item</DialogTitle>
           <DialogDescription>
             Update the details for this item. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="cost" className="text-right">
-              Cost
-            </Label>
-            <Input
-              id="cost"
-              type="text"
-              inputMode="decimal"
-              value={cost}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
-                    setCost(value);
-                }
-              }}
-              className="col-span-3"
-            />
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="receipt" className="text-right">
-              Receipt
-            </Label>
-             <div className="col-span-3">
-              <ResponsiveSelect value={receiptId} onValueChange={setReceiptId}>
-                <ResponsiveSelectTrigger id="receipt" disabled={receipts.length === 0} placeholder="Select a receipt">
-                  {receipts.find((r) => r.id === receiptId)?.name}
-                </ResponsiveSelectTrigger>
-                <ResponsiveSelectContent>
-                  <ResponsiveSelectLabel>Select a Receipt</ResponsiveSelectLabel>
-                  {receipts.map((r) => (
-                    <ResponsiveSelectItem key={r.id} value={r.id}>
-                      {r.name}
-                    </ResponsiveSelectItem>
-                  ))}
-                </ResponsiveSelectContent>
-              </ResponsiveSelect>
+        <ScrollArea className="flex-1 pr-6 -mr-6">
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="cost" className="text-right">
+                Original Cost
+              </Label>
+              <Input
+                id="cost"
+                type="text"
+                inputMode="decimal"
+                value={cost}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
+                      setCost(value);
+                  }
+                }}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="receipt" className="text-right">
+                Receipt
+              </Label>
+              <div className="col-span-3">
+                <ResponsiveSelect value={receiptId} onValueChange={setReceiptId}>
+                  <ResponsiveSelectTrigger id="receipt" disabled={receipts.length === 0} placeholder="Select a receipt">
+                    {receipts.find((r) => r.id === receiptId)?.name}
+                  </ResponsiveSelectTrigger>
+                  <ResponsiveSelectContent>
+                    <ResponsiveSelectLabel>Select a Receipt</ResponsiveSelectLabel>
+                    {receipts.map((r) => (
+                      <ResponsiveSelectItem key={r.id} value={r.id}>
+                        {r.name}
+                      </ResponsiveSelectItem>
+                    ))}
+                  </ResponsiveSelectContent>
+                </ResponsiveSelect>
+              </div>
+            </div>
+            <Separator />
+            <div>
+              <Label>Item Discounts</Label>
+              <div className="mt-2 space-y-2">
+                {discounts.map(discount => (
+                    <div key={discount.id} className="flex items-center gap-2">
+                      <Input 
+                        placeholder="Discount name"
+                        value={discount.name}
+                        onChange={(e) => handleDiscountChange(discount.id, 'name', e.target.value)}
+                        className="flex-1"
+                      />
+                      <Input 
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        value={(discount.amount / 100).toFixed(2)}
+                        onChange={(e) => handleDiscountChange(discount.id, 'amount', e.target.value)}
+                        className="w-28 text-right"
+                      />
+                      <Button variant="ghost" size="icon" onClick={() => handleRemoveDiscount(discount.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                ))}
+                 <Button variant="outline" size="sm" onClick={handleAddDiscount} className="w-full">
+                    <Plus className="h-4 w-4 mr-2"/> Add Item Discount
+                  </Button>
+              </div>
             </div>
           </div>
-        </div>
-        <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
+        </ScrollArea>
+        <DialogFooter className="flex-col sm:flex-row sm:justify-between sm:space-x-2 border-t pt-4">
             <AlertDialog>
                 <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="sm:mr-auto mt-2 sm:mt-0 w-full sm:w-auto">
@@ -144,12 +209,15 @@ export default function ItemEditDialog({ item, receipts, isOpen, onOpenChange, o
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDeleteItem}>Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <div className="flex items-center gap-4">
+                <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Effective Cost</p>
+                    <p className="font-bold text-lg">{formatCurrency(effectiveCost, currentReceiptCurrency)}</p>
+                </div>
                 <Button onClick={handleSave}>Save Changes</Button>
             </div>
         </DialogFooter>

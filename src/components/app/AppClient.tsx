@@ -46,8 +46,11 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     return receipts.some(receipt => {
       const receiptItems = items.filter(i => i.receiptId === receipt.id);
       const subtotal = receiptItems.reduce((acc, item) => acc + item.cost, 0);
-      const totalDiscounts = (receipt.discounts || []).reduce((acc, d) => acc + d.amount, 0);
-      const subtotalAfterDiscounts = subtotal - totalDiscounts;
+      const totalReceiptDiscounts = (receipt.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+      const totalItemDiscounts = receiptItems.reduce((acc, i) => acc + (i.discounts || []).reduce((s,d)=> s + d.amount, 0),0);
+
+      const subtotalAfterDiscounts = subtotal - totalReceiptDiscounts - totalItemDiscounts;
+      
       const serviceCharge = receipt.serviceCharge || { type: 'fixed', value: 0 };
       const serviceChargeAmount = serviceCharge.type === 'fixed'
         ? serviceCharge.value
@@ -85,7 +88,10 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
 
   const isStep2Complete = useMemo(() => {
     return items.every(item => {
-      if (item.cost === 0) return true;
+      const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+      const effectiveCost = item.cost - totalItemDiscount;
+
+      if (effectiveCost <= 0) return true;
       if (item.assignees.length === 0) return false;
 
       if (item.splitMode === 'percentage') {
@@ -97,7 +103,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
       if (item.splitMode === 'exact') {
         if (!item.exactAssignments) return false;
         const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments[pid] || 0), 0);
-        return totalExact === item.cost;
+        return totalExact === effectiveCost;
       }
       
       return true; // 'equal' split is always valid if assignees exist.

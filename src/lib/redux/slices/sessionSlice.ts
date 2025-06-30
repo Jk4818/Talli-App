@@ -63,6 +63,7 @@ const sessionSlice = createSlice({
         receiptId: item.receiptId || '',
         name: item.name || 'New Item',
         cost: item.cost || 0,
+        discounts: item.discounts || [],
         assignees: item.assignees || [],
         splitMode: item.splitMode || 'equal',
         percentageAssignments: item.percentageAssignments || {},
@@ -193,12 +194,20 @@ const sessionSlice = createSlice({
     
       const discountIndex = receipt.discounts.findIndex(d => d.id === discountId);
       if (discountIndex === -1) return;
-    
+      
       const [discount] = receipt.discounts.splice(discountIndex, 1);
       const targetItem = state.items.find(i => i.id === discount.suggestedItemId);
     
       if (targetItem) {
-        targetItem.cost = Math.max(0, targetItem.cost - discount.amount);
+        if (!targetItem.discounts) {
+          targetItem.discounts = [];
+        }
+        // Remove the suggestion property as it's now applied
+        const { suggestedItemId, ...appliedDiscount } = discount;
+        targetItem.discounts.push(appliedDiscount);
+      } else {
+        // If target item not found, put it back
+        receipt.discounts.push(discount);
       }
     },
     ignoreSuggestedDiscount: (state, action: PayloadAction<{ receiptId: string; discountId: string }>) => {
@@ -217,6 +226,7 @@ const sessionSlice = createSlice({
         receiptId: action.payload.receiptId,
         name: 'New Item',
         cost: 0,
+        discounts: [],
         assignees: [],
         splitMode: 'equal',
         percentageAssignments: {},
@@ -232,6 +242,36 @@ const sessionSlice = createSlice({
     },
     removeItem: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter(i => i.id !== action.payload);
+    },
+    // Reducers for per-item discounts
+    addItemDiscount: (state, action: PayloadAction<{ itemId: string }>) => {
+      const item = state.items.find(i => i.id === action.payload.itemId);
+      if (item) {
+        const newDiscount: Discount = {
+          id: `d_${item.id}_${new Date().getTime()}`,
+          name: 'Item Discount',
+          amount: 0,
+        };
+        if (!item.discounts) {
+          item.discounts = [];
+        }
+        item.discounts.push(newDiscount);
+      }
+    },
+    updateItemDiscount: (state, action: PayloadAction<{ itemId: string, discount: Partial<Discount> & { id: string } }>) => {
+      const item = state.items.find(i => i.id === action.payload.itemId);
+      if (item && item.discounts) {
+        const discount = item.discounts.find(d => d.id === action.payload.discount.id);
+        if (discount) {
+          Object.assign(discount, action.payload.discount);
+        }
+      }
+    },
+    removeItemDiscount: (state, action: PayloadAction<{ itemId: string, discountId: string }>) => {
+      const item = state.items.find(i => i.id === action.payload.itemId);
+      if (item && item.discounts) {
+        item.discounts = item.discounts.filter(d => d.id !== action.payload.discountId);
+      }
     },
     assignItemToUser: (state, action: PayloadAction<{ itemId: string; participantId: string }>) => {
         const item = state.items.find(i => i.id === action.payload.itemId);
@@ -355,6 +395,7 @@ const sessionSlice = createSlice({
               receiptId: receipt.id,
               name: item.name,
               cost: Math.round(item.cost * 100),
+              discounts: [],
               assignees: [],
               splitMode: 'equal',
               percentageAssignments: {},
@@ -416,6 +457,9 @@ export const {
   addItem,
   updateItem,
   removeItem,
+  addItemDiscount,
+  updateItemDiscount,
+  removeItemDiscount,
   assignItemToUser,
   unassignItemFromUser,
   toggleAllAssignees,

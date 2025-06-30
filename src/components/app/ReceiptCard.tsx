@@ -56,14 +56,18 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     .filter(i => i.receiptId === receipt.id)
     .reduce((acc, item) => acc + item.cost, 0);
 
-  const totalDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
-  const subtotalAfterDiscounts = subtotal - totalDiscounts;
+  const totalReceiptDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
+  const subtotalAfterDiscounts = subtotal - totalReceiptDiscounts;
 
   const serviceChargeAmount = receipt.serviceCharge?.type === 'fixed'
     ? receipt.serviceCharge.value
     : Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
   
-  const receiptTotal = subtotalAfterDiscounts + serviceChargeAmount;
+  const totalItemLevelDiscounts = items
+    .filter(i => i.receiptId === receipt.id)
+    .reduce((acc, item) => acc + (item.discounts || []).reduce((s,d) => s + d.amount, 0), 0);
+  
+  const receiptTotal = subtotalAfterDiscounts - totalItemLevelDiscounts + serviceChargeAmount;
 
   const hasConflict = receiptTotal < 0;
 
@@ -302,7 +306,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                         <AccordionTrigger className='hover:no-underline'>
                           <div className="flex items-center justify-between w-full">
                               <div className="flex items-center gap-2">
-                                  <span>Discounts ({formatCurrency(totalDiscounts, receipt.currency)})</span>
+                                  <span>Receipt-Wide Discounts ({formatCurrency(totalReceiptDiscounts, receipt.currency)})</span>
                                   {hasDiscountConfidence && (
                                       <AccessibleTooltip content={
                                         <div className="p-1 space-y-1 text-xs max-w-xs">
