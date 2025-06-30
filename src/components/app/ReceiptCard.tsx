@@ -6,12 +6,12 @@ import { type Receipt, type Discount, type ServiceCharge } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
-import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, removeReceipt, applySuggestedDiscount, ignoreSuggestedDiscount } from '@/lib/redux/slices/sessionSlice';
+import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, removeReceipt, applySuggestedDiscount, ignoreSuggestedDiscount, reassignSuggestedDiscount } from '@/lib/redux/slices/sessionSlice';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, X, Layers } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, Pencil, Layers } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -37,6 +37,7 @@ import {
   ResponsiveSelectTrigger,
 } from '../ui/responsive-select';
 import { Badge } from '../ui/badge';
+import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerTrigger } from '../ui/dropdrawer';
 
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
@@ -45,10 +46,11 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>(undefined);
 
-  const isPayerMissing = !receipt.payerId;
-  const [isCardOpen, setIsCardOpen] = useState(isPayerMissing);
-
   const discounts = receipt.discounts || [];
+  const hasSuggestions = discounts.some(d => d.suggestedItemId);
+  const isPayerMissing = !receipt.payerId;
+  const [isCardOpen, setIsCardOpen] = useState(isPayerMissing || hasSuggestions);
+  
   const hasDiscountConfidence = discounts.some(d => d.confidence !== undefined);
   const hasServiceChargeConfidence = receipt.serviceCharge?.confidence !== undefined;
 
@@ -73,11 +75,11 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
 
   useEffect(() => {
     // This effect ensures that if the payer status changes to missing
-    // (e.g., a participant is deleted), the card will open to prompt the user.
-    if (isPayerMissing) {
+    // or new suggestions appear, the card will open to prompt the user.
+    if (isPayerMissing || hasSuggestions) {
       setIsCardOpen(true);
     }
-  }, [isPayerMissing]);
+  }, [isPayerMissing, hasSuggestions]);
 
   useEffect(() => {
     // Automatically expand the discounts section if there's a conflict
@@ -166,7 +168,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                     </div>
                   </div>
                   {receipt.status === 'processed' && (
-                    <CardDescription className='flex items-center gap-2 mt-1.5'>
+                    <CardDescription className='flex items-center flex-wrap gap-x-4 gap-y-1 mt-1.5'>
                       {!isCardOpen && hasConflict ? (
                         <div className="text-destructive font-medium flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" />
@@ -176,6 +178,11 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                          <div className="text-primary font-medium flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" />
                           <span>Payer needed - expand to assign</span>
+                        </div>
+                      ) : !isCardOpen && hasSuggestions ? (
+                        <div className="text-primary font-medium flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          <span>AI has suggestions - expand to review</span>
                         </div>
                       ) : (
                         <>
@@ -337,23 +344,47 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     
                             if (suggestedItem) {
                               return (
-                                <div key={discount.id} className="p-3 rounded-md bg-accent/30 border border-primary/20 space-y-2">
-                                  <div className="flex justify-between items-start">
-                                      <div>
-                                          <p className="font-semibold">{discount.name}</p>
-                                          <p className="text-sm text-muted-foreground">- {formatCurrency(discount.amount, receipt.currency)}</p>
+                                <div key={discount.id} className="p-3 rounded-md bg-accent/30 border border-primary/20 space-y-3">
+                                  <div>
+                                      <div className="flex justify-between items-start">
+                                          <div>
+                                              <p className="font-semibold">{discount.name}</p>
+                                              <p className="text-sm text-muted-foreground">- {formatCurrency(discount.amount, receipt.currency)}</p>
+                                          </div>
+                                          {discount.confidence !== undefined && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {discount.confidence}%</Badge>}
                                       </div>
-                                      {discount.confidence !== undefined && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {discount.confidence}%</Badge>}
+                                      <p className="text-xs text-center text-accent-foreground/80 mt-2">
+                                          AI suggests applying to: <strong className="text-accent-foreground">{suggestedItem.name}</strong>
+                                      </p>
                                   </div>
-                                  <p className="text-sm text-center text-accent-foreground/80">AI suggests applying this to <strong className="text-accent-foreground">{suggestedItem.name}</strong>.</p>
-                                  <div className="flex gap-2 pt-1">
-                                      <Button size="sm" className="flex-1" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                        <Check className="mr-2 h-4 w-4" /> Apply to Item
-                                      </Button>
-                                      <AccessibleTooltip content={<p>Moves this discount to the 'Receipt-Wide' list where you can edit it.</p>}>
-                                        <Button size="sm" variant="secondary" className="flex-1" onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                          <Layers className="mr-2 h-4 w-4" /> Reclassify
-                                        </Button>
+                                  <div className="space-y-2">
+                                      <div className="grid grid-cols-2 gap-2">
+                                          <Button size="sm" className="w-full" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
+                                            <Check className="mr-1.5 h-4 w-4" /> Apply
+                                          </Button>
+                                          <DropDrawer>
+                                              <DropDrawerTrigger asChild>
+                                                  <Button size="sm" variant="secondary" className="w-full">
+                                                      <Pencil className="mr-1.5 h-4 w-4" /> Reassign
+                                                  </Button>
+                                              </DropDrawerTrigger>
+                                              <DropDrawerContent>
+                                                  <DropDrawerLabel>Reassign to another item</DropDrawerLabel>
+                                                  {items.filter(i => i.receiptId === receipt.id).map(item => (
+                                                      <DropDrawerItem 
+                                                          key={item.id}
+                                                          onClick={() => dispatch(reassignSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id, newTargetItemId: item.id }))}
+                                                      >
+                                                          {item.name}
+                                                      </DropDrawerItem>
+                                                  ))}
+                                              </DropDrawerContent>
+                                          </DropDrawer>
+                                      </div>
+                                      <AccessibleTooltip content={<p>This makes the discount editable in the 'Receipt-Wide' list.</p>}>
+                                          <Button size="sm" variant="ghost" className="w-full" onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
+                                            <Layers className="mr-1.5 h-4 w-4" /> Convert to Receipt-Wide Discount
+                                          </Button>
                                       </AccessibleTooltip>
                                   </div>
                                 </div>

@@ -210,6 +210,29 @@ const sessionSlice = createSlice({
         receipt.discounts.push(discount);
       }
     },
+    reassignSuggestedDiscount: (state, action: PayloadAction<{ receiptId: string; discountId: string; newTargetItemId: string }>) => {
+      const { receiptId, discountId, newTargetItemId } = action.payload;
+      const receipt = state.receipts.find(r => r.id === receiptId);
+      if (!receipt) return;
+
+      const discountIndex = receipt.discounts.findIndex(d => d.id === discountId);
+      if (discountIndex === -1) return;
+      
+      const [discount] = receipt.discounts.splice(discountIndex, 1);
+      const newTargetItem = state.items.find(i => i.id === newTargetItemId);
+
+      if (newTargetItem) {
+        if (!newTargetItem.discounts) {
+          newTargetItem.discounts = [];
+        }
+        // Remove the suggestion property as it's now applied
+        const { suggestedItemId, ...appliedDiscount } = discount;
+        newTargetItem.discounts.push(appliedDiscount);
+      } else {
+        // If target item not found for some reason, put it back on the receipt
+        receipt.discounts.push(discount);
+      }
+    },
     ignoreSuggestedDiscount: (state, action: PayloadAction<{ receiptId: string; discountId: string }>) => {
       const { receiptId, discountId } = action.payload;
       const receipt = state.receipts.find(r => r.id === receiptId);
@@ -453,6 +476,7 @@ export const {
   updateDiscount,
   removeDiscount,
   applySuggestedDiscount,
+  reassignSuggestedDiscount,
   ignoreSuggestedDiscount,
   addItem,
   updateItem,
