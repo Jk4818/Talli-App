@@ -6,12 +6,12 @@ import { type Receipt, type Discount, type ServiceCharge } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
-import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, removeReceipt } from '@/lib/redux/slices/sessionSlice';
+import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, removeReceipt, applySuggestedDiscount, ignoreSuggestedDiscount } from '@/lib/redux/slices/sessionSlice';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, X } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -36,6 +36,7 @@ import {
   ResponsiveSelectLabel,
   ResponsiveSelectTrigger,
 } from '../ui/responsive-select';
+import { Badge } from '../ui/badge';
 
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
@@ -327,27 +328,54 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-2 pt-2">
-                          {discounts.map(discount => (
-                            <div key={discount.id} className="flex items-center gap-2">
-                              <Input 
-                                placeholder="Discount name"
-                                defaultValue={discount.name}
-                                onBlur={(e) => handleDiscountChange(discount.id, { name: e.target.value })}
-                                className="flex-1"
-                              />
-                              <Input 
-                                type="text"
-                                inputMode="decimal"
-                                placeholder="0.00"
-                                defaultValue={(discount.amount / 100).toFixed(2)}
-                                onBlur={(e) => handleDiscountChange(discount.id, { amount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
-                                className="w-28 text-right"
-                              />
-                              <Button variant="ghost" size="icon" onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
+                          {discounts.map(discount => {
+                            const suggestedItem = discount.suggestedItemId ? items.find(i => i.id === discount.suggestedItemId) : null;
+    
+                            if (suggestedItem) {
+                              return (
+                                <div key={discount.id} className="p-3 rounded-md bg-accent/30 border border-primary/20 space-y-2">
+                                  <div className="flex justify-between items-start">
+                                      <div>
+                                          <p className="font-semibold">{discount.name}</p>
+                                          <p className="text-sm text-muted-foreground">- {formatCurrency(discount.amount, receipt.currency)}</p>
+                                      </div>
+                                      {discount.confidence !== undefined && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {discount.confidence}%</Badge>}
+                                  </div>
+                                  <p className="text-sm text-center text-accent-foreground/80">AI suggests this applies to: <span className="font-semibold text-accent-foreground">{suggestedItem.name}</span></p>
+                                  <div className="flex gap-2 pt-1">
+                                      <Button size="sm" className="flex-1" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
+                                        <Check className="mr-2 h-4 w-4" /> Apply
+                                      </Button>
+                                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
+                                        <X className="mr-2 h-4 w-4" /> Ignore
+                                      </Button>
+                                  </div>
+                                </div>
+                              )
+                            } else {
+                              return (
+                                <div key={discount.id} className="flex items-center gap-2">
+                                  <Input 
+                                    placeholder="Discount name"
+                                    defaultValue={discount.name}
+                                    onBlur={(e) => handleDiscountChange(discount.id, { name: e.target.value })}
+                                    className="flex-1"
+                                  />
+                                  <Input 
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0.00"
+                                    defaultValue={(discount.amount / 100).toFixed(2)}
+                                    onBlur={(e) => handleDiscountChange(discount.id, { amount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
+                                    className="w-28 text-right"
+                                  />
+                                  <Button variant="ghost" size="icon" onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )
+                            }
+                          })}
                           <Button variant="outline" size="sm" onClick={() => dispatch(addDiscount({ receiptId: receipt.id }))}>
                             <Plus className="h-4 w-4 mr-2"/> Add Discount
                           </Button>

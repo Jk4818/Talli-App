@@ -26,6 +26,7 @@ const ExtractReceiptDataInputSchema = z.object({
 export type ExtractReceiptDataInput = z.infer<typeof ExtractReceiptDataInputSchema>;
 
 const ItemSchema = z.object({
+  id: z.string().describe('A temporary, unique identifier for this item within this response (e.g., "item-1", "item-2").'),
   name: z.string().describe('The name of the item.'),
   cost: z.number().describe('The cost of the item.'),
   confidence: z.number().min(0).max(100).optional().describe('A percentage confidence score (0-100) on the accuracy of this item extraction.'),
@@ -33,7 +34,8 @@ const ItemSchema = z.object({
 
 const DiscountSchema = z.object({
   name: z.string().describe('The name of the discount.'),
-  amount: z.number().describe('The amount of the discount.'),
+  amount: z.number().describe('The amount of the discount (as a positive number).'),
+  suggestedItemId: z.string().optional().describe('If this discount is for a single item, this must be the unique ID of that item. Otherwise, leave this field empty.'),
   confidence: z.number().min(0).max(100).optional().describe('A percentage confidence score (0-100) on the accuracy of this discount extraction.'),
 });
 
@@ -49,7 +51,7 @@ const ExtractReceiptDataOutputSchema = z.object({
   discounts: z.array(DiscountSchema).describe('The list of discounts extracted from the receipt.'),
   serviceCharges: z.array(ServiceChargeSchema).describe('The list of service charges extracted from the receipt.'),
   currency: z.string().length(3).describe('The 3-letter ISO 4217 currency code of the receipt (e.g., USD, GBP, EUR).'),
-  overallConfidence: z.number().min(0).max(100).optional().describe('An overall confidence score (0-100) for the entire receipt extraction, considering image quality and text legibility.'),
+  overallConfidence: z.number().min(0).max(100).optional().describe('An overall confidence score for the entire receipt extraction, considering image quality and text legibility.'),
 });
 
 export type ExtractReceiptDataOutput = z.infer<typeof ExtractReceiptDataOutputSchema>;
@@ -65,12 +67,13 @@ const extractReceiptDataPrompt = ai.definePrompt({
   prompt: `You are an expert AI assistant specializing in extracting structured data from receipts.
 
 You will receive an image of a receipt. Your task is to analyze the image and extract the following information:
-1.  A list of all individual items, including their name and cost.
-2.  A list of all discounts applied, including the discount name and the amount.
-3.  A list of all service charges or tips, including a description and the amount.
-4.  The currency of the receipt as a 3-letter ISO 4217 code (e.g., USD, GBP, EUR).
-5.  For each item, discount, and service charge, provide a confidence score from 0 to 100 on how certain you are about the accuracy of the extracted text and numbers. A low score indicates blurry text, unusual formatting, or ambiguity.
-6.  Provide an overall confidence score for the entire receipt, taking into account the image quality, clarity, and how easy it was to read.
+1.  A list of all individual items. For each item, you MUST provide a temporary unique \`id\` (e.g., "item-1"), its \`name\`, and its \`cost\`.
+2.  A list of all discounts. For each discount, provide its \`name\` and its \`amount\` (as a positive number).
+3.  **Crucially, if a discount applies to a specific item, you MUST provide the \`suggestedItemId\` field containing the temporary ID of the item it applies to. If a discount is receipt-wide (e.g., "20% off total"), leave \`suggestedItemId\` empty.**
+4.  A list of all service charges or tips.
+5.  The currency of the receipt as a 3-letter ISO 4217 code (e.g., USD, GBP, EUR).
+6.  For each extracted element (item, discount, service charge), provide a \`confidence\` score from 0 to 100.
+7.  Provide an \`overallConfidence\` score for the entire receipt.
 
 Analyze the following receipt image and return the data in the specified JSON format.
 

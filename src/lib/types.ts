@@ -20,6 +20,7 @@ export interface Discount {
   name: string;
   amount: number; // in cents
   confidence?: number; // 0-100
+  suggestedItemId?: string | null; // The ID of the item this discount is suggested for
 }
 
 export interface ServiceCharge {

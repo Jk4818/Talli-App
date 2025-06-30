@@ -186,6 +186,31 @@ const sessionSlice = createSlice({
             receipt.discounts = receipt.discounts.filter(d => d.id !== action.payload.discountId);
         }
     },
+    applySuggestedDiscount: (state, action: PayloadAction<{ receiptId: string; discountId: string; }>) => {
+      const { receiptId, discountId } = action.payload;
+      const receipt = state.receipts.find(r => r.id === receiptId);
+      if (!receipt) return;
+    
+      const discountIndex = receipt.discounts.findIndex(d => d.id === discountId);
+      if (discountIndex === -1) return;
+    
+      const [discount] = receipt.discounts.splice(discountIndex, 1);
+      const targetItem = state.items.find(i => i.id === discount.suggestedItemId);
+    
+      if (targetItem) {
+        targetItem.cost = Math.max(0, targetItem.cost - discount.amount);
+      }
+    },
+    ignoreSuggestedDiscount: (state, action: PayloadAction<{ receiptId: string; discountId: string }>) => {
+      const { receiptId, discountId } = action.payload;
+      const receipt = state.receipts.find(r => r.id === receiptId);
+      if (!receipt) return;
+    
+      const discount = receipt.discounts.find(d => d.id === discountId);
+      if (discount) {
+        discount.suggestedItemId = null;
+      }
+    },
     addItem: (state, action: PayloadAction<{ receiptId: string }>) => {
       const newItem: Item = {
         id: `item_${new Date().getTime()}`,
@@ -316,13 +341,38 @@ const sessionSlice = createSlice({
           receipt.imageDataUri = payload.imageDataUri;
           receipt.currency = payload.currency || state.globalCurrency;
           receipt.overallConfidence = payload.overallConfidence;
+
+          const tempIdToPermanentIdMap = new Map<string, string>();
           
-          receipt.discounts = payload.discounts.map((d, i) => ({
-            ...d, 
-            id: `d_${receipt.id}_${i}`, 
-            amount: Math.round(d.amount * 100),
-            confidence: d.confidence
-          }));
+          const newItems: Item[] = payload.items.map((item, index) => {
+            const permanentId = `item_${receipt.id}_${index}`;
+            // The AI returns a temporary ID (e.g., "item-1"), we map it to our permanent, state-wide unique ID
+            if (item.id) {
+              tempIdToPermanentIdMap.set(item.id, permanentId);
+            }
+            return {
+              id: permanentId,
+              receiptId: receipt.id,
+              name: item.name,
+              cost: Math.round(item.cost * 100),
+              assignees: [],
+              splitMode: 'equal',
+              percentageAssignments: {},
+              exactAssignments: {},
+              confidence: item.confidence,
+            };
+          });
+          
+          receipt.discounts = payload.discounts.map((d, i) => {
+            const permanentSuggestedId = d.suggestedItemId ? tempIdToPermanentIdMap.get(d.suggestedItemId) : null;
+            return {
+              id: `d_${receipt.id}_${i}`,
+              name: d.name,
+              amount: Math.round(d.amount * 100),
+              confidence: d.confidence,
+              suggestedItemId: permanentSuggestedId,
+            }
+          });
           
           const serviceChargeTotal = payload.serviceCharges.reduce((sum, sc) => sum + sc.amount, 0);
           const serviceChargeConfidence = payload.serviceCharges.length > 0 ? payload.serviceCharges.reduce((sum, sc) => sum + (sc.confidence || 0), 0) / payload.serviceCharges.length : undefined;
@@ -332,18 +382,6 @@ const sessionSlice = createSlice({
             value: Math.round(serviceChargeTotal * 100),
             confidence: serviceChargeConfidence ? Math.round(serviceChargeConfidence) : undefined
           };
-
-          const newItems: Item[] = payload.items.map((item, index) => ({
-            id: `item_${receipt.id}_${index}`,
-            receiptId: receipt.id,
-            name: item.name,
-            cost: Math.round(item.cost * 100),
-            assignees: [],
-            splitMode: 'equal',
-            percentageAssignments: {},
-            exactAssignments: {},
-            confidence: item.confidence,
-          }));
 
           state.items.push(...newItems);
         }
@@ -373,6 +411,8 @@ export const {
   addDiscount,
   updateDiscount,
   removeDiscount,
+  applySuggestedDiscount,
+  ignoreSuggestedDiscount,
   addItem,
   updateItem,
   removeItem,
