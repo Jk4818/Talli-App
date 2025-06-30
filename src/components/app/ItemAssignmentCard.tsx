@@ -24,7 +24,7 @@ interface ItemAssignmentCardProps {
 }
 
 export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIssue, issueText }: ItemAssignmentCardProps) {
-  const { receipts } = useSelector((state: RootState) => state.session);
+  const { receipts, items } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const receipt = receipts.find(r => r.id === item.receiptId);
   const [isEditing, setIsEditing] = useState(false);
@@ -87,6 +87,7 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
       </Card>
       <ItemEditDialog
         item={item}
+        items={items}
         receipts={receipts}
         isOpen={isEditing}
         onOpenChange={setIsEditing}
