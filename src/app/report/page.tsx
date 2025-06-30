@@ -10,6 +10,7 @@ import { Logo } from '@/components/Logo';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ArrowRight, Printer } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -222,7 +223,9 @@ export default function ReportPage() {
                           {error}
                       </AlertDescription>
                   </Alert>
-                  <Button onClick={() => window.close()} className="mt-4">Close Tab</Button>
+                  <Button asChild className="mt-4">
+                    <Link href="/">Back to Home</Link>
+                  </Button>
               </div>
           </div>
       )
