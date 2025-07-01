@@ -188,20 +188,34 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
 
 
     const highestPayer = React.useMemo(() => {
-      if (!summary.participantSummaries || summary.participantSummaries.length === 0) return null;
-      return summary.participantSummaries.reduce((max, p) => (p.totalPaid > max.totalPaid ? p : max), summary.participantSummaries[0]);
+      if (!summary.participantSummaries || summary.participantSummaries.length === 0) {
+        return null;
+      }
+      return summary.participantSummaries.reduce(
+        (max, p) => (p.totalPaid > max.totalPaid ? p : max),
+        summary.participantSummaries[0]
+      );
     }, [summary.participantSummaries]);
 
     const highestShare = React.useMemo(() => {
-        if (!summary.participantSummaries || summary.participantSummaries.length === 0) return null;
-        return summary.participantSummaries.reduce((max, p) => (p.totalShare > max.totalShare ? p : max), summary.participantSummaries[0]);
+      if (!summary.participantSummaries || summary.participantSummaries.length === 0) {
+        return null;
+      }
+      return summary.participantSummaries.reduce(
+        (max, p) => (p.totalShare > max.totalShare ? p : max),
+        summary.participantSummaries[0]
+      );
     }, [summary.participantSummaries]);
 
     const mostExpensiveItem = React.useMemo(() => {
-        if (items.length === 0) return null;
-        const itemsWithCost = items.filter(i => i.cost > 0);
-        if (itemsWithCost.length === 0) return null;
-        return itemsWithCost.reduce((max, item) => (item.cost > max.cost ? item : max), itemsWithCost[0]);
+      const itemsWithCost = items.filter(i => i.cost > 0);
+      if (itemsWithCost.length === 0) {
+        return null;
+      }
+      return itemsWithCost.reduce(
+        (max, item) => (item.cost > max.cost ? item : max),
+        itemsWithCost[0]
+      );
     }, [items]);
     
     const aiConfidence = React.useMemo(() => {
@@ -239,17 +253,15 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
             return null;
         }
 
-        // Find the participant with the highest total savings from discounts.
         const topSaverParticipant = summary.participantSummaries.reduce(
             (max, p) => {
                 const maxSavings = Math.abs(max.breakdown.discounts.reduce((sum, d) => sum + d.amount, 0));
                 const currentSavings = Math.abs(p.breakdown.discounts.reduce((sum, d) => sum + d.amount, 0));
                 return currentSavings > maxSavings ? p : max;
             },
-            summary.participantSummaries[0]
+            summary.participantSummaries[0] // Start with the first participant
         );
 
-        // Calculate the savings for the top saver.
         const maxSavings = Math.abs(topSaverParticipant.breakdown.discounts.reduce((sum, d) => sum + d.amount, 0));
 
         if (maxSavings > 0) {
@@ -284,16 +296,14 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
             }
         });
 
-        const butterflyData = participants.reduce(
-            (max, p) => {
-                const connections = sharedWithMap.get(p.id)?.size || 0;
-                if (connections > max.connections) {
-                    return { participant: p, connections: connections };
-                }
-                return max;
-            },
-            { participant: null as Participant | null, connections: 0 }
-        );
+        const butterflyData = participants
+            .map(p => ({
+                participant: p,
+                connections: sharedWithMap.get(p.id)?.size || 0,
+            }))
+            .reduce(
+                (max, current) => (current.connections > max.connections ? current : max)
+            );
 
         if (butterflyData.participant && butterflyData.connections > 0) {
             return {
