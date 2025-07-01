@@ -3,8 +3,8 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { SplitSummary, Participant, Item, Receipt } from '@/lib/types';
-import { Lightbulb, Scale, Sparkles, Info, Trophy, Gem, Pizza, Bot } from 'lucide-react';
+import { SplitSummary, Participant, Item, Receipt, ParticipantSummary } from '@/lib/types';
+import { Lightbulb, Scale, Sparkles, Info, Trophy, Gem, Pizza, Bot, Award, HeartHandshake } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -235,6 +235,72 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
       </>
     );
 
+    const topSaver = React.useMemo(() => {
+        if (participants.length < 1) return null;
+
+        let maxSavings = 0;
+        let topSaverParticipant: ParticipantSummary | null = null;
+
+        summary.participantSummaries.forEach(p => {
+            const totalSavings = Math.abs(p.breakdown.discounts.reduce((sum, d) => sum + d.amount, 0));
+            if (totalSavings > maxSavings) {
+                maxSavings = totalSavings;
+                topSaverParticipant = p;
+            }
+        });
+
+        if (topSaverParticipant && maxSavings > 0) {
+            return {
+                name: topSaverParticipant.name,
+                amount: maxSavings,
+            };
+        }
+        return null;
+    }, [summary.participantSummaries, participants]);
+
+
+    const socialButterfly = React.useMemo(() => {
+        if (participants.length < 2) return null;
+
+        const sharedWithMap = new Map<string, Set<string>>();
+        participants.forEach(p => sharedWithMap.set(p.id, new Set()));
+
+        items.forEach(item => {
+            if (item.assignees.length > 1) {
+                item.assignees.forEach(assigneeId => {
+                    const sharerSet = sharedWithMap.get(assigneeId);
+                    if (sharerSet) {
+                        item.assignees.forEach(otherAssigneeId => {
+                            if (assigneeId !== otherAssigneeId) {
+                                sharerSet.add(otherAssigneeId);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        let maxConnections = 0;
+        let butterfly: Participant | null = null;
+
+        participants.forEach(p => {
+            const connections = sharedWithMap.get(p.id)?.size || 0;
+            if (connections > maxConnections) {
+                maxConnections = connections;
+                butterfly = p;
+            }
+        });
+
+        if (butterfly && maxConnections > 0) {
+            return {
+                name: butterfly.name,
+                count: maxConnections,
+            };
+        }
+
+        return null;
+    }, [items, participants]);
+
     return (
         <Card>
             <CardHeader className='flex-row items-center gap-4 space-y-0'>
@@ -306,6 +372,23 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                        </div>
                        <p className="text-muted-foreground">{pennyPerfectContent}</p>
                     </SmartSummaryItem>
+                    {topSaver && (
+                        <SmartSummaryItem icon={<Award className="h-5 w-5" />}>
+                            <p className="font-semibold text-foreground">Top Saver</p>
+                            <p className="text-muted-foreground">
+                                {topSaver.name} saved the most from discounts, totaling{' '}
+                                <span className="font-medium text-foreground">{formatCurrency(topSaver.amount)}</span>.
+                            </p>
+                        </SmartSummaryItem>
+                    )}
+                    {socialButterfly && (
+                        <SmartSummaryItem icon={<HeartHandshake className="h-5 w-5" />}>
+                            <p className="font-semibold text-foreground">Social Butterfly</p>
+                            <p className="text-muted-foreground">
+                                {socialButterfly.name} shared items with {socialButterfly.count} other {socialButterfly.count === 1 ? 'person' : 'people'}, more than anyone else!
+                            </p>
+                        </SmartSummaryItem>
+                    )}
                     {highestPayer && highestPayer.totalPaid > 0 && (
                         <SmartSummaryItem icon={<Trophy className="h-5 w-5" />}>
                             <p className="font-semibold text-foreground">Top Payer</p>
@@ -349,3 +432,4 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
         </Card>
     );
 }
+
