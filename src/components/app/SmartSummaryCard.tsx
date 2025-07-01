@@ -245,7 +245,8 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                 const maxSavings = Math.abs(max.breakdown.discounts.reduce((sum, d) => sum + d.amount, 0));
                 const currentSavings = Math.abs(p.breakdown.discounts.reduce((sum, d) => sum + d.amount, 0));
                 return currentSavings > maxSavings ? p : max;
-            }
+            },
+            summary.participantSummaries[0]
         );
 
         // Calculate the savings for the top saver.
@@ -283,21 +284,21 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
             }
         });
 
-        let maxConnections = 0;
-        let butterfly: Participant | null = null;
+        const butterflyData = participants.reduce(
+            (max, p) => {
+                const connections = sharedWithMap.get(p.id)?.size || 0;
+                if (connections > max.connections) {
+                    return { participant: p, connections: connections };
+                }
+                return max;
+            },
+            { participant: null as Participant | null, connections: 0 }
+        );
 
-        participants.forEach(p => {
-            const connections = sharedWithMap.get(p.id)?.size || 0;
-            if (connections > maxConnections) {
-                maxConnections = connections;
-                butterfly = p;
-            }
-        });
-
-        if (butterfly && maxConnections > 0) {
+        if (butterflyData.participant && butterflyData.connections > 0) {
             return {
-                name: butterfly.name,
-                count: maxConnections,
+                name: butterflyData.participant.name,
+                count: butterflyData.connections,
             };
         }
 
