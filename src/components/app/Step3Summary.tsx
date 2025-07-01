@@ -245,19 +245,6 @@ export default function Step3Summary() {
                     <BillSplitSummary summary={calculatedSummary} />
                 </CardContent>
             </Card>
-            
-            <Card>
-                <CardHeader className='flex-row items-center gap-4 space-y-0'>
-                    <LayoutGrid className="w-8 h-8 text-primary" />
-                    <div>
-                        <CardTitle>Category Breakdown</CardTitle>
-                        <CardDescription>A summary of spending by category.</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <CategoryBreakdownChart items={items} globalCurrency={globalCurrency} />
-                </CardContent>
-            </Card>
 
             <Card>
                 <CardHeader className='flex-row items-center gap-4 space-y-0'>
@@ -343,6 +330,19 @@ export default function Step3Summary() {
                           <p className="text-center text-muted-foreground py-4">All settled up!</p>
                       )}
                   </ul>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className='flex-row items-center gap-4 space-y-0'>
+                    <LayoutGrid className="w-8 h-8 text-primary" />
+                    <div>
+                        <CardTitle>Category Breakdown</CardTitle>
+                        <CardDescription>A summary of spending by category.</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <CategoryBreakdownChart items={items} globalCurrency={globalCurrency} />
                 </CardContent>
             </Card>
         </div>

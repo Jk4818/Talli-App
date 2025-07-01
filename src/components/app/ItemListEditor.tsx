@@ -7,7 +7,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles, Check, Pizza, Beer, HelpCircle } from 'lucide-react';
+import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles, Check } from 'lucide-react';
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
 import { Item, Discount } from '@/lib/types';
@@ -112,13 +112,14 @@ export default function ItemListEditor() {
     }
   };
 
-  const getCategoryIcon = (category?: Item['category']) => {
+  const getCategoryEmoji = (category?: Item['category']): string | null => {
     switch (category) {
-        case 'Food': return <Pizza className="h-3 w-3" />;
-        case 'Drink': return <Beer className="h-3 w-3" />;
+        case 'Food': return '🍕';
+        case 'Drink': return '🍺';
+        case 'Other': return '🛍️';
         default: return null;
     }
-  }
+  };
 
 
   return (
@@ -178,7 +179,7 @@ export default function ItemListEditor() {
                 const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
                 const effectiveCost = item.cost - totalItemDiscount;
                 const suggestion = pendingSuggestionsMap.get(item.id);
-                const categoryIcon = getCategoryIcon(item.category);
+                const categoryEmoji = getCategoryEmoji(item.category);
 
                 return (
                   <div
@@ -236,7 +237,7 @@ export default function ItemListEditor() {
                               )}
                               {item.category && (
                                 <Badge variant="secondary" className="capitalize">
-                                    {categoryIcon}
+                                    {categoryEmoji && <span className='mr-1.5'>{categoryEmoji}</span>}
                                     {item.category}
                                 </Badge>
                               )}

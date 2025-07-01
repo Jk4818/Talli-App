@@ -19,6 +19,15 @@ interface CategoryBreakdownChartProps {
 
 const CATEGORIES_ORDER: (Item['category'])[] = ['Food', 'Drink', 'Other'];
 
+const getCategoryEmoji = (category: Item['category'] | string): string | null => {
+    switch (category) {
+        case 'Food': return '🍕';
+        case 'Drink': return '🍺';
+        case 'Other': return '🛍️';
+        default: return null;
+    }
+};
+
 export default function CategoryBreakdownChart({ items, globalCurrency }: CategoryBreakdownChartProps) {
 
   const categoryTotals = React.useMemo(() => {
@@ -118,7 +127,7 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
                 <Collapsible key={cat.category} className="rounded-md border px-4">
                     <CollapsibleTrigger className="flex justify-between items-center w-full py-3 group">
                         <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: chartConfig[cat.category as keyof typeof chartConfig]?.color }} />
+                            <span className="text-lg w-6 text-center">{getCategoryEmoji(cat.category)}</span>
                             <span className="font-semibold">{cat.category}</span>
                         </div>
                         <div className="flex items-center gap-4">
