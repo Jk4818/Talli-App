@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -133,24 +132,21 @@ const DropDrawerItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DropdownMenuItem> & {
     icon?: React.ReactNode;
   }
->(({ children, icon, className, onClick: consumerOnClick, ...props }, ref) => {
+>(({ children, icon, className, ...props }, ref) => {
   const { isMobile, setOpen } = useDropDrawer();
 
-  const handleSelect = (event: Event) => {
-    props.onSelect?.(event);
-    if (!event.defaultPrevented) {
-      setOpen(false);
-    }
-  };
+  const handleInteraction = (event: React.SyntheticEvent) => {
+    // The consumer might pass an `onSelect` prop to prevent default behavior.
+    props.onSelect?.(event as Event);
 
-  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    // Call the original onClick passed from the consumer (e.g., AlertDialogTrigger)
+    // The consumer might pass an `onClick` prop (e.g., from an AlertDialogTrigger).
+    // This is a bit of a hack since DropdownMenuItem doesn't natively have onClick,
+    // but it's passed via {...props} when using `asChild`.
+    // We cast `props` to `any` to access it without a TS error.
+    const consumerOnClick = (props as any).onClick;
     consumerOnClick?.(event);
 
-    // Call onSelect for preventDefault logic, ensuring consistency
-    props.onSelect?.(event);
-    
-    // Close the drawer/menu if the action was not prevented
+    // If the event was not default-prevented, close the menu.
     if (!event.defaultPrevented) {
       setOpen(false);
     }
@@ -165,7 +161,7 @@ const DropDrawerItem = React.forwardRef<
           props.disabled && "opacity-50 pointer-events-none",
           className
         )}
-        onClick={props.disabled ? undefined : handleClick}
+        onClick={props.disabled ? undefined : handleInteraction}
         {...props}
       >
         {icon && <div className="w-5 h-5 flex items-center justify-center shrink-0">{icon}</div>}
@@ -177,10 +173,9 @@ const DropDrawerItem = React.forwardRef<
   return (
     <DropdownMenuItem
       ref={ref}
-      onSelect={handleSelect}
-      onClick={consumerOnClick}
-      className={cn("gap-2", className)}
+      onSelect={handleInteraction}
       {...props}
+      className={cn("gap-2", className)}
     >
       {icon}
       {children}
