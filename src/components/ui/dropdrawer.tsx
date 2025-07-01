@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -132,20 +133,24 @@ const DropDrawerItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DropdownMenuItem> & {
     icon?: React.ReactNode;
   }
->(({ children, icon, className, ...props }, ref) => {
+>(({ children, icon, className, onClick: consumerOnClick, ...props }, ref) => {
   const { isMobile, setOpen } = useDropDrawer();
 
-  // Unified handler for both desktop and mobile
-  const handleInteraction = (event: Event | React.MouseEvent<HTMLDivElement>) => {
-    // If the consumer has an `onSelect` handler, call it.
-    // This is the standard for Radix menu items.
-    if (props.onSelect) {
-      // We cast the event to `Event` to satisfy the type.
-      // The most important part, `preventDefault`, is available on both.
-      props.onSelect(event as Event);
+  const handleSelect = (event: Event) => {
+    props.onSelect?.(event);
+    if (!event.defaultPrevented) {
+      setOpen(false);
     }
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    // Call the original onClick passed from the consumer (e.g., AlertDialogTrigger)
+    consumerOnClick?.(event);
+
+    // Call onSelect for preventDefault logic, ensuring consistency
+    props.onSelect?.(event);
     
-    // If the event was not prevented by the consumer, close the drawer.
+    // Close the drawer/menu if the action was not prevented
     if (!event.defaultPrevented) {
       setOpen(false);
     }
@@ -160,7 +165,8 @@ const DropDrawerItem = React.forwardRef<
           props.disabled && "opacity-50 pointer-events-none",
           className
         )}
-        onClick={props.disabled ? undefined : handleInteraction}
+        onClick={props.disabled ? undefined : handleClick}
+        {...props}
       >
         {icon && <div className="w-5 h-5 flex items-center justify-center shrink-0">{icon}</div>}
         <span className="flex-1">{children}</span>
@@ -171,7 +177,8 @@ const DropDrawerItem = React.forwardRef<
   return (
     <DropdownMenuItem
       ref={ref}
-      onSelect={handleInteraction}
+      onSelect={handleSelect}
+      onClick={consumerOnClick}
       className={cn("gap-2", className)}
       {...props}
     >
