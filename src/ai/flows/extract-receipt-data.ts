@@ -29,7 +29,8 @@ const ItemSchema = z.object({
   id: z.string().describe('A temporary, unique identifier for this item within this response (e.g., "item-1", "item-2").'),
   name: z.string().describe('The name of the item.'),
   cost: z.number().describe('The cost of the item.'),
-  category: z.enum(['Food', 'Drink', 'Other']).describe("The category of the item. Use 'Other' if unsure.").optional(),
+  category: z.enum(['Food', 'Drink', 'Other']).describe("The primary category of the item. Use 'Other' if unsure."),
+  subCategory: z.string().optional().describe("A specific, one-or-two-word sub-category for the item (e.g., 'Pizza', 'Beer', 'Side', 'Dessert')."),
   confidence: z.number().min(0).max(100).optional().describe('A percentage confidence score (0-100) on the accuracy of this item extraction.'),
 });
 
@@ -68,7 +69,12 @@ const extractReceiptDataPrompt = ai.definePrompt({
   prompt: `You are an expert AI assistant specializing in extracting structured data from receipts.
 
 You will receive an image of a receipt. Your task is to analyze the image and extract the following information:
-1.  A list of all individual items. For each item, you MUST provide a temporary unique \`id\` (e.g., "item-1"), its \`name\`, its \`cost\`, and its \`category\` ('Food', 'Drink', or 'Other'). If you are uncertain about an item's category, default to 'Other'.
+1.  A list of all individual items. For each item, you MUST provide:
+    - a temporary unique \`id\` (e.g., "item-1").
+    - its \`name\`.
+    - its \`cost\`.
+    - its primary \`category\` ('Food', 'Drink', or 'Other').
+    - a concise \`subCategory\` (e.g., "Pizza", "Beer", "Side", "Dessert", "Cocktail").
 2.  A list of all discounts. For each discount, provide its \`name\` and its \`amount\` (as a positive number).
 3.  **Crucially, if a discount applies to a specific item, you MUST provide the \`suggestedItemId\` field containing the temporary ID of the item it applies to. If a discount is receipt-wide (e.g., "20% off total"), leave \`suggestedItemId\` empty.**
 4.  A list of all service charges or tips.

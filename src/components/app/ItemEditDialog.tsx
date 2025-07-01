@@ -55,6 +55,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const [cost, setCost] = useState('');
   const [receiptId, setReceiptId] = useState('');
   const [category, setCategory] = useState<'Food' | 'Drink' | 'Other'>('Other');
+  const [subCategory, setSubCategory] = useState('');
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [discountAmountStrings, setDiscountAmountStrings] = useState<Record<string, string>>({});
   const dispatch = useDispatch<AppDispatch>();
@@ -65,6 +66,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
       setCost((item.cost / 100).toFixed(2));
       setReceiptId(item.receiptId);
       setCategory(item.category || 'Other');
+      setSubCategory(item.subCategory || '');
       const initialDiscounts = JSON.parse(JSON.stringify(item.discounts || []));
       setDiscounts(initialDiscounts);
       
@@ -79,7 +81,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const handleSave = () => {
     const costInCents = Math.round(parseFloat(cost) * 100);
     if (item && name.trim() && !isNaN(costInCents) && receiptId) {
-      onSave({ id: item.id, name: name.trim(), cost: costInCents, receiptId, discounts, category });
+      onSave({ id: item.id, name: name.trim(), cost: costInCents, receiptId, discounts, category, subCategory: subCategory.trim() });
       onOpenChange(false);
     }
   };
@@ -210,7 +212,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                     <div className="grid grid-cols-2 gap-2">
                         <AccessibleTooltip content={isSuggestionConflict ? "Cannot apply discount greater than item cost." : "Apply this discount to the item"}>
                             <span className="w-full" tabIndex={0}>
-                                <Button size="sm" className="w-full" onClick={handleApplySuggestion} disabled={isSuggestionConflict}>
+                                <Button size="sm" className="w-full" onClick={handleApplySuggestion} disabled={!!isSuggestionConflict}>
                                     <Check className="mr-1.5 h-4 w-4" /> Apply
                                 </Button>
                             </span>
@@ -336,13 +338,25 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                 </RadioGroup>
               </div>
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="sub-category" className="text-right">
+                Sub-category
+              </Label>
+              <Input
+                id="sub-category"
+                value={subCategory}
+                onChange={(e) => setSubCategory(e.target.value)}
+                className="col-span-3"
+                placeholder="e.g. Pizza, Beer, Side"
+              />
+            </div>
             <Separator />
             <div>
               <Label>Item Discounts</Label>
               <div className="mt-2 space-y-2">
                 {discounts.map(discount => (
-                  <div key={discount.id} className="flex flex-wrap items-end gap-2 rounded-md border p-3 bg-secondary/30">
-                    <div className='space-y-1.5 flex-1 min-w-[150px]'>
+                  <div key={discount.id} className="flex flex-col sm:flex-row items-start sm:items-end gap-2 rounded-md border p-3 bg-secondary/30">
+                    <div className='space-y-1.5 flex-1 min-w-[100px]'>
                         <Label htmlFor={`item-discount-name-${discount.id}`} className="text-xs text-muted-foreground">Discount Name</Label>
                         <Input 
                             id={`item-discount-name-${discount.id}`}
@@ -351,7 +365,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                             onChange={(e) => handleDiscountNameChange(discount.id, e.target.value)}
                         />
                     </div>
-                    <div className="flex w-full items-end justify-between gap-2 sm:w-auto sm:justify-start">
+                    <div className="flex w-full items-end justify-between gap-2">
                         <div className='space-y-1.5'>
                             <Label htmlFor={`item-discount-amount-${discount.id}`} className="text-xs text-muted-foreground">Amount</Label>
                             <Input 

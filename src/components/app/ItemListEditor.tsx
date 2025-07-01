@@ -116,7 +116,7 @@ export default function ItemListEditor() {
     switch (category) {
         case 'Food': return <Pizza className="h-3 w-3" />;
         case 'Drink': return <Beer className="h-3 w-3" />;
-        default: return <HelpCircle className="h-3 w-3" />;
+        default: return null;
     }
   }
 
@@ -178,6 +178,7 @@ export default function ItemListEditor() {
                 const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
                 const effectiveCost = item.cost - totalItemDiscount;
                 const suggestion = pendingSuggestionsMap.get(item.id);
+                const categoryIcon = getCategoryIcon(item.category);
 
                 return (
                   <div
@@ -227,10 +228,15 @@ export default function ItemListEditor() {
                                     (was {formatCurrency(item.cost, currency)})
                                 </p>
                             )}
-                            <div className='flex justify-end items-center gap-2 mt-1'>
+                            <div className='flex justify-end items-center gap-2 mt-1 flex-wrap'>
+                              {item.subCategory && (
+                                <Badge variant="secondary" className="capitalize">
+                                    {item.subCategory}
+                                </Badge>
+                              )}
                               {item.category && (
                                 <Badge variant="secondary" className="capitalize">
-                                    {getCategoryIcon(item.category)}
+                                    {categoryIcon}
                                     {item.category}
                                 </Badge>
                               )}

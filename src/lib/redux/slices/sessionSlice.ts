@@ -69,6 +69,7 @@ const sessionSlice = createSlice({
         percentageAssignments: item.percentageAssignments || {},
         exactAssignments: item.exactAssignments || {},
         category: item.category || 'Other',
+        subCategory: item.subCategory || undefined,
       }));
 
       const sanitizedReceipts = (importedData.receipts || []).map((receipt, index): Receipt => ({
@@ -256,6 +257,7 @@ const sessionSlice = createSlice({
         percentageAssignments: {},
         exactAssignments: {},
         category: 'Other',
+        subCategory: undefined,
       };
       state.items.push(newItem);
     },
@@ -427,6 +429,7 @@ const sessionSlice = createSlice({
               exactAssignments: {},
               confidence: item.confidence,
               category: item.category || 'Other',
+              subCategory: item.subCategory,
             };
           });
           
