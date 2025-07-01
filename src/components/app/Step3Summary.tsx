@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import BillSplitSummary from './BillSplitSummary';
 import { Button } from '../ui/button';
 import { resetSession, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
-import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight, MessageSquareText, Copy, FileText, Braces, MoreHorizontal, LayoutGrid } from 'lucide-react';
+import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight, MessageSquareText, Copy, FileText, Braces, MoreHorizontal, LayoutGrid, Pizza } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -248,23 +248,6 @@ export default function Step3Summary() {
 
             <Card>
                 <CardHeader className='flex-row items-center gap-4 space-y-0'>
-                    <Calculator className="w-8 h-8 text-primary" />
-                    <div>
-                        <CardTitle>Overall Bill Calculation</CardTitle>
-                        <CardDescription>The grand total. From subtotal to service charge, here's the full damage.</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span>Original Items Subtotal</span> <span className="font-medium">{formatCurrency(calculatedSummary.totalItemCost)}</span></div>
-                    {calculatedSummary.totalDiscounts > 0 && <div className="flex justify-between text-destructive"><span>Discounts</span> <span className="font-medium">- {formatCurrency(calculatedSummary.totalDiscounts)}</span></div>}
-                    <div className="flex justify-between border-t pt-2 mt-2"><span>Subtotal</span> <span className="font-medium">{formatCurrency(calculatedSummary.totalItemCost - calculatedSummary.totalDiscounts)}</span></div>
-                    {calculatedSummary.totalServiceCharge > 0 && <div className="flex justify-between"><span>Service Charges & Tips</span> <span className="font-medium">+ {formatCurrency(calculatedSummary.totalServiceCharge)}</span></div>}
-                    <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2"><span>Grand Total</span> <span>{formatCurrency(calculatedSummary.total)}</span></div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader className='flex-row items-center gap-4 space-y-0'>
                     <HandCoins className="w-8 h-8 text-primary" />
                     <div>
                         <CardTitle>Settlement Plan</CardTitle>
@@ -372,9 +355,12 @@ export default function Step3Summary() {
               </Card>
             </motion.div>
           <Card>
-            <CardHeader className='pt-6'>
-              <CardTitle>Total Shares</CardTitle>
-              <CardDescription>Your bill, visualized. See who's responsible for what slice of the pie.</CardDescription>
+            <CardHeader className='pt-6 flex-row items-center gap-4 space-y-0'>
+                <Pizza className="w-8 h-8 text-primary" />
+                <div>
+                  <CardTitle>Total Shares</CardTitle>
+                  <CardDescription>Your bill, visualized. See who's responsible for what slice of the pie.</CardDescription>
+                </div>
             </CardHeader>
             <CardContent>
                 <SharePieChart summary={calculatedSummary} />

@@ -185,7 +185,7 @@ export default function ItemListEditor() {
                   <div
                     key={item.id}
                     className={cn(
-                        "group rounded-lg border bg-card/50 p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer",
+                        "group rounded-lg border bg-card/50 p-4 flex flex-col gap-2 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer",
                         suggestion && "border-primary/50 ring-2 ring-primary/20 shadow-md"
                     )}
                     onClick={() => handleEditClick(item)}
@@ -229,29 +229,10 @@ export default function ItemListEditor() {
                                     (was {formatCurrency(item.cost, currency)})
                                 </p>
                             )}
-                            <div className='flex justify-end items-center gap-2 mt-1 flex-wrap'>
-                              {item.subCategory && (
-                                <Badge variant="secondary" className="capitalize">
-                                    {item.subCategory}
-                                </Badge>
-                              )}
-                              {item.category && (
-                                <Badge variant="secondary" className="capitalize">
-                                    {categoryEmoji && <span className='mr-1.5'>{categoryEmoji}</span>}
-                                    {item.category}
-                                </Badge>
-                              )}
-                              {item.assignees.length > 0 && (
-                                  <Badge variant="secondary" className="capitalize">
-                                      {getSplitModeIcon(item.splitMode)}
-                                      {item.splitMode}
-                                  </Badge>
-                              )}
-                            </div>
                         </div>
                     </div>
                     
-                    <div className="flex items-center min-h-[32px]">
+                    <div className="flex items-center min-h-[32px] flex-grow">
                         {assignedParticipants.length > 0 ? (
                             <div className="flex items-center -space-x-2">
                                 {assignedParticipants.slice(0, MAX_AVATARS).map(p => (
@@ -272,6 +253,17 @@ export default function ItemListEditor() {
                                 No one assigned yet
                             </span>
                         )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
+                        <div className="flex items-center gap-1.5" title={`Category: ${item.category}`}>
+                            {categoryEmoji ? <span>{categoryEmoji}</span> : <div className="w-4 h-4" />}
+                            <span className="capitalize">{item.subCategory || item.category}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5" title={`Split mode: ${item.splitMode}`}>
+                            {getSplitModeIcon(item.splitMode)}
+                            <span className="capitalize">{item.splitMode}</span>
+                        </div>
                     </div>
                   </div>
                 );
