@@ -135,15 +135,17 @@ const DropDrawerItem = React.forwardRef<
 >(({ children, icon, className, ...props }, ref) => {
   const { isMobile, setOpen } = useDropDrawer();
 
-  const handleSelect = (event: Event) => {
-    props.onSelect?.(event);
-    if (!event.defaultPrevented) {
-      setOpen(false);
+  // Unified handler for both desktop and mobile
+  const handleInteraction = (event: Event | React.MouseEvent<HTMLDivElement>) => {
+    // If the consumer has an `onSelect` handler, call it.
+    // This is the standard for Radix menu items.
+    if (props.onSelect) {
+      // We cast the event to `Event` to satisfy the type.
+      // The most important part, `preventDefault`, is available on both.
+      props.onSelect(event as Event);
     }
-  };
-  
-  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    props.onClick?.(event);
+    
+    // If the event was not prevented by the consumer, close the drawer.
     if (!event.defaultPrevented) {
       setOpen(false);
     }
@@ -158,7 +160,7 @@ const DropDrawerItem = React.forwardRef<
           props.disabled && "opacity-50 pointer-events-none",
           className
         )}
-        onClick={props.disabled ? undefined : handleClick}
+        onClick={props.disabled ? undefined : handleInteraction}
       >
         {icon && <div className="w-5 h-5 flex items-center justify-center shrink-0">{icon}</div>}
         <span className="flex-1">{children}</span>
@@ -167,7 +169,12 @@ const DropDrawerItem = React.forwardRef<
   }
 
   return (
-    <DropdownMenuItem ref={ref} onSelect={handleSelect} className={cn("gap-2", className)} {...props}>
+    <DropdownMenuItem
+      ref={ref}
+      onSelect={handleInteraction}
+      className={cn("gap-2", className)}
+      {...props}
+    >
       {icon}
       {children}
     </DropdownMenuItem>
