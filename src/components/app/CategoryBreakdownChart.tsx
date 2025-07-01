@@ -69,7 +69,7 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
   }));
 
   const chartConfig = {
-    total: { label: 'Total' },
+    total: { label: 'Total', color: 'hsl(var(--primary))' },
     Food: { label: 'Food', color: 'hsl(var(--chart-1))' },
     Drink: { label: 'Drink', color: 'hsl(var(--chart-2))' },
     Other: { label: 'Other', color: 'hsl(var(--chart-3))' },
