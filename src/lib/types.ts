@@ -14,6 +14,7 @@ export interface Item {
   percentageAssignments: { [participantId: string]: number }; // participantId -> percentage (e.g. 50 for 50%)
   exactAssignments: { [participantId: string]: number }; // participantId -> amount in cents
   confidence?: number; // 0-100
+  category?: 'Food' | 'Drink' | 'Other';
 }
 
 export interface Discount {

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import BillSplitSummary from './BillSplitSummary';
 import { Button } from '../ui/button';
 import { resetSession, toggleSettlementPaid } from '@/lib/redux/slices/sessionSlice';
-import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight, MessageSquareText, Copy, FileText, Braces, MoreHorizontal } from 'lucide-react';
+import { HandCoins, Scale, RefreshCw, Calculator, Download, ArrowRight, MessageSquareText, Copy, FileText, Braces, MoreHorizontal, LayoutGrid } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import SmartSummaryCard from './SmartSummaryCard';
 import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerSeparator, DropDrawerTrigger } from '../ui/dropdrawer';
+import CategoryBreakdownChart from './CategoryBreakdownChart';
 
 export default function Step3Summary() {
   const sessionState = useSelector((state: RootState) => state.session);
@@ -242,6 +243,19 @@ export default function Step3Summary() {
                 </CardHeader>
                 <CardContent>
                     <BillSplitSummary summary={calculatedSummary} />
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader className='flex-row items-center gap-4 space-y-0'>
+                    <LayoutGrid className="w-8 h-8 text-primary" />
+                    <div>
+                        <CardTitle>Category Breakdown</CardTitle>
+                        <CardDescription>A summary of spending by category.</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <CategoryBreakdownChart items={items} globalCurrency={globalCurrency} />
                 </CardContent>
             </Card>
 

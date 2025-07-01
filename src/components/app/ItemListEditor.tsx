@@ -7,7 +7,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles, Check } from 'lucide-react';
+import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles, Check, Pizza, Beer, HelpCircle } from 'lucide-react';
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
 import { Item, Discount } from '@/lib/types';
@@ -111,6 +111,14 @@ export default function ItemListEditor() {
         default: return null;
     }
   };
+
+  const getCategoryIcon = (category?: Item['category']) => {
+    switch (category) {
+        case 'Food': return <Pizza className="h-3 w-3" />;
+        case 'Drink': return <Beer className="h-3 w-3" />;
+        default: return <HelpCircle className="h-3 w-3" />;
+    }
+  }
 
 
   return (
@@ -219,12 +227,20 @@ export default function ItemListEditor() {
                                     (was {formatCurrency(item.cost, currency)})
                                 </p>
                             )}
-                            {item.assignees.length > 0 && (
-                                <Badge variant="secondary" className="capitalize mt-1">
-                                    {getSplitModeIcon(item.splitMode)}
-                                    {item.splitMode}
+                            <div className='flex justify-end items-center gap-2 mt-1'>
+                              {item.category && (
+                                <Badge variant="secondary" className="capitalize">
+                                    {getCategoryIcon(item.category)}
+                                    {item.category}
                                 </Badge>
-                            )}
+                              )}
+                              {item.assignees.length > 0 && (
+                                  <Badge variant="secondary" className="capitalize">
+                                      {getSplitModeIcon(item.splitMode)}
+                                      {item.splitMode}
+                                  </Badge>
+                              )}
+                            </div>
                         </div>
                     </div>
                     

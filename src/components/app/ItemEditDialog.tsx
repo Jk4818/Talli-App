@@ -36,6 +36,7 @@ import { Badge } from '../ui/badge';
 import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerTrigger } from '../ui/dropdrawer';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 
 interface ItemEditDialogProps {
@@ -53,6 +54,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const [name, setName] = useState('');
   const [cost, setCost] = useState('');
   const [receiptId, setReceiptId] = useState('');
+  const [category, setCategory] = useState<'Food' | 'Drink' | 'Other'>('Other');
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [discountAmountStrings, setDiscountAmountStrings] = useState<Record<string, string>>({});
   const dispatch = useDispatch<AppDispatch>();
@@ -62,6 +64,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
       setName(item.name);
       setCost((item.cost / 100).toFixed(2));
       setReceiptId(item.receiptId);
+      setCategory(item.category || 'Other');
       const initialDiscounts = JSON.parse(JSON.stringify(item.discounts || []));
       setDiscounts(initialDiscounts);
       
@@ -76,7 +79,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const handleSave = () => {
     const costInCents = Math.round(parseFloat(cost) * 100);
     if (item && name.trim() && !isNaN(costInCents) && receiptId) {
-      onSave({ id: item.id, name: name.trim(), cost: costInCents, receiptId, discounts });
+      onSave({ id: item.id, name: name.trim(), cost: costInCents, receiptId, discounts, category });
       onOpenChange(false);
     }
   };
@@ -308,6 +311,29 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                     ))}
                   </ResponsiveSelectContent>
                 </ResponsiveSelect>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Category</Label>
+              <div className="col-span-3">
+                <RadioGroup
+                  value={category}
+                  onValueChange={(v: 'Food' | 'Drink' | 'Other') => setCategory(v)}
+                  className="flex items-center gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Food" id={`cat-food-${item.id}`} />
+                    <Label htmlFor={`cat-food-${item.id}`} className="font-normal cursor-pointer">Food</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Drink" id={`cat-drink-${item.id}`} />
+                    <Label htmlFor={`cat-drink-${item.id}`} className="font-normal cursor-pointer">Drink</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Other" id={`cat-other-${item.id}`} />
+                    <Label htmlFor={`cat-other-${item.id}`} className="font-normal cursor-pointer">Other</Label>
+                  </div>
+                </RadioGroup>
               </div>
             </div>
             <Separator />
