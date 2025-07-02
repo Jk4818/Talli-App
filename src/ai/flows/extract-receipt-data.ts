@@ -110,7 +110,7 @@ const extractReceiptDataFlow = ai.defineFlow(
     let output: ExtractReceiptDataOutput | undefined;
     try {
       const response = await extractReceiptDataPrompt(input);
-      output = response.output;
+      output = response.output || undefined;
     } catch (error) {
       console.error("Error in AI service call:", error);
       // This catch block is ONLY for true service failures (e.g. network, API key issues).
