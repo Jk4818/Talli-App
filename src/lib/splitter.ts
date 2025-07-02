@@ -1,4 +1,4 @@
-import { SessionState, ParticipantSummary, Settlement, SplitSummary, BreakdownEntry } from './types';
+import { SessionState, ParticipantSummary, Settlement, SplitSummary, BreakdownEntry, Item } from './types';
 
 // A helper function to distribute a total amount based on shares, handling rounding.
 // Returns a map of participantId -> distributedAmount
@@ -7,7 +7,7 @@ function distributeAmount(totalAmount: number, shares: Map<string, number>): Map
   const pidsWithShares = [...shares.keys()].filter(pid => (shares.get(pid) || 0) > 0);
   const totalShares = pidsWithShares.reduce((sum, pid) => sum + (shares.get(pid) || 0), 0);
 
-  if (totalShares === 0) {
+  if (totalShares === 0 || totalAmount === 0) {
     return distributed;
   }
 
@@ -52,7 +52,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     };
   }
   
-  // Initialize summaries for each participant
   const finalSummaries = new Map<string, ParticipantSummary>();
   participants.forEach(p => {
     finalSummaries.set(p.id, {
@@ -80,78 +79,73 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   receipts.forEach(receipt => {
     const rate = (receipt.currency !== globalCurrency && receipt.exchangeRate) ? receipt.exchangeRate : 1;
     const itemsOnReceipt = items.filter(i => i.receiptId === receipt.id);
-    const participantSharesOnReceipt = new Map<string, number>();
-    participants.forEach(p => participantSharesOnReceipt.set(p.id, 0));
+    const participantGrossSharesOnReceipt = new Map<string, number>();
+    participants.forEach(p => participantGrossSharesOnReceipt.set(p.id, 0));
 
-    // 1. Calculate and store item shares for each participant on this receipt
+    // 1. Calculate NET shares for each item, then decompose into GROSS and DISCOUNT for the breakdown.
     itemsOnReceipt.forEach(item => {
       const itemTotalDiscount = (item.discounts || []).reduce((sum, d) => sum + d.amount, 0);
       const effectiveItemCost = item.cost - itemTotalDiscount;
 
-      if (effectiveItemCost <= 0 || item.assignees.length === 0) return;
-      
-      const itemShares = new Map<string, number>();
+      if (item.assignees.length === 0) return;
+
+      const netShares = new Map<string, number>();
       let itemCausedRounding = false;
       const adjustments: { participantName: string, amount: number }[] = [];
-      let fallbackToEqual = item.splitMode === 'equal';
 
-      if (item.splitMode === 'percentage') {
+      // Logic to determine net shares for each assignee for this one item
+      if (effectiveItemCost > 0) {
+        let fallbackToEqual = item.splitMode === 'equal';
+
+        if (item.splitMode === 'percentage') {
           const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
           if (totalPercentage === 100) {
-              const calculatedShares: {id: string, share: number}[] = [];
-              let distributedAmount = 0;
-              item.assignees.forEach(pid => {
-                  const percentage = item.percentageAssignments[pid] || 0;
-                  const share = Math.floor((effectiveItemCost * percentage) / 100);
-                  distributedAmount += share;
-                  calculatedShares.push({ id: pid, share });
-              });
-              let remainder = effectiveItemCost - distributedAmount;
-              if (remainder > 0) {
-                  roundingOccurred = true;
-                  itemCausedRounding = true;
-                  const assigneesSortedByDebt = calculatedShares.sort((a, b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0));
-                  for (let i = 0; i < remainder; i++) {
-                      const assigneeToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
-                      assigneeToAdjust.share += 1;
-                      const pidToAdjust = assigneeToAdjust.id;
-                      participantRoundingDebt.set(pidToAdjust, (participantRoundingDebt.get(pidToAdjust) || 0) + 1);
-                      adjustments.push({ participantName: participantIdToName.get(pidToAdjust)!, amount: 1 });
-                  }
-              }
-              calculatedShares.forEach(s => itemShares.set(s.id, s.share));
-          } else {
-              fallbackToEqual = true;
-          }
-      } else if (item.splitMode === 'exact') {
-          const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments?.[pid] || 0), 0);
-          if (totalExact === effectiveItemCost) {
-              item.assignees.forEach(pid => {
-                  itemShares.set(pid, item.exactAssignments?.[pid] || 0);
-              });
-          } else {
-              fallbackToEqual = true;
-          }
-      }
-      
-      if (fallbackToEqual) {
-        if (item.assignees.length > 0) {
-            if (effectiveItemCost % item.assignees.length !== 0) {
+            let distributedAmount = 0;
+            const calculatedShares = item.assignees.map(pid => {
+                const percentage = item.percentageAssignments[pid] || 0;
+                const share = Math.floor((effectiveItemCost * percentage) / 100);
+                distributedAmount += share;
+                return { id: pid, share };
+            });
+            let remainder = effectiveItemCost - distributedAmount;
+            if (remainder > 0) {
                 roundingOccurred = true;
                 itemCausedRounding = true;
-            }
-            const baseShare = Math.floor(effectiveItemCost / item.assignees.length);
-            let remainder = effectiveItemCost % item.assignees.length;
-            item.assignees.forEach(id => itemShares.set(id, baseShare));
-            if (remainder > 0) {
-                const assigneesSortedByDebt = [...item.assignees].sort((a, b) => (participantRoundingDebt.get(a) || 0) - (participantRoundingDebt.get(b) || 0));
+                const assigneesSortedByDebt = calculatedShares.sort((a, b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0));
                 for (let i = 0; i < remainder; i++) {
-                    const pidToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
-                    itemShares.set(pidToAdjust, (itemShares.get(pidToAdjust) || 0) + 1);
+                    const assigneeToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
+                    assigneeToAdjust.share += 1;
+                    const pidToAdjust = assigneeToAdjust.id;
                     participantRoundingDebt.set(pidToAdjust, (participantRoundingDebt.get(pidToAdjust) || 0) + 1);
                     adjustments.push({ participantName: participantIdToName.get(pidToAdjust)!, amount: 1 });
                 }
             }
+            calculatedShares.forEach(s => netShares.set(s.id, s.share));
+          } else { fallbackToEqual = true; }
+        } else if (item.splitMode === 'exact') {
+          const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments?.[pid] || 0), 0);
+          if (totalExact === effectiveItemCost) {
+            item.assignees.forEach(pid => netShares.set(pid, item.exactAssignments[pid] || 0));
+          } else { fallbackToEqual = true; }
+        }
+        
+        if (fallbackToEqual) {
+          if (effectiveItemCost % item.assignees.length !== 0) {
+              roundingOccurred = true;
+              itemCausedRounding = true;
+          }
+          const baseShare = Math.floor(effectiveItemCost / item.assignees.length);
+          let remainder = effectiveItemCost % item.assignees.length;
+          item.assignees.forEach(id => netShares.set(id, baseShare));
+          if (remainder > 0) {
+            const assigneesSortedByDebt = [...item.assignees].sort((a, b) => (participantRoundingDebt.get(a) || 0) - (participantRoundingDebt.get(b) || 0));
+            for (let i = 0; i < remainder; i++) {
+                const pidToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
+                netShares.set(pidToAdjust, (netShares.get(pidToAdjust) || 0) + 1);
+                participantRoundingDebt.set(pidToAdjust, (participantRoundingDebt.get(pidToAdjust) || 0) + 1);
+                adjustments.push({ participantName: participantIdToName.get(pidToAdjust)!, amount: 1 });
+            }
+          }
         }
       }
 
@@ -159,21 +153,41 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         roundedItems.push({ name: item.name, cost: effectiveItemCost, assigneesCount: item.assignees.length, adjustments });
       }
 
-      itemShares.forEach((share, pid) => {
+      // Decompose net shares into gross and discount shares for the breakdown
+      netShares.forEach((netShare, pid) => {
         const summary = finalSummaries.get(pid)!;
-        summary.breakdown.items.push({ itemId: item.id, description: item.name, amount: Math.round(share * rate), receiptId: receipt.id });
-        participantSharesOnReceipt.set(pid, (participantSharesOnReceipt.get(pid) || 0) + share);
+        const proportion = effectiveItemCost > 0 ? netShare / effectiveItemCost : (item.assignees.length > 0 ? 1 / item.assignees.length : 0);
+        
+        const grossShare = item.cost * proportion;
+        const discountShare = itemTotalDiscount * proportion;
+
+        summary.breakdown.items.push({
+          itemId: item.id,
+          description: item.name,
+          amount: Math.round(grossShare * rate),
+          receiptId: receipt.id
+        });
+
+        if (discountShare > 0) {
+          summary.breakdown.discounts.push({
+            description: `Discount on ${item.name}`,
+            amount: -Math.round(discountShare * rate),
+            receiptId: receipt.id,
+            isDiscount: true,
+          });
+        }
+
+        participantGrossSharesOnReceipt.set(pid, (participantGrossSharesOnReceipt.get(pid) || 0) + grossShare);
       });
     });
 
-    const receiptSubtotal = [...participantSharesOnReceipt.values()].reduce((sum, s) => sum + s, 0);
     totalItemCost += Math.round(itemsOnReceipt.reduce((sum, i) => sum + i.cost, 0) * rate);
     const totalItemLevelDiscounts = itemsOnReceipt.reduce((sum, i) => sum + (i.discounts || []).reduce((s, d) => s + d.amount, 0), 0);
 
-    // 2. Distribute receipt-level discounts and service charges based on item shares
+    // 2. Distribute receipt-level discounts and service charges based on GROSS item shares
     (receipt.discounts || []).forEach(discount => {
       totalDiscounts += Math.round(discount.amount * rate);
-      const distributedDiscount = distributeAmount(discount.amount, participantSharesOnReceipt);
+      const distributedDiscount = distributeAmount(discount.amount, participantGrossSharesOnReceipt);
       distributedDiscount.forEach((amount, pid) => {
         finalSummaries.get(pid)!.breakdown.discounts.push({
           description: discount.name,
@@ -184,20 +198,21 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       });
     });
     totalDiscounts += Math.round(totalItemLevelDiscounts * rate);
-
-    const subtotalAfterReceiptDiscounts = receiptSubtotal - (receipt.discounts || []).reduce((sum, d) => sum + d.amount, 0);
+    
     let localServiceCharge = 0;
     if (receipt.serviceCharge?.type === 'fixed') {
         localServiceCharge = receipt.serviceCharge.value;
     } else if (receipt.serviceCharge?.type === 'percentage') {
-        const exactServiceCharge = subtotalAfterReceiptDiscounts * (receipt.serviceCharge.value / 100);
+        // Service charge is calculated on the gross subtotal MINUS receipt-level discounts.
+        const serviceChargeBase = [...participantGrossSharesOnReceipt.values()].reduce((s, c) => s + c, 0) - (receipt.discounts || []).reduce((t, d) => t + d.amount, 0);
+        const exactServiceCharge = serviceChargeBase * (receipt.serviceCharge.value / 100);
         localServiceCharge = Math.round(exactServiceCharge);
         if (exactServiceCharge !== localServiceCharge) roundingOccurred = true;
     }
     
     totalServiceCharge += Math.round(localServiceCharge * rate);
     if (localServiceCharge > 0) {
-      const distributedServiceCharge = distributeAmount(localServiceCharge, participantSharesOnReceipt);
+      const distributedServiceCharge = distributeAmount(localServiceCharge, participantGrossSharesOnReceipt);
       distributedServiceCharge.forEach((amount, pid) => {
         const summary = finalSummaries.get(pid)!;
         const serviceChargeShare = Math.round(amount * rate);
@@ -217,14 +232,13 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     
     const totalReceiptLevelDiscounts = (receipt.discounts || []).reduce((sum, d) => sum + d.amount, 0);
     const totalItemLevelDiscounts = itemsOnReceipt.reduce((sum, i) => sum + (i.discounts || []).reduce((s,d) => s + d.amount, 0), 0);
-
-    const subtotalAfterDiscounts = subtotal - totalReceiptLevelDiscounts - totalItemLevelDiscounts;
     
+    const subtotalAfterDiscounts = subtotal - totalReceiptLevelDiscounts - totalItemLevelDiscounts;
+
     let serviceChargeAmount = 0;
     if (receipt.serviceCharge?.type === 'fixed') {
       serviceChargeAmount = receipt.serviceCharge.value;
     } else if (receipt.serviceCharge?.type === 'percentage') {
-      // Service charge is usually calculated on the subtotal after receipt-level discounts. Item-level discounts are handled at the item line.
       const serviceChargeBase = subtotal - totalReceiptLevelDiscounts;
       serviceChargeAmount = Math.round(serviceChargeBase * (receipt.serviceCharge.value / 100));
     }
@@ -251,7 +265,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   let roundingDifference = grandTotal - totalCalculatedShare;
   let roundingAdjustment: SplitSummary['roundingAdjustment'] | undefined = undefined;
 
-  if (roundingDifference !== 0) {
+  if (Math.abs(roundingDifference) > 0.5) { // Only adjust if difference is more than half a cent
     roundingOccurred = true;
     const payers = [...finalSummaries.values()].filter(s => s.totalPaid > 0).sort((a,b) => b.totalPaid - a.totalPaid);
     const personToAdjust = (payers.length > 0 ? payers : [...finalSummaries.values()]).sort((a,b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0))[0];

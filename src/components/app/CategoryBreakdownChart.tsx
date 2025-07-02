@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -49,47 +48,32 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
             newTotals[category].subCategories[subCategory] += amount;
         };
 
-        if (selectedView === 'total') {
-            summary.participantSummaries.forEach(pSummary => {
-                pSummary.breakdown.items.forEach(entry => {
-                    const originalItem = itemsById.get(entry.itemId!);
-                    if (originalItem) {
-                        addToTotals(originalItem.category || 'Other', originalItem.subCategory || 'Uncategorized', entry.amount);
-                    }
-                });
+        const targetSummaries = selectedView === 'total' 
+            ? summary.participantSummaries 
+            : summary.participantSummaries.filter(p => p.id === selectedView);
+
+        // Aggregate Items
+        targetSummaries.forEach(pSummary => {
+            pSummary.breakdown.items.forEach(entry => {
+                const originalItem = itemsById.get(entry.itemId!);
+                if (originalItem) {
+                    addToTotals(originalItem.category || 'Other', originalItem.subCategory || 'Uncategorized', entry.amount);
+                }
             });
+        });
 
-            const totalServiceCharge = summary.participantSummaries.reduce((sum, p) => sum + p.totalServiceChargeShare, 0);
-            if (totalServiceCharge > 0) {
-                 newTotals['Service'] = { total: totalServiceCharge, subCategories: { 'Tips & Fees': totalServiceCharge } };
-            }
-            
-            const totalDiscounts = summary.participantSummaries.reduce((sum, p) => sum + p.breakdown.discounts.reduce((s, d) => s + d.amount, 0), 0);
-            if (totalDiscounts < 0) {
-                 newTotals['Discounts'] = { total: totalDiscounts, subCategories: { 'Total Savings': totalDiscounts } };
-            }
-
-        } else {
-            const participantSummary = summary.participantSummaries.find(p => p.id === selectedView);
-            if (participantSummary) {
-                participantSummary.breakdown.items.forEach(entry => {
-                    const originalItem = itemsById.get(entry.itemId!);
-                    if (originalItem) {
-                        addToTotals(originalItem.category || 'Other', originalItem.subCategory || 'Uncategorized', entry.amount);
-                    }
-                });
-                
-                if (participantSummary.totalServiceChargeShare > 0) {
-                    newTotals['Service'] = { total: participantSummary.totalServiceChargeShare, subCategories: { 'Tips & Fees': participantSummary.totalServiceChargeShare } };
-                }
-
-                const participantDiscounts = participantSummary.breakdown.discounts.reduce((s, d) => s + d.amount, 0);
-                if (participantDiscounts < 0) {
-                    newTotals['Discounts'] = { total: participantDiscounts, subCategories: { 'Your Savings': participantDiscounts } };
-                }
-            }
+        // Aggregate Service Charges
+        const totalServiceCharge = targetSummaries.reduce((sum, p) => sum + p.breakdown.serviceCharges.reduce((s, sc) => s + sc.amount, 0), 0);
+        if (totalServiceCharge > 0) {
+            addToTotals('Service', 'Tips & Fees', totalServiceCharge);
         }
-        
+
+        // Aggregate Discounts
+        const totalDiscountAmount = targetSummaries.reduce((sum, p) => sum + p.breakdown.discounts.reduce((s, d) => s + d.amount, 0), 0);
+        if (totalDiscountAmount < 0) {
+            addToTotals('Discounts', 'Total Savings', totalDiscountAmount);
+        }
+
         return Object.entries(newTotals)
           .map(([category, data]) => ({
             category,
@@ -98,7 +82,7 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
               .map(([name, total]) => ({ name, total }))
               .sort((a, b) => b.total - a.total),
           }))
-          .filter(c => Math.abs(c.total) > 0)
+          .filter(c => Math.abs(c.total) > 0.5) // Filter out zero or penny-rounding totals
           .sort((a, b) => {
                 const aIndex = CATEGORIES_ORDER.indexOf(a.category);
                 const bIndex = CATEGORIES_ORDER.indexOf(b.category);
@@ -109,7 +93,7 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
     }, [itemsById, selectedView, summary.participantSummaries]);
 
     const chartConfig = {
-        total: { label: 'Total' },
+        total: { label: 'Total', color: 'hsl(var(--primary))' },
         Food: { label: 'Food', color: 'hsl(var(--chart-1))' },
         Drink: { label: 'Drink', color: 'hsl(var(--chart-2))' },
         Other: { label: 'Other', color: 'hsl(var(--chart-3))' },
