@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, Pencil, Layers } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, Pencil, Layers, FileWarning } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -38,6 +37,22 @@ import {
 } from '../ui/responsive-select';
 import { Badge } from '../ui/badge';
 import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerTrigger } from '../ui/dropdrawer';
+
+const getFriendlyErrorMessage = (error?: string | null): string => {
+    if (!error) {
+        return "An unknown error occurred during processing. Please try again.";
+    }
+    if (error.includes('does not appear to be a receipt')) {
+        return "Our AI is pretty smart, but it's sure this isn't a receipt. Please try uploading a bill.";
+    }
+    if (error.includes('unclear to read') || error.includes('blurry')) {
+        return "This receipt is playing hard to get. Could you try a clearer, brighter photo?";
+    }
+    if (error.includes('AI service failed')) {
+        return "Our robot assistant seems to be on a coffee break. Please try again in a moment.";
+    }
+    return "Something went wrong during the scan. Please delete this attempt and try again.";
+};
 
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
@@ -146,7 +161,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                           Scanning...
                         </Button>
                       )}
-                      {receipt.status !== 'processing' && (
+                      {receipt.status === 'processed' && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="icon">
@@ -202,11 +217,6 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                       )}
                     </CardDescription>
                   )}
-                  {receipt.status === 'failed' && (
-                     <CardDescription className="text-destructive font-medium mt-1.5">
-                        Processing failed. Expand card for details.
-                    </CardDescription>
-                  )}
                 </CardHeader>
                 <CollapsibleTrigger className="flex-shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring -mr-2">
                     <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", isCardOpen && "rotate-180")} />
@@ -215,30 +225,51 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
             </div>
           
             <CollapsibleContent>
-              {receipt.status === 'failed' && (
-                <div className='px-6 pb-6'>
-                  <Alert variant="destructive" className="mt-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Scan Failed</AlertTitle>
-                    <AlertDescription>
-                      {receipt.error || "An unknown error occurred."}
-                    </AlertDescription>
-                  </Alert>
+              {receipt.status === 'failed' ? (
+                <div className="p-6 pt-0 text-center">
+                    <div className="flex justify-center mb-4">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+                            <FileWarning className="h-8 w-8 text-destructive" />
+                        </div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-destructive">Scan Unsuccessful</h3>
+                    <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-sm mx-auto">
+                        {getFriendlyErrorMessage(receipt.error)}
+                    </p>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Attempt
+                        </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                            This will permanently delete this failed receipt attempt. This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleRemoveReceipt}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
-              )}
-              {hasConflict && receipt.status === 'processed' && (
-                  <div className='px-6 pb-6'>
-                      <Alert variant="destructive">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle>Receipt Conflict</AlertTitle>
-                          <AlertDescription>
-                              This receipt's total is negative. Please adjust the values in the expanded "Discounts" section below, or correct the item costs in the list at the bottom of the page.
-                          </AlertDescription>
-                      </Alert>
-                  </div>
-              )}
-              {receipt.status === 'processed' && (
+              ) : (
                 <>
+                  {hasConflict && (
+                      <div className='px-6 pb-6'>
+                          <Alert variant="destructive">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertTitle>Receipt Conflict</AlertTitle>
+                              <AlertDescription>
+                                  This receipt's total is negative. Please adjust the values in the expanded "Discounts" section below, or correct the item costs in the list at the bottom of the page.
+                              </AlertDescription>
+                          </Alert>
+                      </div>
+                  )}
                   <CardContent className="space-y-4">
                     {hasMediumConfidence && (
                         <Alert variant="default" className="border-primary/50 text-primary-foreground [&>svg]:text-primary">
@@ -542,5 +573,3 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     </>
   );
 }
-
-    
