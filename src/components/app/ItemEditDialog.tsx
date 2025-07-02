@@ -35,7 +35,6 @@ import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDra
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { useToast } from '@/hooks/use-toast';
 
 interface ItemEditDialogProps {
   item: Item | null;
@@ -57,7 +56,6 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [discountAmountStrings, setDiscountAmountStrings] = useState<Record<string, string>>({});
   const dispatch = useDispatch<AppDispatch>();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (item) {
@@ -77,29 +75,11 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
     }
   }, [item]);
 
-  const performSave = () => {
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
     const costInCents = Math.round(parseFloat(cost) * 100);
     if (item && name.trim() && !isNaN(costInCents) && receiptId) {
       onSave({ id: item.id, name: name.trim(), cost: costInCents, receiptId, discounts, category, subCategory: subCategory.trim() });
-      return true;
-    }
-    return false;
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = performSave();
-    if (success) {
-      toast({
-        title: 'Item Saved',
-        description: `Changes to "${name.trim()}" have been saved.`,
-      });
-    }
-  };
-
-  const handleSaveAndClose = () => {
-    const success = performSave();
-    if (success) {
       onOpenChange(false);
     }
   };
@@ -199,10 +179,10 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
         <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>Edit Item</DialogTitle>
           <DialogDescription>
-            Update the details for this item. Press Enter to save, or click the button when you're done.
+            Update the details for this item. Click Save Changes or press Enter to confirm.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleFormSubmit} className="flex-1 min-h-0 flex flex-col">
+        <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col">
           <div className="flex-1 min-h-0 overflow-y-auto px-6">
             <div className="space-y-4 py-4">
               {pendingSuggestion && (
@@ -260,7 +240,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                               </DropDrawerContent>
                           </DropDrawer>
                       </div>
-                      <Button size="sm" type="button" variant="ghost" className="w-full" onClick={handleIgnoreSuggestion}>
+                      <Button type="button" size="sm" variant="ghost" className="w-full" onClick={handleIgnoreSuggestion}>
                           <Layers className="mr-1.5 h-4 w-4" /> Convert to Receipt-Wide Discount
                       </Button>
                       <AlertDialog>
@@ -413,8 +393,6 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
               </div>
             </div>
           </div>
-          {/* Visually hidden submit button to enable Enter key submission */}
-          <button type="submit" className="sr-only" aria-hidden="true" tabIndex={-1} />
           <DialogFooter className="p-6 border-t flex-col sm:flex-row sm:justify-between sm:space-x-2">
               <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -441,7 +419,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                       <p className="text-sm text-muted-foreground">Effective Cost</p>
                       <p className="font-bold text-lg">{formatCurrency(effectiveCost, currentReceiptCurrency)}</p>
                   </div>
-                  <Button type="button" onClick={handleSaveAndClose}>Save Changes</Button>
+                  <Button type="submit">Save Changes</Button>
               </div>
           </DialogFooter>
         </form>
