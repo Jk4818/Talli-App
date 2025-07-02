@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -414,6 +413,8 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
               </div>
             </div>
           </div>
+          {/* Visually hidden submit button to enable Enter key submission */}
+          <button type="submit" className="sr-only" aria-hidden="true" tabIndex={-1} />
           <DialogFooter className="p-6 border-t flex-col sm:flex-row sm:justify-between sm:space-x-2">
               <AlertDialog>
                   <AlertDialogTrigger asChild>
