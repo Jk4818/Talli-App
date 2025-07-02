@@ -80,6 +80,7 @@ export default function Step2Assignment() {
     return itemsWithCost.filter(item => {
       const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
       const effectiveCost = item.cost - totalItemDiscount;
+      if (effectiveCost <= 0) return true; // Zero-cost items are considered "assigned"
       if (item.assignees.length === 0) return false;
       if (item.splitMode === 'percentage') {
         const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
@@ -158,7 +159,7 @@ export default function Step2Assignment() {
         </motion.div>
         <motion.div 
             variants={fadeInUp} 
-            className="flex flex-col items-center justify-center scroll-mt-36" 
+            className="flex flex-col items-center justify-center scroll-mt-48" 
             ref={assignmentSectionRef}
         >
             <div className="w-full max-w-md">
@@ -212,8 +213,9 @@ export default function Step2Assignment() {
                             <CardDescription>These items have incomplete assignments. Click an item to fix it.</CardDescription>
                         </div>
                     </CardHeader>
-                    <CardContent className="flex-1 min-h-0 p-0">
-                        <ScrollArea className="h-full max-h-72">
+                    {/* The fix is here: remove flex sizing from CardContent and apply a fixed height to ScrollArea */}
+                    <CardContent className="p-0">
+                        <ScrollArea className="h-72">
                             <div className="divide-y divide-border">
                                 {itemsRequiringAttention.map(({ item, index, issue }) => {
                                     const receipt = receipts.find(r => r.id === item.receiptId);
