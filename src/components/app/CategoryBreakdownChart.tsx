@@ -95,6 +95,7 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
                 data={chartData}
                 layout="vertical"
                 margin={{ left: 10, right: 10 }}
+                barCategoryGap="25%"
             >
                 <YAxis
                 dataKey="category"
@@ -113,7 +114,7 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
                     hideLabel
                 />}
                 />
-                <Bar dataKey="total" layout="vertical" radius={5}>
+                <Bar dataKey="total" layout="vertical" barSize={16} radius={[0, 8, 8, 0]}>
                     {chartData.map((entry) => (
                         <Cell key={`cell-${entry.category}`} fill={chartConfig[entry.category as keyof typeof chartConfig]?.color} />
                     ))}
@@ -124,7 +125,7 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
         <div className="space-y-2">
             <h4 className="font-medium text-sm">Detailed Breakdown</h4>
             {categoryTotals.map(cat => (
-                <Collapsible key={cat.category} className="rounded-md border px-4">
+                <Collapsible key={cat.category} className="rounded-lg border px-4">
                     <CollapsibleTrigger className="flex justify-between items-center w-full py-3 group">
                         <div className="flex items-center gap-3">
                             <span className="text-lg w-6 text-center">{getCategoryEmoji(cat.category)}</span>
