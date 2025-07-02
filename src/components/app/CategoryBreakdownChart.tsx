@@ -18,13 +18,15 @@ interface CategoryBreakdownChartProps {
   globalCurrency: string;
 }
 
-const CATEGORIES_ORDER: (Item['category'])[] = ['Food', 'Drink', 'Other'];
+const CATEGORIES_ORDER: string[] = ['Food', 'Drink', 'Other', 'Service', 'Discounts'];
 
-const getCategoryEmoji = (category: Item['category'] | string): string | null => {
+const getCategoryEmoji = (category: string): string | null => {
     switch (category) {
         case 'Food': return '🍕';
         case 'Drink': return '🍺';
         case 'Other': return '🛍️';
+        case 'Service': return '🤝';
+        case 'Discounts': return '🏷️';
         default: return null;
     }
 };
@@ -34,52 +36,61 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
     const itemsById = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
 
     const categoryTotals = useMemo(() => {
-        const totals: { [key: string]: { total: number, subCategories: { [key: string]: number } } } = {};
-        
-        CATEGORIES_ORDER.forEach(cat => {
-            if (cat) totals[cat] = { total: 0, subCategories: {} };
-        });
+        const newTotals: { [key: string]: { total: number; subCategories: { [key: string]: number } } } = {};
+
+        const addToTotals = (category: string, subCategory: string, amount: number) => {
+            if (!newTotals[category]) {
+                newTotals[category] = { total: 0, subCategories: {} };
+            }
+            if (!newTotals[category].subCategories[subCategory]) {
+                newTotals[category].subCategories[subCategory] = 0;
+            }
+            newTotals[category].total += amount;
+            newTotals[category].subCategories[subCategory] += amount;
+        };
 
         if (selectedView === 'total') {
-            // "Total Bill" view logic
-            items.forEach(item => {
-                const category = item.category || 'Other';
-                const subCategory = item.subCategory || 'Uncategorized';
-                const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
-                const effectiveCost = item.cost - totalItemDiscount;
-
-                if (effectiveCost > 0) {
-                    if (!totals[category]) {
-                        totals[category] = { total: 0, subCategories: {} };
-                    }
-                    totals[category].total += effectiveCost;
-                    totals[category].subCategories[subCategory] = (totals[category].subCategories[subCategory] || 0) + effectiveCost;
-                }
-            });
-        } else {
-            // Personalized view logic
-            const participantSummary = summary.participantSummaries.find(p => p.id === selectedView);
-            if (participantSummary) {
-                participantSummary.breakdown.items.forEach(breakdownEntry => {
-                    if (!breakdownEntry.itemId) return;
-                    const originalItem = itemsById.get(breakdownEntry.itemId);
+            summary.participantSummaries.forEach(pSummary => {
+                pSummary.breakdown.items.forEach(entry => {
+                    const originalItem = itemsById.get(entry.itemId!);
                     if (originalItem) {
-                        const category = originalItem.category || 'Other';
-                        const subCategory = originalItem.subCategory || 'Uncategorized';
-                        // The breakdown amount is the participant's exact share of this item.
-                        const shareAmount = breakdownEntry.amount;
-
-                        if (!totals[category]) {
-                            totals[category] = { total: 0, subCategories: {} };
-                        }
-                        totals[category].total += shareAmount;
-                        totals[category].subCategories[subCategory] = (totals[category].subCategories[subCategory] || 0) + shareAmount;
+                        addToTotals(originalItem.category || 'Other', originalItem.subCategory || 'Uncategorized', entry.amount);
                     }
                 });
+            });
+
+            const totalServiceCharge = summary.participantSummaries.reduce((sum, p) => sum + p.totalServiceChargeShare, 0);
+            if (totalServiceCharge > 0) {
+                 newTotals['Service'] = { total: totalServiceCharge, subCategories: { 'Tips & Fees': totalServiceCharge } };
+            }
+            
+            const totalDiscounts = summary.participantSummaries.reduce((sum, p) => sum + p.breakdown.discounts.reduce((s, d) => s + d.amount, 0), 0);
+            if (totalDiscounts < 0) {
+                 newTotals['Discounts'] = { total: totalDiscounts, subCategories: { 'Total Savings': totalDiscounts } };
+            }
+
+        } else {
+            const participantSummary = summary.participantSummaries.find(p => p.id === selectedView);
+            if (participantSummary) {
+                participantSummary.breakdown.items.forEach(entry => {
+                    const originalItem = itemsById.get(entry.itemId!);
+                    if (originalItem) {
+                        addToTotals(originalItem.category || 'Other', originalItem.subCategory || 'Uncategorized', entry.amount);
+                    }
+                });
+                
+                if (participantSummary.totalServiceChargeShare > 0) {
+                    newTotals['Service'] = { total: participantSummary.totalServiceChargeShare, subCategories: { 'Tips & Fees': participantSummary.totalServiceChargeShare } };
+                }
+
+                const participantDiscounts = participantSummary.breakdown.discounts.reduce((s, d) => s + d.amount, 0);
+                if (participantDiscounts < 0) {
+                    newTotals['Discounts'] = { total: participantDiscounts, subCategories: { 'Your Savings': participantDiscounts } };
+                }
             }
         }
-
-        return Object.entries(totals)
+        
+        return Object.entries(newTotals)
           .map(([category, data]) => ({
             category,
             total: data.total,
@@ -87,18 +98,28 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
               .map(([name, total]) => ({ name, total }))
               .sort((a, b) => b.total - a.total),
           }))
-          .filter(c => c.total > 0)
-          .sort((a, b) => CATEGORIES_ORDER.indexOf(a.category as any) - CATEGORIES_ORDER.indexOf(b.category as any));
-    }, [items, selectedView, summary.participantSummaries, itemsById]);
+          .filter(c => Math.abs(c.total) > 0)
+          .sort((a, b) => {
+                const aIndex = CATEGORIES_ORDER.indexOf(a.category);
+                const bIndex = CATEGORIES_ORDER.indexOf(b.category);
+                if (aIndex === -1) return 1;
+                if (bIndex === -1) return -1;
+                return aIndex - bIndex;
+          });
+    }, [itemsById, selectedView, summary.participantSummaries]);
 
     const chartConfig = {
         total: { label: 'Total' },
         Food: { label: 'Food', color: 'hsl(var(--chart-1))' },
         Drink: { label: 'Drink', color: 'hsl(var(--chart-2))' },
         Other: { label: 'Other', color: 'hsl(var(--chart-3))' },
+        Service: { label: 'Service', color: 'hsl(var(--chart-4))' },
+        Discounts: { label: 'Discounts', color: 'hsl(var(--destructive))' },
     } satisfies ChartConfig;
 
-    const grandTotal = categoryTotals.reduce((sum, cat) => sum + cat.total, 0);
+    const grandTotal = categoryTotals
+      .filter(c => c.total > 0)
+      .reduce((sum, cat) => sum + cat.total, 0);
 
     const renderTabs = () => (
         <Tabs value={selectedView} onValueChange={setSelectedView} className="w-full">
@@ -114,7 +135,7 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
         </Tabs>
     );
 
-    if (grandTotal === 0 && selectedView === 'total') {
+    if (grandTotal === 0 && selectedView === 'total' && categoryTotals.length === 0) {
         return (
             <Alert>
                 <LayoutGrid className="h-4 w-4" />
@@ -126,7 +147,7 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
         )
     }
 
-    if (grandTotal === 0 && selectedView !== 'total') {
+    if (grandTotal === 0 && selectedView !== 'total' && categoryTotals.length === 0) {
         const participantName = participants.find(p => p.id === selectedView)?.name || 'This participant';
         return (
             <div className="space-y-4">
@@ -147,37 +168,42 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
             {renderTabs()}
             <div className="space-y-2">
             {categoryTotals.map((cat, index) => {
-                const percentage = grandTotal > 0 ? (cat.total / grandTotal) * 100 : 0;
+                const isDiscount = cat.category === 'Discounts';
+                const percentage = grandTotal > 0 && !isDiscount ? (cat.total / grandTotal) * 100 : 0;
                 const color = chartConfig[cat.category as keyof typeof chartConfig]?.color || 'hsl(var(--primary))';
                 
                 return (
                 <Collapsible
                     key={cat.category}
-                    defaultOpen={index < 2}
+                    defaultOpen={index < 2 || isDiscount}
                     className="rounded-lg border bg-card transition-colors data-[state=open]:bg-primary/10 data-[state=open]:border-primary/20"
                 >
                     <CollapsibleTrigger className="group flex w-full flex-col gap-2 p-3 text-left">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                            <span className="text-lg w-6 text-center">{getCategoryEmoji(cat.category)}</span>
-                            <span className="font-semibold">{cat.category}</span>
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <span className="text-lg w-6 text-center">{getCategoryEmoji(cat.category)}</span>
+                                <span className="font-semibold">{cat.category}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className={cn("font-mono font-medium", isDiscount && "text-destructive")}>
+                                    {formatCurrency(cat.total, globalCurrency)}
+                                </span>
+                                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                            </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <span className="font-mono font-medium">{formatCurrency(cat.total, globalCurrency)}</span>
-                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                        </div>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div 
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ width: `${percentage}%`, backgroundColor: color }} 
-                        />
-                    </div>
+                        {!isDiscount && (
+                            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                                <div 
+                                    className="h-full rounded-full transition-all duration-500"
+                                    style={{ width: `${percentage}%`, backgroundColor: color }} 
+                                />
+                            </div>
+                        )}
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                         <div className="space-y-1.5 px-3 pb-3 pt-1 border-t border-inherit">
                             {cat.subCategories.length > 0 ? cat.subCategories.map(sub => (
-                                <div key={sub.name} className="flex justify-between items-center text-sm text-muted-foreground pl-9">
+                                <div key={sub.name} className={cn("flex justify-between items-center text-sm text-muted-foreground pl-9", isDiscount && "text-destructive/90")}>
                                     <span>{sub.name}</span>
                                     <span className="font-mono">{formatCurrency(sub.total, globalCurrency)}</span>
                                 </div>
