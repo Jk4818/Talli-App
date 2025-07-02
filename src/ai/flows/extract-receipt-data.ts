@@ -107,32 +107,33 @@ const extractReceiptDataFlow = ai.defineFlow(
   async (input) => {
     assertAuth(input.user);
 
+    let output: ExtractReceiptDataOutput | undefined;
     try {
       const response = await extractReceiptDataPrompt(input);
-      const output = response.output;
-      
-      console.log('Raw AI Response for receipt:', output);
-
-      if (!output) {
-        throw new Error('The AI service returned an empty response.');
-      }
-
-      if (!output.isReceipt) {
-        throw new Error(output.rejectionReason || 'The uploaded image does not appear to be a receipt.');
-      }
-      
-      // If the AI determines the image quality is too low, reject it.
-      if (output.overallConfidence && output.overallConfidence < 60) {
-        throw new Error(output.rejectionReason || 'The receipt image is too unclear to read accurately. Please try again with a better photo.');
-      }
-      
-      return output;
-
+      output = response.output;
     } catch (error) {
-        console.error("Error in extractReceiptDataFlow:", error);
-        // Catch specific Genkit/API errors and generalize them for the user.
-        // This prevents leaking complex internal error messages.
-        throw new Error('The AI service failed to process the request. Please try again later.');
+      console.error("Error in AI service call:", error);
+      // This catch block is ONLY for true service failures (e.g. network, API key issues).
+      throw new Error('The AI service failed to process the request. Please try again later.');
     }
+      
+    console.log('Raw AI Response for receipt:', output);
+
+    if (!output) {
+      // This case handles if the AI returns an empty but valid response.
+      throw new Error('The AI service returned an empty response.');
+    }
+
+    // Now, perform validation. Errors thrown from here will be propagated correctly to the client.
+    if (!output.isReceipt) {
+      throw new Error(output.rejectionReason || 'The uploaded image does not appear to be a receipt.');
+    }
+    
+    // If the AI determines the image quality is too low, reject it.
+    if (output.overallConfidence && output.overallConfidence < 60) {
+      throw new Error(output.rejectionReason || 'The receipt image is too unclear to read accurately. Please try again with a better photo.');
+    }
+    
+    return output;
   }
 );
