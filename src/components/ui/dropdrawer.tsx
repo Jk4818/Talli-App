@@ -162,6 +162,7 @@ const DropDrawerItem = React.forwardRef<
   };
 
   if (isMobile) {
+    const { onClick, ...restOfProps } = props as any;
     return (
       <div
         ref={ref as React.Ref<HTMLDivElement>}
@@ -171,7 +172,7 @@ const DropDrawerItem = React.forwardRef<
           className
         )}
         onClick={!props.disabled ? handleInteraction : undefined}
-        {...props}
+        {...restOfProps}
       >
         {icon && <div className="w-5 h-5 flex items-center justify-center shrink-0">{icon}</div>}
         <span className="flex-1">{children}</span>
