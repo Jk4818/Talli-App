@@ -75,7 +75,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
     }
   }, [item]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSaveAndClose = (e: React.FormEvent) => {
     e.preventDefault();
     const costInCents = Math.round(parseFloat(cost) * 100);
     if (item && name.trim() && !isNaN(costInCents) && receiptId) {
@@ -83,6 +83,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
       onOpenChange(false);
     }
   };
+
 
   const handleDeleteItem = () => {
     if(item) {
@@ -182,7 +183,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
             Update the details for this item. Click Save Changes or press Enter to confirm.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col">
+        <form onSubmit={handleSaveAndClose} className="flex-1 min-h-0 flex flex-col">
           <div className="flex-1 min-h-0 overflow-y-auto px-6">
             <div className="space-y-4 py-4">
               {pendingSuggestion && (
@@ -393,34 +394,34 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
               </div>
             </div>
           </div>
-          <DialogFooter className="p-6 border-t flex-col sm:flex-row sm:justify-between sm:space-x-2">
-              <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                      <Button type="button" variant="destructive" className="sm:mr-auto mt-2 sm:mt-0 w-full sm:w-auto">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Item
-                      </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                      <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                              This will permanently delete the item "{item?.name}". This action cannot be undone.
-                          </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDeleteItem}>Delete</AlertDialogAction>
-                      </AlertDialogFooter>
-                  </AlertDialogContent>
-              </AlertDialog>
-              <div className="flex items-center gap-4">
-                  <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Effective Cost</p>
-                      <p className="font-bold text-lg">{formatCurrency(effectiveCost, currentReceiptCurrency)}</p>
-                  </div>
-                  <Button type="submit">Save Changes</Button>
-              </div>
+          <DialogFooter className="p-6 border-t flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button type="button" variant="destructive" className="w-full sm:w-auto sm:mr-auto">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Item
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the item "{item?.name}". This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteItem}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-4">
+                <div className="text-left sm:text-right">
+                    <p className="text-sm text-muted-foreground">Effective Cost</p>
+                    <p className="font-bold text-lg">{formatCurrency(effectiveCost, currentReceiptCurrency)}</p>
+                </div>
+                <Button type="submit">Save Changes</Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
