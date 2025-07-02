@@ -86,6 +86,11 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
     }
   };
   
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSave();
+  };
+
   const handleDeleteItem = () => {
     if(item) {
       onDelete(item.id);
@@ -177,250 +182,254 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Edit Item</DialogTitle>
-          <DialogDescription>
-            Update the details for this item. Click save when you're done.
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="flex-1 pr-6 -mr-6">
-          {pendingSuggestion && (
-             <div className="mb-4 p-3 rounded-md bg-accent/30 border border-primary/20 space-y-3 text-sm">
-                <div className="flex justify-between items-start">
-                    <div className='flex items-center gap-2 font-semibold text-accent-foreground'>
-                        <Sparkles className="h-4 w-4" />
-                        AI Discount Suggestion
+      <DialogContent className="max-h-[90vh] flex flex-col p-0">
+        <form onSubmit={handleFormSubmit} className="flex h-full flex-col">
+          <DialogHeader className="p-6 pb-4">
+            <DialogTitle>Edit Item</DialogTitle>
+            <DialogDescription>
+              Update the details for this item. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="space-y-4 px-6">
+              {pendingSuggestion && (
+                <div className="mb-4 p-3 rounded-md bg-accent/30 border border-primary/20 space-y-3 text-sm">
+                    <div className="flex justify-between items-start">
+                        <div className='flex items-center gap-2 font-semibold text-accent-foreground'>
+                            <Sparkles className="h-4 w-4" />
+                            AI Discount Suggestion
+                        </div>
+                        {pendingSuggestion.discount.confidence && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {pendingSuggestion.discount.confidence}%</Badge>}
                     </div>
-                    {pendingSuggestion.discount.confidence && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {pendingSuggestion.discount.confidence}%</Badge>}
-                </div>
 
-                {isSuggestionConflict && (
-                    <Alert variant="destructive" className="my-2">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Potential Conflict</AlertTitle>
-                        <AlertDescription>
-                            Applying this discount would make the item cost negative. Please reassign or remove it.
-                        </AlertDescription>
-                    </Alert>
-                )}
+                    {isSuggestionConflict && (
+                        <Alert variant="destructive" className="my-2">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Potential Conflict</AlertTitle>
+                            <AlertDescription>
+                                Applying this discount would make the item cost negative. Please reassign or remove it.
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
-                <p>
-                    AI suggests applying the <span className='font-medium'>&quot;{pendingSuggestion.discount.name}&quot;</span> discount (-{formatCurrency(pendingSuggestion.discount.amount, currentReceiptCurrency)}) to this item.
-                </p>
-                <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                        <AccessibleTooltip content={isSuggestionConflict ? "Cannot apply discount greater than item cost." : "Apply this discount to the item"}>
-                            <span className="w-full" tabIndex={0}>
-                                <Button size="sm" className="w-full" onClick={handleApplySuggestion} disabled={!!isSuggestionConflict}>
-                                    <Check className="mr-1.5 h-4 w-4" /> Apply
-                                </Button>
-                            </span>
-                        </AccessibleTooltip>
-                        <DropDrawer>
-                            <DropDrawerTrigger asChild>
-                                <Button size="sm" variant="secondary" className="w-full">
-                                    <Pencil className="mr-1.5 h-4 w-4" /> Reassign
-                                </Button>
-                            </DropDrawerTrigger>
-                            <DropDrawerContent>
-                                <DropDrawerLabel>Reassign to another item</DropDrawerLabel>
-                                {items.filter(i => i.receiptId === pendingSuggestion.receiptId && i.id !== item.id)
-                                .map(otherItem => (
-                                    <DropDrawerItem 
-                                        key={otherItem.id}
-                                        onClick={() => handleReassignSuggestion(otherItem.id)}
-                                    >
-                                        {otherItem.name}
-                                    </DropDrawerItem>
-                                ))}
-                                {items.filter(i => i.receiptId === pendingSuggestion.receiptId && i.id !== item.id).length === 0 && (
-                                  <DropDrawerItem disabled>No other items on this receipt</DropDrawerItem>
-                                )}
-                            </DropDrawerContent>
-                        </DropDrawer>
-                    </div>
-                    <Button size="sm" variant="ghost" className="w-full" onClick={handleIgnoreSuggestion}>
-                        <Layers className="mr-1.5 h-4 w-4" /> Convert to Receipt-Wide Discount
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive" className="w-full">
-                          <Trash2 className="h-4 w-4 mr-1.5" /> Remove Discount
+                    <p>
+                        AI suggests applying the <span className='font-medium'>&quot;{pendingSuggestion.discount.name}&quot;</span> discount (-{formatCurrency(pendingSuggestion.discount.amount, currentReceiptCurrency)}) to this item.
+                    </p>
+                    <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                            <AccessibleTooltip content={isSuggestionConflict ? "Cannot apply discount greater than item cost." : "Apply this discount to the item"}>
+                                <span className="w-full" tabIndex={0}>
+                                    <Button size="sm" type="button" className="w-full" onClick={handleApplySuggestion} disabled={!!isSuggestionConflict}>
+                                        <Check className="mr-1.5 h-4 w-4" /> Apply
+                                    </Button>
+                                </span>
+                            </AccessibleTooltip>
+                            <DropDrawer>
+                                <DropDrawerTrigger asChild>
+                                    <Button size="sm" type="button" variant="secondary" className="w-full">
+                                        <Pencil className="mr-1.5 h-4 w-4" /> Reassign
+                                    </Button>
+                                </DropDrawerTrigger>
+                                <DropDrawerContent>
+                                    <DropDrawerLabel>Reassign to another item</DropDrawerLabel>
+                                    {items.filter(i => i.receiptId === pendingSuggestion.receiptId && i.id !== item.id)
+                                    .map(otherItem => (
+                                        <DropDrawerItem 
+                                            key={otherItem.id}
+                                            onClick={() => handleReassignSuggestion(otherItem.id)}
+                                        >
+                                            {otherItem.name}
+                                        </DropDrawerItem>
+                                    ))}
+                                    {items.filter(i => i.receiptId === pendingSuggestion.receiptId && i.id !== item.id).length === 0 && (
+                                      <DropDrawerItem disabled>No other items on this receipt</DropDrawerItem>
+                                    )}
+                                </DropDrawerContent>
+                            </DropDrawer>
+                        </div>
+                        <Button size="sm" type="button" variant="ghost" className="w-full" onClick={handleIgnoreSuggestion}>
+                            <Layers className="mr-1.5 h-4 w-4" /> Convert to Receipt-Wide Discount
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently remove the AI-suggested &quot;{pendingSuggestion.discount.name}&quot; discount. This action cannot be undone.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleRemoveSuggestion}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                </div>
-            </div>
-          )}
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="cost" className="text-right">
-                Original Cost
-              </Label>
-              <Input
-                id="cost"
-                type="text"
-                inputMode="decimal"
-                value={cost}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
-                      setCost(value);
-                  }
-                }}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="receipt" className="text-right">
-                Receipt
-              </Label>
-              <div className="col-span-3">
-                <ResponsiveSelect value={receiptId} onValueChange={setReceiptId}>
-                  <ResponsiveSelectTrigger id="receipt" disabled={receipts.length === 0} placeholder="Select a receipt">
-                    {receipts.find((r) => r.id === receiptId)?.name}
-                  </ResponsiveSelectTrigger>
-                  <ResponsiveSelectContent>
-                    <ResponsiveSelectLabel>Select a Receipt</ResponsiveSelectLabel>
-                    {receipts.map((r) => (
-                      <ResponsiveSelectItem key={r.id} value={r.id}>
-                        {r.name}
-                      </ResponsiveSelectItem>
-                    ))}
-                  </ResponsiveSelectContent>
-                </ResponsiveSelect>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Category</Label>
-              <div className="col-span-3">
-                <RadioGroup
-                  value={category}
-                  onValueChange={(v: 'Food' | 'Drink' | 'Other') => setCategory(v)}
-                  className="flex items-center gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Food" id={`cat-food-${item.id}`} />
-                    <Label htmlFor={`cat-food-${item.id}`} className="font-normal cursor-pointer">Food</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Drink" id={`cat-drink-${item.id}`} />
-                    <Label htmlFor={`cat-drink-${item.id}`} className="font-normal cursor-pointer">Drink</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Other" id={`cat-other-${item.id}`} />
-                    <Label htmlFor={`cat-other-${item.id}`} className="font-normal cursor-pointer">Other</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="sub-category" className="text-right">
-                Sub-category
-              </Label>
-              <Input
-                id="sub-category"
-                value={subCategory}
-                onChange={(e) => setSubCategory(e.target.value)}
-                className="col-span-3"
-                placeholder="e.g. Pizza, Beer, Side"
-              />
-            </div>
-            <Separator />
-            <div>
-              <Label>Item Discounts</Label>
-              <div className="mt-2 space-y-2">
-                {discounts.map(discount => (
-                  <div key={discount.id} className="flex flex-col sm:flex-row items-start sm:items-end gap-2 rounded-md border p-3 bg-secondary/30">
-                    <div className='space-y-1.5 flex-1 min-w-[100px]'>
-                        <Label htmlFor={`item-discount-name-${discount.id}`} className="text-xs text-muted-foreground">Discount Name</Label>
-                        <Input 
-                            id={`item-discount-name-${discount.id}`}
-                            placeholder="Discount name"
-                            value={discount.name}
-                            onChange={(e) => handleDiscountNameChange(discount.id, e.target.value)}
-                        />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" type="button" variant="destructive" className="w-full">
+                              <Trash2 className="h-4 w-4 mr-1.5" /> Remove Discount
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently remove the AI-suggested &quot;{pendingSuggestion.discount.name}&quot; discount. This action cannot be undone.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleRemoveSuggestion}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                     </div>
-                    <div className="flex w-full items-end justify-between gap-2">
-                        <div className='space-y-1.5'>
-                            <Label htmlFor={`item-discount-amount-${discount.id}`} className="text-xs text-muted-foreground">Amount</Label>
+                </div>
+              )}
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="cost" className="text-right">
+                    Original Cost
+                  </Label>
+                  <Input
+                    id="cost"
+                    type="text"
+                    inputMode="decimal"
+                    value={cost}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
+                          setCost(value);
+                      }
+                    }}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="receipt" className="text-right">
+                    Receipt
+                  </Label>
+                  <div className="col-span-3">
+                    <ResponsiveSelect value={receiptId} onValueChange={setReceiptId}>
+                      <ResponsiveSelectTrigger id="receipt" disabled={receipts.length === 0} placeholder="Select a receipt">
+                        {receipts.find((r) => r.id === receiptId)?.name}
+                      </ResponsiveSelectTrigger>
+                      <ResponsiveSelectContent>
+                        <ResponsiveSelectLabel>Select a Receipt</ResponsiveSelectLabel>
+                        {receipts.map((r) => (
+                          <ResponsiveSelectItem key={r.id} value={r.id}>
+                            {r.name}
+                          </ResponsiveSelectItem>
+                        ))}
+                      </ResponsiveSelectContent>
+                    </ResponsiveSelect>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Category</Label>
+                  <div className="col-span-3">
+                    <RadioGroup
+                      value={category}
+                      onValueChange={(v: 'Food' | 'Drink' | 'Other') => setCategory(v)}
+                      className="flex items-center gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Food" id={`cat-food-${item.id}`} />
+                        <Label htmlFor={`cat-food-${item.id}`} className="font-normal cursor-pointer">Food</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Drink" id={`cat-drink-${item.id}`} />
+                        <Label htmlFor={`cat-drink-${item.id}`} className="font-normal cursor-pointer">Drink</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Other" id={`cat-other-${item.id}`} />
+                        <Label htmlFor={`cat-other-${item.id}`} className="font-normal cursor-pointer">Other</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="sub-category" className="text-right">
+                    Sub-category
+                  </Label>
+                  <Input
+                    id="sub-category"
+                    value={subCategory}
+                    onChange={(e) => setSubCategory(e.target.value)}
+                    className="col-span-3"
+                    placeholder="e.g. Pizza, Beer, Side"
+                  />
+                </div>
+                <Separator />
+                <div>
+                  <Label>Item Discounts</Label>
+                  <div className="mt-2 space-y-2">
+                    {discounts.map(discount => (
+                      <div key={discount.id} className="flex flex-col sm:flex-row items-start sm:items-end gap-2 rounded-md border p-3 bg-secondary/30">
+                        <div className='space-y-1.5 flex-1 min-w-[100px]'>
+                            <Label htmlFor={`item-discount-name-${discount.id}`} className="text-xs text-muted-foreground">Discount Name</Label>
                             <Input 
-                                id={`item-discount-amount-${discount.id}`}
-                                type="text"
-                                inputMode="decimal"
-                                placeholder="0.00"
-                                value={discountAmountStrings[discount.id] ?? ''}
-                                onChange={(e) => handleDiscountAmountStringChange(discount.id, e.target.value)}
-                                onBlur={() => handleDiscountAmountBlur(discount.id)}
-                                className="w-28 text-right"
+                                id={`item-discount-name-${discount.id}`}
+                                placeholder="Discount name"
+                                value={discount.name}
+                                onChange={(e) => handleDiscountNameChange(discount.id, e.target.value)}
                             />
                         </div>
-                        <Button variant="ghost" size="icon" className="mb-[1px]" onClick={() => handleRemoveDiscount(discount.id)}>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
+                        <div className="flex w-full items-end justify-between gap-2 sm:w-auto sm:justify-start">
+                            <div className='space-y-1.5'>
+                                <Label htmlFor={`item-discount-amount-${discount.id}`} className="text-xs text-muted-foreground">Amount</Label>
+                                <Input 
+                                    id={`item-discount-amount-${discount.id}`}
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0.00"
+                                    value={discountAmountStrings[discount.id] ?? ''}
+                                    onChange={(e) => handleDiscountAmountStringChange(discount.id, e.target.value)}
+                                    onBlur={() => handleDiscountAmountBlur(discount.id)}
+                                    className="w-28 text-right"
+                                />
+                            </div>
+                            <Button variant="ghost" type="button" size="icon" className="mb-[1px]" onClick={() => handleRemoveDiscount(discount.id)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button variant="outline" type="button" size="sm" onClick={handleAddDiscount} className="w-full">
+                        <Plus className="h-4 w-4 mr-2"/> Add Item Discount
+                      </Button>
                   </div>
-                ))}
-                 <Button variant="outline" size="sm" onClick={handleAddDiscount} className="w-full">
-                    <Plus className="h-4 w-4 mr-2"/> Add Item Discount
-                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </ScrollArea>
-        <DialogFooter className="flex-col sm:flex-row sm:justify-between sm:space-x-2 border-t pt-4">
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="sm:mr-auto mt-2 sm:mt-0 w-full sm:w-auto">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Item
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the item "{item?.name}". This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteItem}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <div className="flex items-center gap-4">
-                <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Effective Cost</p>
-                    <p className="font-bold text-lg">{formatCurrency(effectiveCost, currentReceiptCurrency)}</p>
-                </div>
-                <Button onClick={handleSave}>Save Changes</Button>
-            </div>
-        </DialogFooter>
+          </ScrollArea>
+          <DialogFooter className="flex-col sm:flex-row sm:justify-between sm:space-x-2 border-t p-6">
+              <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                      <Button type="button" variant="destructive" className="sm:mr-auto mt-2 sm:mt-0 w-full sm:w-auto">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Item
+                      </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              This will permanently delete the item "{item?.name}". This action cannot be undone.
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteItem}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                  </AlertDialogContent>
+              </AlertDialog>
+              <div className="flex items-center gap-4">
+                  <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Effective Cost</p>
+                      <p className="font-bold text-lg">{formatCurrency(effectiveCost, currentReceiptCurrency)}</p>
+                  </div>
+                  <Button type="submit">Save Changes</Button>
+              </div>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
