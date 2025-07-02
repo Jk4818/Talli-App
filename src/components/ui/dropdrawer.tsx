@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -128,23 +129,20 @@ const DropDrawerContent = React.forwardRef<
 DropDrawerContent.displayName = "DropDrawerContent";
 
 const DropDrawerItem = React.forwardRef<
-  React.ElementRef<typeof DropdownMenuItem>,
+  HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof DropdownMenuItem> & {
     icon?: React.ReactNode;
   }
->(({ children, icon, className, ...props }, ref) => {
+>(({ children, icon, className, onSelect, ...props }, ref) => {
   const { isMobile, setOpen } = useDropDrawer();
 
   const handleInteraction = (event: React.SyntheticEvent | Event) => {
     // The consumer might pass an `onSelect` prop to prevent default behavior.
-    // Radix's `onSelect` expects a native Event.
-    if (props.onSelect) {
-      if ("nativeEvent" in event) {
-        // It's a SyntheticEvent, so we pass the underlying native event.
-        props.onSelect(event.nativeEvent);
-      } else {
-        // It's already a native Event.
-        props.onSelect(event);
+    if (onSelect) {
+      if (event instanceof Event) {
+        onSelect(event);
+      } else if (event.nativeEvent instanceof Event) {
+        onSelect(event.nativeEvent);
       }
     }
 
@@ -152,7 +150,6 @@ const DropDrawerItem = React.forwardRef<
     const consumerOnClick = (props as any).onClick;
     consumerOnClick?.(event);
 
-    // Check if default action was prevented, for both event types.
     const wasDefaultPrevented =
       "isDefaultPrevented" in event
         ? event.isDefaultPrevented()
@@ -173,7 +170,7 @@ const DropDrawerItem = React.forwardRef<
           props.disabled && "opacity-50 pointer-events-none",
           className
         )}
-        onClick={props.disabled ? undefined : handleInteraction}
+        onClick={!props.disabled ? handleInteraction : undefined}
         {...props}
       >
         {icon && <div className="w-5 h-5 flex items-center justify-center shrink-0">{icon}</div>}
