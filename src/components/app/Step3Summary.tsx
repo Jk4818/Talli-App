@@ -325,7 +325,7 @@ export default function Step3Summary() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <CategoryBreakdownChart items={items} globalCurrency={globalCurrency} />
+                    <CategoryBreakdownChart items={items} participants={participants} summary={calculatedSummary} globalCurrency={globalCurrency} />
                 </CardContent>
             </Card>
         </div>

@@ -161,7 +161,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
 
       itemShares.forEach((share, pid) => {
         const summary = finalSummaries.get(pid)!;
-        summary.breakdown.items.push({ description: item.name, amount: Math.round(share * rate), receiptId: receipt.id });
+        summary.breakdown.items.push({ itemId: item.id, description: item.name, amount: Math.round(share * rate), receiptId: receipt.id });
         participantSharesOnReceipt.set(pid, (participantSharesOnReceipt.get(pid) || 0) + share);
       });
     });

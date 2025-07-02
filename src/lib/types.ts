@@ -55,6 +55,7 @@ export interface Settlement {
 }
 
 export interface BreakdownEntry {
+  itemId?: string;
   description: string;
   amount: number; // in cents, negative for discounts
   receiptId: string;
