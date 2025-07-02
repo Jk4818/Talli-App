@@ -478,32 +478,32 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                               </div>
                           </AccordionTrigger>
                         <AccordionContent className="pt-4">
-                          <div className="flex items-center gap-6">
-                            <RadioGroup 
-                              value={receipt.serviceCharge.type} 
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <RadioGroup
+                              value={receipt.serviceCharge.type}
                               onValueChange={(type: 'fixed' | 'percentage') => handleUpdateServiceCharge({ type, value: 0 })}
                               className="flex items-center gap-4"
                             >
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="percentage" id={`sc-type-percentage-${receipt.id}`} />
-                                <Label htmlFor={`sc-type-percentage-${receipt.id}`}>Percentage (%)</Label>
+                                <Label htmlFor={`sc-type-percentage-${receipt.id}`} className="font-normal cursor-pointer">Percentage (%)</Label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="fixed" id={`sc-type-fixed-${receipt.id}`} />
-                                <Label htmlFor={`sc-type-fixed-${receipt.id}`}>Fixed ({receipt.currency})</Label>
+                                <Label htmlFor={`sc-type-fixed-${receipt.id}`} className="font-normal cursor-pointer">Fixed ({receipt.currency})</Label>
                               </div>
                             </RadioGroup>
                             <Input
-                              key={`${receipt.id}-${receipt.serviceCharge.type}`} // Force re-render on type change
+                              key={`${receipt.id}-${receipt.serviceCharge.type}`}
                               type="text"
                               inputMode="decimal"
-                              defaultValue={receipt.serviceCharge.type === 'fixed' ? (receipt.serviceCharge.value / 100).toFixed(2) : receipt.serviceCharge.value}
-                              onBlur={(e) => handleUpdateServiceCharge({ 
-                                value: receipt.serviceCharge.type === 'fixed' 
+                              defaultValue={receipt.serviceCharge.type === 'fixed' ? (receipt.serviceCharge.value / 100).toFixed(2) : receipt.serviceCharge.value.toString()}
+                              onBlur={(e) => handleUpdateServiceCharge({
+                                value: receipt.serviceCharge.type === 'fixed'
                                   ? Math.round(parseFloat(e.target.value) * 100) || 0
                                   : parseFloat(e.target.value) || 0
                               })}
-                              className="w-28 text-right"
+                              className="w-full sm:w-32 text-right"
                             />
                           </div>
                         </AccordionContent>
@@ -523,3 +523,5 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     </>
   );
 }
+
+    
