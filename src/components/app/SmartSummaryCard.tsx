@@ -49,7 +49,7 @@ const SmartSummaryItem = ({ icon, title, description, children }: { icon: React.
             {icon}
         </div>
         <div className="flex-1 min-w-0">
-            <p className="font-semibold text-foreground">{title}</p>
+            <div className="font-semibold text-foreground">{title}</div>
             {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
         </div>
         <div className="text-right shrink-0">
@@ -311,7 +311,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             icon={<Bot className="h-5 w-5" />}
                             title={
                                 <div className="flex items-center gap-1.5">
-                                    <p>AI Confidence</p>
+                                    AI Confidence
                                     <InfoDialog title="AI Confidence Breakdown" description={aiConfidenceDialogDescription} trigger={
                                         <button className="p-0 m-0 h-4 w-4 inline-flex items-center justify-center align-middle" aria-label="More information"><Info className="h-4 w-4 text-muted-foreground" /></button>
                                     }/>
@@ -327,7 +327,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             icon={<Scale className="h-5 w-5" />}
                             title={
                                 <div className="flex items-center gap-1.5">
-                                   <p>Fairness Check</p>
+                                   Fairness Check
                                    <InfoDialog title="Fairness Check Calculation" description={fairnessInfoDescription} trigger={
                                        <button className="p-0 m-0 h-4 w-4 inline-flex items-center justify-center align-middle" aria-label="More information"><Info className="h-4 w-4 text-muted-foreground" /></button>
                                    }/>
@@ -343,7 +343,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             icon={<Sparkles className="h-5 w-5" />}
                             title={
                                 <div className="flex items-center gap-1.5">
-                                    <p>Penny Perfect</p>
+                                    Penny Perfect
                                     <InfoDialog title="Penny Perfect Breakdown" description={pennyPerfectDialogDescription} trigger={
                                         <button className="p-0 m-0 h-4 w-4 inline-flex items-center justify-center align-middle" aria-label="More information"><Info className="h-4 w-4 text-muted-foreground" /></button>
                                     }/>
@@ -360,7 +360,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                     {topSaver && (
                         <SmartSummaryItem
                             icon={<Award className="h-5 w-5" />}
-                            title={<p>Top Saver</p>}
+                            title="Top Saver"
                             description="Benefited most from discounts."
                         >
                             <p className="font-medium text-foreground truncate">{topSaver.name}</p>
@@ -370,7 +370,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                     {socialButterfly && (
                         <SmartSummaryItem
                             icon={<HeartHandshake className="h-5 w-5" />}
-                            title={<p>Social Butterfly</p>}
+                            title="Social Butterfly"
                             description="Shared items with the most people."
                         >
                            <p className="font-medium text-foreground truncate">{socialButterfly.name}</p>
@@ -380,7 +380,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                     {highestPayer && highestPayer.totalPaid > 0 && (
                         <SmartSummaryItem
                             icon={<Trophy className="h-5 w-5" />}
-                            title={<p>Top Payer</p>}
+                            title="Top Payer"
                             description="Contributed the most money."
                         >
                             <p className="font-medium text-foreground truncate">{highestPayer.name}</p>
@@ -390,7 +390,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                     {highestShare && highestShare.totalShare > 0 && (
                         <SmartSummaryItem
                             icon={<Pizza className="h-5 w-5" />}
-                            title={<p>Highest Share</p>}
+                            title="Highest Share"
                             description="Largest portion of the final bill."
                         >
                            <p className="font-medium text-foreground truncate">{highestShare.name}</p>
@@ -400,7 +400,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                     {mostExpensiveItem && (
                         <SmartSummaryItem
                             icon={<Gem className="h-5 w-5" />}
-                            title={<p>Priciest Item</p>}
+                            title="Priciest Item"
                             description={`Shared between ${mostExpensiveItem.assignees.length} people.`}
                         >
                              <p className="font-medium text-foreground truncate">{mostExpensiveItem.name}</p>
