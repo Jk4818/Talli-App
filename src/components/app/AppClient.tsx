@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { loadDemoData, resetSession, setStep } from '@/lib/redux/slices/sessionSlice';
@@ -11,10 +11,13 @@ import Step3Summary from './Step3Summary';
 import { Button } from '../ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
+import type { Discount, Item } from '@/lib/types';
+import SuggestionResolverDialog from './SuggestionResolverDialog';
 
 export function AppClient({ isDemo }: { isDemo: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
   const { step, participants, items, receipts, isDemoSession } = useSelector((state: RootState) => state.session);
+  const [isSuggestionResolverOpen, setIsSuggestionResolverOpen] = useState(false);
 
   useEffect(() => {
     // This effect synchronizes the session state (demo vs. real) with the current page
@@ -29,8 +32,31 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     }
   }, [dispatch, isDemo, isDemoSession]);
 
+  const pendingSuggestions = useMemo(() => {
+    const suggestions: { receiptId: string; discount: Discount; targetItem?: Item }[] = [];
+    receipts.forEach(receipt => {
+        (receipt.discounts || []).forEach(discount => {
+            if (discount.suggestedItemId) {
+                const targetItem = items.find(i => i.id === discount.suggestedItemId);
+                suggestions.push({ receiptId: receipt.id, discount, targetItem });
+            }
+        });
+    });
+    return suggestions;
+  }, [receipts, items]);
+
+  const hasPendingSuggestions = pendingSuggestions.length > 0;
 
   const handleNext = () => {
+    if (step === 1) {
+      if (hasPendingSuggestions) {
+        setIsSuggestionResolverOpen(true);
+        return;
+      }
+      dispatch(setStep(step + 1));
+      return;
+    }
+
     if (step < 3) {
       dispatch(setStep(step + 1));
     }
@@ -65,16 +91,9 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     return items.some(item => !receiptIds.has(item.receiptId));
   }, [items, receipts]);
 
-  const hasPendingSuggestions = useMemo(() => {
-    return receipts.some(r => (r.discounts || []).some(d => d.suggestedItemId));
-  }, [receipts]);
-
-  const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
+  const isStep1SetupComplete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
   
   const step1TooltipMessage = useMemo(() => {
-    if (hasPendingSuggestions) {
-      return 'Please resolve all AI discount suggestions before continuing.';
-    }
     if (hasConflictingReceipts) {
       return 'Please resolve all receipt conflicts before continuing.';
     }
@@ -91,7 +110,9 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
         return 'A payer must be assigned to every receipt.';
     }
     return 'Please complete all setup steps to continue.';
-  }, [hasConflictingReceipts, participants.length, receipts, hasOrphanedItems, hasPendingSuggestions]);
+  }, [hasConflictingReceipts, participants.length, receipts, hasOrphanedItems]);
+  
+  const isStep1Blocked = !isStep1SetupComplete || hasConflictingReceipts || hasOrphanedItems;
 
   const isStep2Complete = useMemo(() => {
     return items.every(item => {
@@ -147,9 +168,8 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
           </div>
           <div>
             {step === 1 && (
-              !isStep1Complete || hasConflictingReceipts || hasOrphanedItems || hasPendingSuggestions ? (
+              isStep1Blocked ? (
                 <AccessibleTooltip content={<p>{step1TooltipMessage}</p>}>
-                  {/* The span wrapper is crucial for the tooltip to work on a disabled button */}
                   <span tabIndex={0}>
                     <Button disabled className="pointer-events-none">
                       Assign Items
@@ -159,7 +179,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
                 </AccessibleTooltip>
               ) : (
                 <Button onClick={handleNext}>
-                  Assign Items
+                  {hasPendingSuggestions ? 'Review Suggestions' : 'Assign Items'}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               )
@@ -184,6 +204,11 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
           </div>
         </div>
       </footer>
+      <SuggestionResolverDialog 
+        isOpen={isSuggestionResolverOpen}
+        onOpenChange={setIsSuggestionResolverOpen}
+        suggestions={pendingSuggestions}
+      />
     </>
   );
 }
