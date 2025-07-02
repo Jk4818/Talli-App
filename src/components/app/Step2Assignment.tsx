@@ -46,23 +46,38 @@ export default function Step2Assignment() {
             const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
             const effectiveCost = item.cost - totalItemDiscount;
 
-            if (item.assignees.length === 0) {
-                issue = "This item is unassigned.";
-            } else if (item.splitMode === 'percentage') {
-                const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
-                if (totalPercentage !== 100) {
-                    issue = `Percentages total to ${totalPercentage}%, not 100%.`;
-                }
-            } else if (item.splitMode === 'exact') {
-                const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments?.[pid] || 0), 0);
-                if (totalExact !== effectiveCost) {
-                    issue = "Exact amounts don't add up to the item total.";
-                }
+            // Only flag items that have assignees but have errors in their split logic.
+            // An unassigned item is not an error, it's just an incomplete task.
+            if (item.assignees.length > 0) {
+              if (item.splitMode === 'percentage') {
+                  const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
+                  if (totalPercentage !== 100) {
+                      issue = `Percentages total to ${totalPercentage}%, not 100%.`;
+                  }
+              } else if (item.splitMode === 'exact') {
+                  const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments?.[pid] || 0), 0);
+                  if (totalExact !== effectiveCost) {
+                      issue = "Exact amounts don't add up to the item total.";
+                  }
+              }
+            } else if (effectiveCost > 0) {
+              // This is now the only case for unassigned items to be flagged,
+              // but we will only show the card for *errors*, not this state.
+              // For robustness, we can keep the logic but not render it.
+              issue = "This item is unassigned.";
             }
+
             return { item, index, issue };
         })
         .filter((data): data is { item: typeof data.item; index: number; issue: string } => data.issue !== null);
   }, [itemsWithCost]);
+
+  const assignmentErrors = useMemo(() => {
+    // We only want to show the card for actual ERRORS, not just unassigned items.
+    return itemsRequiringAttention.filter(
+      (p) => p.issue !== "This item is unassigned."
+    );
+  }, [itemsRequiringAttention]);
   
   const issueItems = useMemo(() => {
     const issues = new Map<string, string>();
@@ -74,8 +89,21 @@ export default function Step2Assignment() {
 
 
   const assignedItemsCount = useMemo(() => {
-    return itemsWithCost.length - itemsRequiringAttention.length;
-  }, [itemsWithCost.length, itemsRequiringAttention.length]);
+    return itemsWithCost.filter(item => {
+      const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+      const effectiveCost = item.cost - totalItemDiscount;
+      if (item.assignees.length === 0) return false;
+      if (item.splitMode === 'percentage') {
+        const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
+        return totalPercentage === 100;
+      }
+      if (item.splitMode === 'exact') {
+        const totalExact = item.assignees.reduce((sum, pid) => sum + (item.exactAssignments?.[pid] || 0), 0);
+        return totalExact === effectiveCost;
+      }
+      return true; // Equal split is always valid if there are assignees.
+    }).length;
+  }, [itemsWithCost]);
 
 
   const handleJumpToItem = (index: number) => {
@@ -142,7 +170,7 @@ export default function Step2Assignment() {
         </motion.div>
         <motion.div 
             variants={fadeInUp} 
-            className="flex flex-col items-center justify-center scroll-mt-20" 
+            className="flex flex-col items-center justify-center scroll-mt-24" 
             ref={assignmentSectionRef}
         >
             <div className="w-full max-w-md">
@@ -186,20 +214,20 @@ export default function Step2Assignment() {
             </div>
         </motion.div>
 
-        {itemsRequiringAttention.length > 0 && (
+        {assignmentErrors.length > 0 && (
             <motion.div variants={fadeInUp}>
-                <Card className="max-w-2xl mx-auto">
+                <Card className="max-w-2xl mx-auto flex flex-col">
                     <CardHeader className='flex-row items-center gap-4 space-y-0'>
                         <AlertCircle className="w-6 h-6 text-destructive"/>
                         <div>
-                            <CardTitle>Items Requiring Attention</CardTitle>
-                            <CardDescription>These items have incomplete assignments. Click an item to fix it.</CardDescription>
+                            <CardTitle>Assignment Errors</CardTitle>
+                            <CardDescription>These items have assignment conflicts that must be resolved to continue.</CardDescription>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0">
-                        <ScrollArea className="max-h-72">
+                    <CardContent className="flex-1 min-h-0 p-0">
+                        <ScrollArea className="h-full max-h-72">
                             <div className="divide-y divide-border">
-                                {itemsRequiringAttention.map(({ item, index, issue }) => {
+                                {assignmentErrors.map(({ item, index, issue }) => {
                                     const receipt = receipts.find(r => r.id === item.receiptId);
                                     const currency = receipt?.currency || globalCurrency;
                                     const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
