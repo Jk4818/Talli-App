@@ -1,3 +1,4 @@
+
 import type { SessionState } from './types';
 
 export const MOCK_DATA: SessionState = {
@@ -43,17 +44,17 @@ export const MOCK_DATA: SessionState = {
     { id: 'i_2', receiptId: 'r_1', name: 'Truffle Pasta', cost: 2200, discounts: [], assignees: ['p_2'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 99, category: 'Food', subCategory: 'Pasta' },
     { id: 'i_3', receiptId: 'r_1', name: 'Bottle of Merlot', cost: 3000, discounts: [], assignees: ['p_1', 'p_2', 'p_3', 'p_4'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 92, category: 'Drink', subCategory: 'Wine' },
     { id: 'i_4', receiptId: 'r_1', name: 'Side Salad', cost: 600, discounts: [], assignees: ['p_2'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 85, category: 'Food', subCategory: 'Side' },
-    { id: 'i_5', receiptId: 'r_1', name: 'Sparkling Water', cost: 401, discounts: [], assignees: ['p_1', 'p_3'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 96, category: 'Drink', subCategory: 'Soft Drink' },
+    { id: 'i_5', receiptId: 'r_1', name: 'Sparkling Water', cost: 401, discounts: [], assignees: ['p_1', 'p_2', 'p_3'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 96, category: 'Drink', subCategory: 'Soft Drink' },
     { id: 'i_6', receiptId: 'r_1', name: 'Cheeseboard', cost: 1200, discounts: [], assignees: ['p_1', 'p_4'], splitMode: 'percentage', percentageAssignments: { 'p_1': 70, 'p_4': 30 }, exactAssignments: {}, confidence: 90, category: 'Food', subCategory: 'Dessert' },
-    { id: 'i_13', receiptId: 'r_1', name: 'Crème Brûlée (Discounted)', cost: 800, discounts: [{ id: 'd_item_1', name: 'Dessert Deal', amount: 150 }], assignees: ['p_3'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 99, category: 'Food', subCategory: 'Dessert' },
+    { id: 'i_13', receiptId: 'r_1', name: 'Crème Brûlée (Discounted)', cost: 800, discounts: [{ id: 'd_item_1', name: 'Dessert Deal', amount: 150 }], assignees: ['p_1', 'p_2', 'p_3'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 99, category: 'Food', subCategory: 'Dessert' },
 
     // Receipt 2 Items
-    { id: 'i_7', receiptId: 'r_2', name: 'Pint of Lager', cost: 550, discounts: [], assignees: ['p_1'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 97, category: 'Drink', subCategory: 'Beer' },
-    { id: 'i_8', receiptId: 'r_2', name: 'Pint of Lager', cost: 550, discounts: [], assignees: ['p_2'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 97, category: 'Drink', subCategory: 'Beer' },
+    { id: 'i_7', receiptId: 'r_2', name: 'Pint of Lager', cost: 550, discounts: [], assignees: ['p_1', 'p_2', 'p_3'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 97, category: 'Drink', subCategory: 'Beer' },
+    { id: 'i_8', receiptId: 'r_2', name: 'Pint of Lager', cost: 550, discounts: [], assignees: ['p_4'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 97, category: 'Drink', subCategory: 'Beer' },
     { id: 'i_9', receiptId: 'r_2', name: 'Gin & Tonic', cost: 800, discounts: [], assignees: ['p_3'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 95, category: 'Drink', subCategory: 'Cocktail' },
     { id: 'i_10', receiptId: 'r_2', name: 'Glass of Sauvignon', cost: 750, discounts: [], assignees: ['p_4'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 93, category: 'Drink', subCategory: 'Wine' },
     { id: 'i_11', receiptId: 'r_2', name: 'Scotch Egg', cost: 450, discounts: [], assignees: ['p_1', 'p_2'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 88, category: 'Food', subCategory: 'Snack' },
-    { id: 'i_12', receiptId: 'r_2', name: 'Round of Shots', cost: 1500, discounts: [], assignees: ['p_3', 'p_4'], splitMode: 'exact', percentageAssignments: {}, exactAssignments: { 'p_3': 1000, 'p_4': 500 }, confidence: 82, category: 'Drink', subCategory: 'Spirits' },
+    { id: 'i_12', receiptId: 'r_2', name: 'Round of Shots', cost: 1501, discounts: [], assignees: ['p_1', 'p_2', 'p_3', 'p_4'], splitMode: 'equal', percentageAssignments: {}, exactAssignments: {}, confidence: 82, category: 'Drink', subCategory: 'Spirits' },
   ],
   paidSettlements: {},
   currentAssignmentIndex: 0,

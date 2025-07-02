@@ -9,7 +9,6 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -28,7 +27,7 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
       <AlertDialogHeader className="border-b px-6 pt-6 pb-4">
         <AlertDialogTitle>{title}</AlertDialogTitle>
       </AlertDialogHeader>
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="space-y-4 text-left text-sm text-foreground/80 p-6">
           {description}
         </div>
@@ -119,7 +118,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
 
         return (
             <>
-                <p>To ensure penny-perfect accuracy, small rounding adjustments are sometimes necessary. Here is a summary of adjustments made during this session:</p>
+                <div>To ensure penny-perfect accuracy, small rounding adjustments are sometimes necessary. Here is a summary of adjustments made during this session:</div>
                 
                 {hasItemRounding && (
                     <div className="mt-4">
