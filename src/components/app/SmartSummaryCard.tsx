@@ -27,11 +27,11 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
       <AlertDialogHeader className="border-b px-6 pt-6 pb-4">
         <AlertDialogTitle>{title}</AlertDialogTitle>
       </AlertDialogHeader>
-      <ScrollArea className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="space-y-4 text-left text-sm text-foreground/80 p-6">
           {description}
         </div>
-      </ScrollArea>
+      </div>
       <AlertDialogFooter className="border-t p-6">
         <AlertDialogAction>Got it</AlertDialogAction>
       </AlertDialogFooter>
