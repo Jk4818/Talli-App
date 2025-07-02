@@ -158,7 +158,7 @@ export default function Step2Assignment() {
         </motion.div>
         <motion.div 
             variants={fadeInUp} 
-            className="flex flex-col items-center justify-center scroll-mt-28" 
+            className="flex flex-col items-center justify-center scroll-mt-36" 
             ref={assignmentSectionRef}
         >
             <div className="w-full max-w-md">
