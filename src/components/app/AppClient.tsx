@@ -32,6 +32,10 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     }
   }, [dispatch, isDemo, isDemoSession]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
   const pendingSuggestions = useMemo(() => {
     const suggestions: { receiptId: string; discount: Discount; targetItem?: Item }[] = [];
     receipts.forEach(receipt => {

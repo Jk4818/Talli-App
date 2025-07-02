@@ -15,6 +15,7 @@ import { Progress } from '../ui/progress';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
 import { formatCurrency } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -185,7 +186,7 @@ export default function Step2Assignment() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="rounded-md border">
+                        <ScrollArea className="max-h-72 rounded-md border">
                             <div className="divide-y divide-border">
                                 {itemsRequiringAttention.map(({ item, index, issue }) => {
                                     const receipt = receipts.find(r => r.id === item.receiptId);
@@ -211,7 +212,7 @@ export default function Step2Assignment() {
                                     );
                                 })}
                             </div>
-                        </div>
+                        </ScrollArea>
                     </CardContent>
                 </Card>
             </motion.div>
