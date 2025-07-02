@@ -49,6 +49,8 @@ const ServiceChargeSchema = z.object({
 
 
 const ExtractReceiptDataOutputSchema = z.object({
+  isReceipt: z.boolean().describe('True if the image appears to be a receipt, false otherwise.'),
+  rejectionReason: z.string().optional().describe('If the receipt is rejected, a brief reason why (e.g., "Image is too blurry", "Not a receipt").'),
   items: z.array(ItemSchema).describe('The list of items extracted from the receipt.'),
   discounts: z.array(DiscountSchema).describe('The list of discounts extracted from the receipt.'),
   serviceCharges: z.array(ServiceChargeSchema).describe('The list of service charges extracted from the receipt.'),
@@ -68,7 +70,15 @@ const extractReceiptDataPrompt = ai.definePrompt({
   output: {schema: ExtractReceiptDataOutputSchema},
   prompt: `You are an expert AI assistant specializing in extracting structured data from receipts.
 
-You will receive an image of a receipt. Your task is to analyze the image and extract the following information:
+Your first and most important task is to determine if the provided image is a receipt.
+- If it is a receipt, set 'isReceipt' to true.
+- If it is NOT a receipt (e.g., a picture of a cat, a landscape), you MUST set 'isReceipt' to false and provide 'Not a receipt' as the 'rejectionReason'. You do not need to provide any other fields.
+
+If the image IS a receipt, your second task is to assess its quality.
+- If the image is a receipt but is of very poor quality (e.g., extremely blurry, unreadable text, cut off), set a low 'overallConfidence' (below 60) and provide a concise 'rejectionReason' (e.g., "Image is too blurry").
+- Otherwise, proceed with full extraction.
+
+For a good quality receipt, extract the following information:
 1.  A list of all individual items. For each item, you MUST provide:
     - a temporary unique \`id\` (e.g., "item-1").
     - its \`name\`.
@@ -80,7 +90,7 @@ You will receive an image of a receipt. Your task is to analyze the image and ex
 4.  A list of all service charges or tips.
 5.  The currency of the receipt as a 3-letter ISO 4217 code (e.g., USD, GBP, EUR).
 6.  For each extracted element (item, discount, service charge), provide a \`confidence\` score from 0 to 100.
-7.  Provide an \`overallConfidence\` score for the entire receipt.
+7.  The \`overallConfidence\` should be a holistic assessment of your confidence in the entire extraction. It should generally align with the average confidence of the individual items, but be marked down for poor image quality.
 
 Analyze the following receipt image and return the data in the specified JSON format.
 
@@ -96,12 +106,33 @@ const extractReceiptDataFlow = ai.defineFlow(
   },
   async (input) => {
     assertAuth(input.user);
-    const response = await extractReceiptDataPrompt(input);
-    
-    // Log the raw LLM output for easier debugging.
-    // This can be viewed in the Genkit Inspector or the terminal running the dev server.
-    console.log('Raw AI Response for receipt:', response.output);
 
-    return response.output!;
+    try {
+      const response = await extractReceiptDataPrompt(input);
+      const output = response.output;
+      
+      console.log('Raw AI Response for receipt:', output);
+
+      if (!output) {
+        throw new Error('The AI service returned an empty response.');
+      }
+
+      if (!output.isReceipt) {
+        throw new Error(output.rejectionReason || 'The uploaded image does not appear to be a receipt.');
+      }
+      
+      // If the AI determines the image quality is too low, reject it.
+      if (output.overallConfidence && output.overallConfidence < 60) {
+        throw new Error(output.rejectionReason || 'The receipt image is too unclear to read accurately. Please try again with a better photo.');
+      }
+      
+      return output;
+
+    } catch (error) {
+        console.error("Error in extractReceiptDataFlow:", error);
+        // Catch specific Genkit/API errors and generalize them for the user.
+        // This prevents leaking complex internal error messages.
+        throw new Error('The AI service failed to process the request. Please try again later.');
+    }
   }
 );

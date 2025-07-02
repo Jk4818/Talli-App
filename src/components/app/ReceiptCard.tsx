@@ -49,10 +49,11 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const discounts = receipt.discounts || [];
   const hasSuggestions = discounts.some(d => d.suggestedItemId);
   const isPayerMissing = !receipt.payerId;
-  const [isCardOpen, setIsCardOpen] = useState(isPayerMissing || hasSuggestions);
+  const [isCardOpen, setIsCardOpen] = useState(isPayerMissing || hasSuggestions || receipt.status === 'failed');
   
   const hasDiscountConfidence = discounts.some(d => d.confidence !== undefined);
   const hasServiceChargeConfidence = receipt.serviceCharge?.confidence !== undefined;
+  const hasMediumConfidence = receipt.overallConfidence !== undefined && receipt.overallConfidence < 85;
 
   const subtotal = items
     .filter(i => i.receiptId === receipt.id)
@@ -76,10 +77,10 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   useEffect(() => {
     // This effect ensures that if the payer status changes to missing
     // or new suggestions appear, the card will open to prompt the user.
-    if (isPayerMissing || hasSuggestions) {
+    if (isPayerMissing || hasSuggestions || receipt.status === 'failed') {
       setIsCardOpen(true);
     }
-  }, [isPayerMissing, hasSuggestions]);
+  }, [isPayerMissing, hasSuggestions, receipt.status]);
 
   useEffect(() => {
     // Automatically expand the discounts section if there's a conflict
@@ -119,7 +120,8 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
         <Card className={cn(
           'bg-card/50 overflow-hidden', 
           hasConflict && 'border-destructive',
-          isPayerMissing && !hasConflict && isCardOpen && 'border-primary'
+          isPayerMissing && !hasConflict && isCardOpen && 'border-primary',
+          receipt.status === 'failed' && 'border-destructive bg-destructive/10'
         )}>
             <div className="flex items-start p-6">
                 <CardHeader className="flex-1 p-0">
@@ -129,6 +131,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                       onBlur={(e) => handleUpdateReceipt({ name: e.target.value })}
                       className="text-lg font-semibold border-0 shadow-none -ml-3 focus-visible:ring-1 focus-visible:ring-ring flex-1"
                       maxLength={50}
+                      disabled={receipt.status !== 'processed'}
                     />
                     <div className='flex items-center gap-2 flex-shrink-0'>
                       {receipt.imageDataUri && (
@@ -167,7 +170,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                       )}
                     </div>
                   </div>
-                  {receipt.status === 'processed' && (
+                   {receipt.status === 'processed' && (
                     <CardDescription className='flex items-center flex-wrap gap-x-4 gap-y-1 mt-1.5'>
                       {!isCardOpen && hasConflict ? (
                         <div className="text-destructive font-medium flex items-center gap-2">
@@ -199,14 +202,10 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                       )}
                     </CardDescription>
                   )}
-                  {receipt.status === 'failed' && receipt.error && (
-                    <Alert variant="destructive" className="mt-4">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Scan Failed</AlertTitle>
-                      <AlertDescription>
-                        {receipt.error}
-                      </AlertDescription>
-                    </Alert>
+                  {receipt.status === 'failed' && (
+                     <CardDescription className="text-destructive font-medium mt-1.5">
+                        Processing failed. Expand card for details.
+                    </CardDescription>
                   )}
                 </CardHeader>
                 <CollapsibleTrigger className="flex-shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring -mr-2">
@@ -216,6 +215,17 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
             </div>
           
             <CollapsibleContent>
+              {receipt.status === 'failed' && (
+                <div className='px-6 pb-6'>
+                  <Alert variant="destructive" className="mt-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Scan Failed</AlertTitle>
+                    <AlertDescription>
+                      {receipt.error || "An unknown error occurred."}
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
               {hasConflict && receipt.status === 'processed' && (
                   <div className='px-6 pb-6'>
                       <Alert variant="destructive">
@@ -230,6 +240,15 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
               {receipt.status === 'processed' && (
                 <>
                   <CardContent className="space-y-4">
+                    {hasMediumConfidence && (
+                        <Alert variant="default" className="border-primary/50 text-primary-foreground [&>svg]:text-primary">
+                          <Sparkles className="h-4 w-4" />
+                          <AlertTitle>AI Confidence is Moderate</AlertTitle>
+                          <AlertDescription>
+                            The AI was about {receipt.overallConfidence}% confident in this scan. Please review the items and totals carefully for any errors.
+                          </AlertDescription>
+                        </Alert>
+                    )}
                      <div className="flex flex-col sm:flex-row sm:items-end sm:gap-4 space-y-4 sm:space-y-0">
                         <div className="flex-1 space-y-1.5">
                             <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 text-sm font-medium">
