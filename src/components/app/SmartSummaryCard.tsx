@@ -44,7 +44,7 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
 
 
 const SmartSummaryItem = ({ icon, title, description, children }: { icon: React.ReactNode; title: React.ReactNode; description?: React.ReactNode; children: React.ReactNode }) => (
-    <li className="flex items-center gap-4 py-3">
+    <li className="flex items-start gap-4 py-3">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
             {icon}
         </div>
@@ -107,59 +107,91 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
       </>
     );
 
-    const { roundingAdjustment, roundedItems } = summary;
-
     const pennyPerfectDialogDescription = React.useMemo(() => {
-        if (roundedItems.length === 0 && !roundingAdjustment) {
-             return <p>All items in this session were split perfectly without any need for rounding adjustments.</p>
+        const { roundingAdjustment, roundedItems, roundingOccurred, serviceChargeRounding } = summary;
+
+        if (!roundingOccurred) {
+            return <p>All items in this session were split perfectly without any need for rounding adjustments.</p>;
         }
 
-        const introText = roundedItems.length > 0 ? <p>This happens when an item's cost doesn't divide perfectly into cents among the sharers. The app distributes these extra pennies one by one to ensure fairness. The following items from your session required this kind of adjustment:</p> : null;
+        const hasItemRounding = roundedItems.length > 0;
+        const hasServiceChargeRounding = (serviceChargeRounding || []).length > 0;
+        const hasFinalRounding = !!roundingAdjustment && roundingAdjustment.amount !== 0;
 
         return (
             <>
-                {introText}
-                {roundedItems.length > 0 && (
-                    <div className="mt-4 rounded-md border bg-muted/50">
-                        <div className="space-y-3 p-2">
-                            {roundedItems.map((item, index) => (
-                                <React.Fragment key={index}>
-                                    {index > 0 && <Separator className="my-2 bg-border/50" />}
-                                    <div>
-                                        <div className="flex justify-between font-semibold">
-                                            <span>Item:</span>
-                                            <span className="font-mono text-right">{item.name}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs pl-4">
-                                            <span className='text-muted-foreground'>Cost:</span>
-                                            <span className="font-mono">{formatCurrency(item.cost)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs pl-4">
-                                            <span className='text-muted-foreground'>Split between:</span>
-                                            <span className="font-mono">{item.assigneesCount} people</span>
-                                        </div>
-                                        {item.adjustments.map((adj, adjIndex) => (
-                                            <div key={adjIndex} className="flex justify-between text-xs pl-4">
-                                                <span className='text-muted-foreground'>
-                                                    → {adj.participantName} paid
-                                                </span>
-                                                <span className="font-mono">
-                                                    {formatCurrency(Math.abs(adj.amount))}{' '}{adj.amount > 0 ? 'more' : 'less'}
-                                                </span>
+                <p>To ensure penny-perfect accuracy, small rounding adjustments are sometimes necessary. Here is a summary of adjustments made during this session:</p>
+                
+                {hasItemRounding && (
+                    <div className="mt-4">
+                        <h4 className="font-semibold text-foreground">Item-Level Rounding</h4>
+                        <p className="text-muted-foreground text-xs mb-2">Happens when an item's cost doesn't divide perfectly among sharers.</p>
+                        <div className="rounded-md border bg-muted/50">
+                            <div className="space-y-3 p-2">
+                                {roundedItems.map((item, index) => (
+                                    <React.Fragment key={index}>
+                                        {index > 0 && <Separator className="my-2 bg-border/50" />}
+                                        <div>
+                                            <div className="flex justify-between font-semibold">
+                                                <span>Item:</span>
+                                                <span className="font-mono text-right">{item.name}</span>
                                             </div>
-                                        ))}
-                                    </div>
-                                </React.Fragment>
+                                            <div className="flex justify-between text-xs pl-4">
+                                                <span className='text-muted-foreground'>Cost:</span>
+                                                <span className="font-mono">{formatCurrency(item.cost)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs pl-4">
+                                                <span className='text-muted-foreground'>Split between:</span>
+                                                <span className="font-mono">{item.assigneesCount} people</span>
+                                            </div>
+                                            {item.adjustments.map((adj, adjIndex) => (
+                                                <div key={adjIndex} className="flex justify-between text-xs pl-4">
+                                                    <span className='text-muted-foreground'>
+                                                        → {adj.participantName} paid
+                                                    </span>
+                                                    <span className="font-mono">
+                                                        {formatCurrency(Math.abs(adj.amount))}{' '}{adj.amount > 0 ? 'more' : 'less'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {hasServiceChargeRounding && (
+                    <div className="mt-4">
+                        <h4 className="font-semibold text-foreground">Service Charge Rounding</h4>
+                        <p className="text-muted-foreground text-xs mb-2">Happens when a percentage-based tip/fee results in a fraction of a cent.</p>
+                        <div className="rounded-md border bg-muted/50 p-3 space-y-2">
+                            {(serviceChargeRounding || []).map((scr, index) => (
+                                <div key={index} className="flex justify-between text-xs">
+                                    <span>Fee on "{scr.receiptName}"</span>
+                                    <span className="font-mono text-muted-foreground">Adjusted</span>
+                                </div>
                             ))}
                         </div>
                     </div>
                 )}
-                {roundingAdjustment && roundingAdjustment.amount !== 0 && (
-                     <p className='mt-4'>After all items were calculated, a final session-wide adjustment of <strong>{formatCurrency(Math.abs(roundingAdjustment.amount))}</strong> was {roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from'} <strong>{roundingAdjustment.participantName}'s</strong> share to make the grand total exact.</p>
+                
+                {hasFinalRounding && (
+                     <div className="mt-4">
+                        <h4 className="font-semibold text-foreground">Final Session Rounding</h4>
+                        <p className='mt-1 text-sm'>After all items were calculated, a final session-wide adjustment of <strong>{formatCurrency(Math.abs(roundingAdjustment.amount))}</strong> was {roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from'} <strong>{roundingAdjustment.participantName}'s</strong> share to make the grand total exact.</p>
+                     </div>
+                )}
+
+                {!hasItemRounding && !hasServiceChargeRounding && !hasFinalRounding && roundingOccurred && (
+                    <div className="mt-4">
+                        <p>A minor rounding adjustment was made to ensure the total was exact.</p>
+                    </div>
                 )}
             </>
         );
-    }, [roundedItems, roundingAdjustment, formatCurrency]);
+    }, [summary, formatCurrency]);
 
 
     const fairnessMetric = React.useMemo(() => {
@@ -186,18 +218,19 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
 
     const highestPayer = React.useMemo(() => {
       if (!summary.participantSummaries || summary.participantSummaries.length === 0) return null;
-      return summary.participantSummaries.reduce((max, p) => (p.totalPaid > max.totalPaid ? p : max), summary.participantSummaries[0]);
+      return summary.participantSummaries.reduce((max, p) => (p.totalPaid > max.totalPaid ? p : max));
     }, [summary.participantSummaries]);
 
     const highestShare = React.useMemo(() => {
       if (!summary.participantSummaries || summary.participantSummaries.length === 0) return null;
-      return summary.participantSummaries.reduce((max, p) => (p.totalShare > max.totalShare ? p : max), summary.participantSummaries[0]);
+      return summary.participantSummaries.reduce((max, p) => (p.totalShare > max.totalShare ? p : max));
     }, [summary.participantSummaries]);
 
     const mostExpensiveItem = React.useMemo(() => {
+        if (!items || items.length === 0) return null;
         const itemsWithCost = items.filter(i => i.cost > 0);
         if (itemsWithCost.length === 0) return null;
-        return itemsWithCost.reduce((max, item) => (item.cost > max.cost ? item : max), itemsWithCost[0]);
+        return itemsWithCost.reduce((max, item) => (item.cost > max.cost ? item : max));
     }, [items]);
     
     const aiConfidence = React.useMemo(() => {
@@ -229,13 +262,15 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
 
     const topSaver = React.useMemo(() => {
         if (participants.length === 0 || summary.participantSummaries.length === 0) return null;
-        const topSaverParticipant = summary.participantSummaries.reduce((max, p) => {
-            const maxSavings = Math.abs((max.breakdown.discounts || []).reduce((sum, d) => sum + d.amount, 0));
-            const currentSavings = Math.abs((p.breakdown.discounts || []).reduce((sum, d) => sum + d.amount, 0));
-            return currentSavings > maxSavings ? p : max;
+
+        const participantSavings = summary.participantSummaries.map(p => {
+            const savings = (p.breakdown.discounts || []).reduce((sum, d) => sum + Math.abs(d.amount), 0);
+            return { name: p.name, amount: savings };
         });
-        const maxSavings = Math.abs((topSaverParticipant.breakdown.discounts || []).reduce((sum, d) => sum + d.amount, 0));
-        if (maxSavings > 0) return { name: topSaverParticipant.name, amount: maxSavings };
+
+        const topSaverParticipant = participantSavings.reduce((max, current) => (current.amount > max.amount ? current : max));
+
+        if (topSaverParticipant.amount > 0) return topSaverParticipant;
         return null;
     }, [summary.participantSummaries, participants]);
 

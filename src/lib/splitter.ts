@@ -8,6 +8,7 @@ function distributeAmount(totalAmount: number, shares: Map<string, number>): Map
   const totalShares = pidsWithShares.reduce((sum, pid) => sum + (shares.get(pid) || 0), 0);
 
   if (totalShares === 0 || totalAmount === 0) {
+    pidsWithShares.forEach(pid => distributed.set(pid, 0));
     return distributed;
   }
 
@@ -49,6 +50,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       roundingAdjustment: undefined,
       roundingOccurred: false,
       roundedItems: [],
+      serviceChargeRounding: [],
     };
   }
   
@@ -70,6 +72,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
 
   let roundingOccurred = false;
   const roundedItems: SplitSummary['roundedItems'] = [];
+  const serviceChargeRoundings: SplitSummary['serviceChargeRounding'] = [];
   let totalItemCost = 0;
   let totalDiscounts = 0;
   let totalServiceCharge = 0;
@@ -89,6 +92,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
 
       if (item.assignees.length === 0) {
         // Only track the item's gross cost for the total, but no shares.
+        // Gross cost is still added to the subtotal for receipt-level calculations
         participantGrossSharesOnReceipt.set('unassigned', (participantGrossSharesOnReceipt.get('unassigned') || 0) + item.cost);
         return;
       }
@@ -165,7 +169,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         const proportion = effectiveItemCost > 0 ? netShare / effectiveItemCost : (item.assignees.length > 0 ? 1 / item.assignees.length : 0);
         
         const grossShare = item.cost * proportion;
-        const discountShare = itemTotalDiscount * proportion;
 
         summary.breakdown.items.push({
           itemId: item.id,
@@ -178,7 +181,8 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
             const individualDiscountShare = itemDiscount.amount * proportion;
              if (individualDiscountShare > 0) {
                 summary.breakdown.discounts.push({
-                    description: itemDiscount.name,
+                    itemId: item.id,
+                    description: `Discount on ${item.name}`,
                     amount: -Math.round(individualDiscountShare * rate),
                     receiptId: receipt.id,
                     isDiscount: true,
@@ -216,7 +220,10 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         const serviceChargeBase = [...participantGrossSharesOnReceipt.values()].reduce((s, c) => s + c, 0) - (receipt.discounts || []).reduce((t, d) => t + d.amount, 0);
         const exactServiceCharge = serviceChargeBase * (receipt.serviceCharge.value / 100);
         localServiceCharge = Math.round(exactServiceCharge);
-        if (exactServiceCharge !== localServiceCharge) roundingOccurred = true;
+        if (exactServiceCharge !== localServiceCharge) {
+            roundingOccurred = true;
+            serviceChargeRoundings.push({ receiptName: receipt.name });
+        }
     }
     
     totalServiceCharge += Math.round(localServiceCharge * rate);
@@ -331,5 +338,6 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
     roundingAdjustment,
     roundingOccurred,
     roundedItems,
+    serviceChargeRounding: serviceChargeRoundings,
   };
 };

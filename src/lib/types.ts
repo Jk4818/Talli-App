@@ -97,6 +97,9 @@ export interface SplitSummary {
         amount: number; // in cents, e.g. +1 or -1
     }[];
   }[];
+  serviceChargeRounding?: {
+    receiptName: string;
+  }[];
 }
 
 export interface SessionState {
