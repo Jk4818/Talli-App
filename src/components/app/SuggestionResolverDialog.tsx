@@ -16,7 +16,7 @@ import { AppDispatch, RootState } from '@/lib/redux/store';
 import { formatCurrency } from '@/lib/utils';
 import { applySuggestedDiscount, ignoreSuggestedDiscount, reassignSuggestedDiscount, removeDiscount } from '@/lib/redux/slices/sessionSlice';
 import { DropDrawer, DropDrawerTrigger, DropDrawerContent, DropDrawerLabel, DropDrawerItem } from '../ui/dropdrawer';
-import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogAction, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '../ui/alert-dialog';
+import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogAction, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogContent } from '../ui/alert-dialog';
 
 interface Suggestion {
   receiptId: string;
