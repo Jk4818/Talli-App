@@ -50,7 +50,7 @@ const SmartSummaryItem = ({ icon, title, description, children }: { icon: React.
         </div>
         <div className="flex-1 min-w-0">
             <div className="font-semibold text-foreground">{title}</div>
-            {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+            {description && <div className="text-xs text-muted-foreground mt-0.5">{description}</div>}
         </div>
         <div className="text-right shrink-0">
             {children}
@@ -108,13 +108,14 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
     );
 
     const pennyPerfectDialogDescription = React.useMemo(() => {
-        const { roundingAdjustment, roundedItems, roundingOccurred, serviceChargeRounding } = summary;
+        const { roundingAdjustment, roundedItems, discountRounding, serviceChargeRounding, roundingOccurred } = summary;
 
         if (!roundingOccurred) {
             return <p>All items in this session were split perfectly without any need for rounding adjustments.</p>;
         }
 
         const hasItemRounding = roundedItems.length > 0;
+        const hasDiscountRounding = (discountRounding || []).length > 0;
         const hasServiceChargeRounding = (serviceChargeRounding || []).length > 0;
         const hasFinalRounding = !!roundingAdjustment && roundingAdjustment.amount !== 0;
 
@@ -161,18 +162,75 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                         </div>
                     </div>
                 )}
+
+                {hasDiscountRounding && (
+                    <div className="mt-4">
+                        <h4 className="font-semibold text-foreground">Discount Rounding</h4>
+                        <p className="text-muted-foreground text-xs mb-2">Happens when a receipt-wide discount doesn't divide perfectly across participants' shares.</p>
+                        <div className="rounded-md border bg-muted/50">
+                            <div className="space-y-3 p-2">
+                                {(discountRounding || []).map((disc, index) => (
+                                    <React.Fragment key={index}>
+                                        {index > 0 && <Separator className="my-2 bg-border/50" />}
+                                        <div>
+                                            <div className="flex justify-between font-semibold">
+                                                <span>Discount:</span>
+                                                <span className="font-mono text-right">{disc.description}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs pl-4">
+                                                <span className='text-muted-foreground'>Total:</span>
+                                                <span className="font-mono">{formatCurrency(disc.totalAmount)}</span>
+                                            </div>
+                                            {disc.adjustments.map((adj, adjIndex) => (
+                                                <div key={adjIndex} className="flex justify-between text-xs pl-4">
+                                                    <span className='text-muted-foreground'>
+                                                        → {adj.participantName} saved
+                                                    </span>
+                                                    <span className="font-mono">
+                                                        {formatCurrency(Math.abs(adj.amount))}{' '}{adj.amount > 0 ? 'more' : 'less'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
                 
                 {hasServiceChargeRounding && (
                     <div className="mt-4">
                         <h4 className="font-semibold text-foreground">Service Charge Rounding</h4>
-                        <p className="text-muted-foreground text-xs mb-2">Happens when a percentage-based tip/fee results in a fraction of a cent.</p>
-                        <div className="rounded-md border bg-muted/50 p-3 space-y-2">
-                            {(serviceChargeRounding || []).map((scr, index) => (
-                                <div key={index} className="flex justify-between text-xs">
-                                    <span>Fee on "{scr.receiptName}"</span>
-                                    <span className="font-mono text-muted-foreground">Adjusted</span>
-                                </div>
-                            ))}
+                        <p className="text-muted-foreground text-xs mb-2">Happens when a tip/fee doesn't divide perfectly across participants' shares.</p>
+                        <div className="rounded-md border bg-muted/50">
+                             <div className="space-y-3 p-2">
+                                {(serviceChargeRounding || []).map((sc, index) => (
+                                    <React.Fragment key={index}>
+                                        {index > 0 && <Separator className="my-2 bg-border/50" />}
+                                        <div>
+                                            <div className="flex justify-between font-semibold">
+                                                <span>Charge:</span>
+                                                <span className="font-mono text-right">{sc.description}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs pl-4">
+                                                <span className='text-muted-foreground'>Total:</span>
+                                                <span className="font-mono">{formatCurrency(sc.totalAmount)}</span>
+                                            </div>
+                                            {sc.adjustments.map((adj, adjIndex) => (
+                                                <div key={adjIndex} className="flex justify-between text-xs pl-4">
+                                                    <span className='text-muted-foreground'>
+                                                        → {adj.participantName} paid
+                                                    </span>
+                                                    <span className="font-mono">
+                                                        {formatCurrency(Math.abs(adj.amount))}{' '}{adj.amount > 0 ? 'more' : 'less'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </React.Fragment>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -180,11 +238,11 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                 {hasFinalRounding && (
                      <div className="mt-4">
                         <h4 className="font-semibold text-foreground">Final Session Rounding</h4>
-                        <p className='mt-1 text-sm'>After all items were calculated, a final session-wide adjustment of <strong>{formatCurrency(Math.abs(roundingAdjustment.amount))}</strong> was {roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from'} <strong>{roundingAdjustment.participantName}'s</strong> share to make the grand total exact.</p>
+                        <div className='mt-1 text-sm'>After all items were calculated, a final session-wide adjustment of <strong>{formatCurrency(Math.abs(roundingAdjustment.amount))}</strong> was {roundingAdjustment.amount > 0 ? 'added to' : 'subtracted from'} <strong>{roundingAdjustment.participantName}'s</strong> share to make the grand total exact.</div>
                      </div>
                 )}
 
-                {!hasItemRounding && !hasServiceChargeRounding && !hasFinalRounding && roundingOccurred && (
+                {!hasItemRounding && !hasDiscountRounding && !hasServiceChargeRounding && !hasFinalRounding && roundingOccurred && (
                     <div className="mt-4">
                         <p>A minor rounding adjustment was made to ensure the total was exact.</p>
                     </div>
@@ -242,7 +300,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
 
     const aiConfidenceDialogDescription = (
       <>
-        <p>This is the average confidence score from all AI-scanned receipts in this session. A lower score suggests you should double-check the extracted data. Here's the breakdown:</p>
+        <div>This is the average confidence score from all AI-scanned receipts in this session. A lower score suggests you should double-check the extracted data. Here's the breakdown:</div>
         <div className="space-y-3 rounded-md border p-3 bg-muted/50 mt-4">
           {receipts
             .filter(r => r.overallConfidence !== undefined && r.status === 'processed')

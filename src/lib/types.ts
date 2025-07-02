@@ -97,8 +97,23 @@ export interface SplitSummary {
         amount: number; // in cents, e.g. +1 or -1
     }[];
   }[];
+  discountRounding?: {
+    receiptName: string;
+    description: string;
+    totalAmount: number;
+    adjustments: {
+      participantName: string;
+      amount: number;
+    }[];
+  }[];
   serviceChargeRounding?: {
     receiptName: string;
+    description: string;
+    totalAmount: number;
+    adjustments: {
+      participantName: string;
+      amount: number;
+    }[];
   }[];
 }
 
