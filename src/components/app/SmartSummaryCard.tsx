@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
-import { cn } from '@/lib/utils';
 
 
 const InfoDialog = ({ title, description, trigger }: { title: string, description: React.ReactNode, trigger: React.ReactNode }) => (
@@ -44,13 +43,14 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
 );
 
 
-const SmartSummaryItem = ({ icon, title, children }: { icon: React.ReactNode; title: React.ReactNode; children: React.ReactNode }) => (
+const SmartSummaryItem = ({ icon, title, description, children }: { icon: React.ReactNode; title: React.ReactNode; description?: React.ReactNode; children: React.ReactNode }) => (
     <li className="flex items-center gap-4 py-3">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
             {icon}
         </div>
         <div className="flex-1 min-w-0">
             {title}
+            {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
         </div>
         <div className="text-right shrink-0">
             {children}
@@ -58,6 +58,13 @@ const SmartSummaryItem = ({ icon, title, children }: { icon: React.ReactNode; ti
     </li>
 );
 
+interface SmartSummaryCardProps {
+    summary: SplitSummary;
+    participants: Participant[];
+    items: Item[];
+    receipts: Receipt[];
+    globalCurrency: string;
+}
 
 export default function SmartSummaryCard({ summary, participants, items, receipts, globalCurrency }: SmartSummaryCardProps) {
     const formatCurrency = React.useCallback((amount: number) => {
@@ -188,9 +195,9 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
     }, [summary.participantSummaries]);
 
     const mostExpensiveItem = React.useMemo(() => {
-      const itemsWithCost = items.filter(i => i.cost > 0);
-      if (itemsWithCost.length === 0) return null;
-      return itemsWithCost.reduce((max, item) => (item.cost > max.cost ? item : max), itemsWithCost[0]);
+        const itemsWithCost = items.filter(i => i.cost > 0);
+        if (itemsWithCost.length === 0) return null;
+        return itemsWithCost.reduce((max, item) => (item.cost > max.cost ? item : max), itemsWithCost[0]);
     }, [items]);
     
     const aiConfidence = React.useMemo(() => {
@@ -221,19 +228,16 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
     );
 
     const topSaver = React.useMemo(() => {
-      if (participants.length === 0 || summary.participantSummaries.length === 0) return null;
-      const topSaverParticipant = summary.participantSummaries.reduce(
-        (max, p) => {
-            const maxSavings = Math.abs((max?.breakdown.discounts || []).reduce((sum, d) => sum + d.amount, 0));
+        if (participants.length === 0 || summary.participantSummaries.length === 0) return null;
+        const topSaverParticipant = summary.participantSummaries.reduce((max, p) => {
+            const maxSavings = Math.abs((max.breakdown.discounts || []).reduce((sum, d) => sum + d.amount, 0));
             const currentSavings = Math.abs((p.breakdown.discounts || []).reduce((sum, d) => sum + d.amount, 0));
             return currentSavings > maxSavings ? p : max;
-        }
-      );
-      const maxSavings = Math.abs((topSaverParticipant?.breakdown.discounts || []).reduce((sum, d) => sum + d.amount, 0));
-      if (maxSavings > 0) return { name: topSaverParticipant.name, amount: maxSavings };
-      return null;
+        });
+        const maxSavings = Math.abs((topSaverParticipant.breakdown.discounts || []).reduce((sum, d) => sum + d.amount, 0));
+        if (maxSavings > 0) return { name: topSaverParticipant.name, amount: maxSavings };
+        return null;
     }, [summary.participantSummaries, participants]);
-
 
     const socialButterfly = React.useMemo(() => {
         if (participants.length < 2) return null;
@@ -278,6 +282,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                     }/>
                                 </div>
                             }
+                            description="Average AI confidence in receipt scans."
                         >
                             <p className="font-medium text-foreground">{aiConfidence}%</p>
                         </SmartSummaryItem>
@@ -293,9 +298,9 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                    }/>
                                 </div>
                             }
+                            description="How evenly the bill was shared."
                         >
                             <p className="font-medium text-foreground">{fairnessMetric.value}</p>
-                            <p className="text-xs text-muted-foreground">{fairnessMetric.text}</p>
                         </SmartSummaryItem>
                     )}
                     {summary.roundingOccurred && (
@@ -309,6 +314,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                                     }/>
                                </div>
                             }
+                            description="Rounding was applied for accuracy."
                         >
                             <div className="flex items-center gap-2">
                                 <p className="font-medium text-foreground">Adjusted</p>
@@ -320,6 +326,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                         <SmartSummaryItem
                             icon={<Award className="h-5 w-5" />}
                             title={<p className="font-semibold text-foreground">Top Saver</p>}
+                            description="Benefited most from discounts."
                         >
                             <p className="font-medium text-foreground truncate">{topSaver.name}</p>
                             <p className="text-xs text-muted-foreground">{formatCurrency(topSaver.amount)}</p>
@@ -329,6 +336,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                         <SmartSummaryItem
                             icon={<HeartHandshake className="h-5 w-5" />}
                             title={<p className="font-semibold text-foreground">Social Butterfly</p>}
+                            description="Shared items with the most people."
                         >
                            <p className="font-medium text-foreground truncate">{socialButterfly.name}</p>
                            <p className="text-xs text-muted-foreground">{socialButterfly.count} connections</p>
@@ -338,6 +346,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                         <SmartSummaryItem
                             icon={<Trophy className="h-5 w-5" />}
                             title={<p className="font-semibold text-foreground">Top Payer</p>}
+                            description="Contributed the most money."
                         >
                             <p className="font-medium text-foreground truncate">{highestPayer.name}</p>
                             <p className="text-xs text-muted-foreground">{formatCurrency(highestPayer.totalPaid)}</p>
@@ -347,6 +356,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                         <SmartSummaryItem
                             icon={<Pizza className="h-5 w-5" />}
                             title={<p className="font-semibold text-foreground">Highest Share</p>}
+                            description="Largest portion of the final bill."
                         >
                            <p className="font-medium text-foreground truncate">{highestShare.name}</p>
                            <p className="text-xs text-muted-foreground">{formatCurrency(highestShare.totalShare)}</p>
@@ -356,6 +366,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                         <SmartSummaryItem
                             icon={<Gem className="h-5 w-5" />}
                             title={<p className="font-semibold text-foreground">Priciest Item</p>}
+                            description={`Shared between ${mostExpensiveItem.assignees.length} people.`}
                         >
                              <p className="font-medium text-foreground truncate">{mostExpensiveItem.name}</p>
                              <p className="text-xs text-muted-foreground">{formatCurrency(mostExpensiveItem.cost)}</p>
