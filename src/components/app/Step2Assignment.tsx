@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
@@ -20,6 +20,7 @@ import { ScrollArea } from '../ui/scroll-area';
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
+  const assignmentSectionRef = useRef<HTMLDivElement>(null);
 
   const itemsWithCost = useMemo(() => {
     return items.filter(item => {
@@ -78,6 +79,7 @@ export default function Step2Assignment() {
 
   const handleJumpToItem = (index: number) => {
     emblaApi?.scrollTo(index);
+    assignmentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   
   useEffect(() => {
@@ -133,7 +135,7 @@ export default function Step2Assignment() {
             </div>
             <Progress value={itemsWithCost.length > 0 ? (assignedItemsCount / itemsWithCost.length) * 100 : 100} />
         </motion.div>
-        <motion.div variants={fadeInUp} className="flex flex-col items-center justify-center">
+        <motion.div variants={fadeInUp} className="flex flex-col items-center justify-center" ref={assignmentSectionRef}>
             <div className="w-full max-w-md">
                 <div className="overflow-hidden" ref={emblaRef}>
                     <div className="flex" style={{ marginLeft: '-1rem' }}>
@@ -182,7 +184,7 @@ export default function Step2Assignment() {
                         <AlertCircle className="w-6 h-6 text-destructive"/>
                         <div>
                             <CardTitle>Items Requiring Attention</CardTitle>
-                            <CardDescription>These items have incomplete assignments. Click 'Go to Item' to fix them.</CardDescription>
+                            <CardDescription>These items have incomplete assignments. Click an item to fix it.</CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -195,7 +197,11 @@ export default function Step2Assignment() {
                                     const effectiveCost = item.cost - totalItemDiscount;
 
                                     return (
-                                        <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                                        <div 
+                                          key={item.id} 
+                                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 hover:bg-accent/50 cursor-pointer"
+                                          onClick={() => handleJumpToItem(index)}
+                                        >
                                             <div className="flex-1 space-y-1.5 min-w-0">
                                                 <div className="flex justify-between items-center gap-4">
                                                     <p className="font-medium leading-snug truncate" title={item.name}>{item.name}</p>
@@ -205,7 +211,15 @@ export default function Step2Assignment() {
                                                 </div>
                                                 <p className="text-sm text-destructive font-medium">{issue}</p>
                                             </div>
-                                            <Button variant="outline" size="sm" onClick={() => handleJumpToItem(index)} className="w-full sm:w-auto shrink-0">
+                                            <Button 
+                                              variant="outline" 
+                                              size="sm" 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleJumpToItem(index);
+                                              }} 
+                                              className="w-full sm:w-auto shrink-0"
+                                            >
                                                 Go to Item
                                             </Button>
                                         </div>
