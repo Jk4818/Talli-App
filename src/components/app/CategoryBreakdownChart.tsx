@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -63,16 +64,22 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
         });
 
         // Aggregate Service Charges
-        const totalServiceCharge = targetSummaries.reduce((sum, p) => sum + p.breakdown.serviceCharges.reduce((s, sc) => s + sc.amount, 0), 0);
-        if (totalServiceCharge > 0) {
-            addToTotals('Service', 'Tips & Fees', totalServiceCharge);
-        }
+        targetSummaries.forEach(pSummary => {
+            pSummary.breakdown.serviceCharges.forEach(entry => {
+                if (entry.amount > 0) {
+                    addToTotals('Service', entry.description || 'Service Charge', entry.amount);
+                }
+            });
+        });
 
         // Aggregate Discounts
-        const totalDiscountAmount = targetSummaries.reduce((sum, p) => sum + p.breakdown.discounts.reduce((s, d) => s + d.amount, 0), 0);
-        if (totalDiscountAmount < 0) {
-            addToTotals('Discounts', 'Total Savings', totalDiscountAmount);
-        }
+        targetSummaries.forEach(pSummary => {
+            pSummary.breakdown.discounts.forEach(entry => {
+                if (entry.amount < 0) {
+                    addToTotals('Discounts', entry.description || 'Discount', entry.amount);
+                }
+            });
+        });
 
         return Object.entries(newTotals)
           .map(([category, data]) => ({
@@ -188,7 +195,7 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
                         <div className="space-y-1.5 px-3 pb-3 pt-1 border-t border-inherit">
                             {cat.subCategories.length > 0 ? cat.subCategories.map(sub => (
                                 <div key={sub.name} className={cn("flex justify-between items-center text-sm text-muted-foreground pl-9", isDiscount && "text-destructive/90")}>
-                                    <span>{sub.name}</span>
+                                    <span className="break-words pr-2">{sub.name}</span>
                                     <span className="font-mono">{formatCurrency(sub.total, globalCurrency)}</span>
                                 </div>
                             )) : (

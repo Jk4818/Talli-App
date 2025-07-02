@@ -87,7 +87,11 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       const itemTotalDiscount = (item.discounts || []).reduce((sum, d) => sum + d.amount, 0);
       const effectiveItemCost = item.cost - itemTotalDiscount;
 
-      if (item.assignees.length === 0) return;
+      if (item.assignees.length === 0) {
+        // Only track the item's gross cost for the total, but no shares.
+        participantGrossSharesOnReceipt.set('unassigned', (participantGrossSharesOnReceipt.get('unassigned') || 0) + item.cost);
+        return;
+      }
 
       const netShares = new Map<string, number>();
       let itemCausedRounding = false;
@@ -108,16 +112,18 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
                 return { id: pid, share };
             });
             let remainder = effectiveItemCost - distributedAmount;
-            if (remainder > 0) {
+            if (remainder !== 0) {
                 roundingOccurred = true;
                 itemCausedRounding = true;
                 const assigneesSortedByDebt = calculatedShares.sort((a, b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0));
-                for (let i = 0; i < remainder; i++) {
+                
+                const amountToDistribute = remainder > 0 ? 1 : -1;
+                for (let i = 0; i < Math.abs(remainder); i++) {
                     const assigneeToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
-                    assigneeToAdjust.share += 1;
+                    assigneeToAdjust.share += amountToDistribute;
                     const pidToAdjust = assigneeToAdjust.id;
-                    participantRoundingDebt.set(pidToAdjust, (participantRoundingDebt.get(pidToAdjust) || 0) + 1);
-                    adjustments.push({ participantName: participantIdToName.get(pidToAdjust)!, amount: 1 });
+                    participantRoundingDebt.set(pidToAdjust, (participantRoundingDebt.get(pidToAdjust) || 0) + amountToDistribute);
+                    adjustments.push({ participantName: participantIdToName.get(pidToAdjust)!, amount: amountToDistribute });
                 }
             }
             calculatedShares.forEach(s => netShares.set(s.id, s.share));
@@ -168,15 +174,18 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
           receiptId: receipt.id
         });
 
-        if (discountShare > 0) {
-          summary.breakdown.discounts.push({
-            description: `Discount on ${item.name}`,
-            amount: -Math.round(discountShare * rate),
-            receiptId: receipt.id,
-            isDiscount: true,
-          });
-        }
-
+        (item.discounts || []).forEach(itemDiscount => {
+            const individualDiscountShare = itemDiscount.amount * proportion;
+             if (individualDiscountShare > 0) {
+                summary.breakdown.discounts.push({
+                    description: itemDiscount.name,
+                    amount: -Math.round(individualDiscountShare * rate),
+                    receiptId: receipt.id,
+                    isDiscount: true,
+                });
+            }
+        });
+        
         participantGrossSharesOnReceipt.set(pid, (participantGrossSharesOnReceipt.get(pid) || 0) + grossShare);
       });
     });
@@ -216,7 +225,8 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
       distributedServiceCharge.forEach((amount, pid) => {
         const summary = finalSummaries.get(pid)!;
         const serviceChargeShare = Math.round(amount * rate);
-        summary.breakdown.serviceCharges.push({ description: 'Service Charge / Tip', amount: serviceChargeShare, receiptId: receipt.id });
+        const description = `Tip/Fee on "${receipt.name}"`;
+        summary.breakdown.serviceCharges.push({ description, amount: serviceChargeShare, receiptId: receipt.id });
         summary.totalServiceChargeShare += serviceChargeShare;
       });
     }
