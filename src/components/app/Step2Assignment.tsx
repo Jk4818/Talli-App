@@ -46,9 +46,9 @@ export default function Step2Assignment() {
             const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
             const effectiveCost = item.cost - totalItemDiscount;
 
-            // Only flag items that have assignees but have errors in their split logic.
-            // An unassigned item is not an error, it's just an incomplete task.
-            if (item.assignees.length > 0) {
+            if (item.assignees.length === 0 && effectiveCost > 0) {
+                issue = "This item is unassigned.";
+            } else if (item.assignees.length > 0) {
               if (item.splitMode === 'percentage') {
                   const totalPercentage = item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments?.[pid] || 0), 0);
                   if (totalPercentage !== 100) {
@@ -60,11 +60,6 @@ export default function Step2Assignment() {
                       issue = "Exact amounts don't add up to the item total.";
                   }
               }
-            } else if (effectiveCost > 0) {
-              // This is now the only case for unassigned items to be flagged,
-              // but we will only show the card for *errors*, not this state.
-              // For robustness, we can keep the logic but not render it.
-              issue = "This item is unassigned.";
             }
 
             return { item, index, issue };
@@ -72,13 +67,6 @@ export default function Step2Assignment() {
         .filter((data): data is { item: typeof data.item; index: number; issue: string } => data.issue !== null);
   }, [itemsWithCost]);
 
-  const assignmentErrors = useMemo(() => {
-    // We only want to show the card for actual ERRORS, not just unassigned items.
-    return itemsRequiringAttention.filter(
-      (p) => p.issue !== "This item is unassigned."
-    );
-  }, [itemsRequiringAttention]);
-  
   const issueItems = useMemo(() => {
     const issues = new Map<string, string>();
     itemsRequiringAttention.forEach(({ item, issue }) => {
@@ -170,7 +158,7 @@ export default function Step2Assignment() {
         </motion.div>
         <motion.div 
             variants={fadeInUp} 
-            className="flex flex-col items-center justify-center scroll-mt-24" 
+            className="flex flex-col items-center justify-center scroll-mt-28" 
             ref={assignmentSectionRef}
         >
             <div className="w-full max-w-md">
@@ -214,24 +202,25 @@ export default function Step2Assignment() {
             </div>
         </motion.div>
 
-        {assignmentErrors.length > 0 && (
+        {itemsRequiringAttention.length > 0 && (
             <motion.div variants={fadeInUp}>
                 <Card className="max-w-2xl mx-auto flex flex-col">
                     <CardHeader className='flex-row items-center gap-4 space-y-0'>
                         <AlertCircle className="w-6 h-6 text-destructive"/>
                         <div>
-                            <CardTitle>Assignment Errors</CardTitle>
-                            <CardDescription>These items have assignment conflicts that must be resolved to continue.</CardDescription>
+                            <CardTitle>Items Requiring Attention</CardTitle>
+                            <CardDescription>These items have incomplete assignments. Click an item to fix it.</CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent className="flex-1 min-h-0 p-0">
                         <ScrollArea className="h-full max-h-72">
                             <div className="divide-y divide-border">
-                                {assignmentErrors.map(({ item, index, issue }) => {
+                                {itemsRequiringAttention.map(({ item, index, issue }) => {
                                     const receipt = receipts.find(r => r.id === item.receiptId);
                                     const currency = receipt?.currency || globalCurrency;
                                     const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
                                     const effectiveCost = item.cost - totalItemDiscount;
+                                    const isError = issue !== 'This item is unassigned.';
 
                                     return (
                                         <div 
@@ -246,7 +235,9 @@ export default function Step2Assignment() {
                                                         {formatCurrency(effectiveCost, currency)}
                                                     </p>
                                                 </div>
-                                                <p className="text-sm text-destructive font-medium">{issue}</p>
+                                                <p className={cn("text-sm font-medium", isError ? "text-destructive" : "text-muted-foreground")}>
+                                                  {issue}
+                                                </p>
                                             </div>
                                             <Button 
                                               variant="outline" 
