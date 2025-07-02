@@ -127,14 +127,19 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
     if (item.splitMode === 'equal') {
         const baseShare = Math.floor(itemCost / assignees.length);
         let remainder = itemCost % assignees.length;
-        assignees.forEach(id => {
-          let share = baseShare;
-          if (remainder > 0) {
-            share += 1;
-            remainder--;
-          }
-          shares[id] = share;
+        
+        // Sort assignees by ID to make rounding distribution deterministic in this view
+        const sortedAssignees = [...assignees].sort((a,b) => a.localeCompare(b));
+
+        sortedAssignees.forEach(id => {
+          shares[id] = baseShare;
         });
+        
+        // Distribute the remainder pennies to the first N people in the sorted list
+        for(let i = 0; i < remainder; i++) {
+          const pidToAdjust = sortedAssignees[i];
+          shares[pidToAdjust] += 1;
+        }
     } else if (item.splitMode === 'percentage') {
         if (totalPercentage === 100) {
             let distributedAmount = 0;
@@ -147,17 +152,14 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
 
             // Distribute rounding errors
             let remainder = itemCost - distributedAmount;
-            for (const s of calculatedShares) {
-                if (remainder === 0) break;
-                if (remainder > 0) {
-                    s.share++;
-                    remainder--;
-                } else if (remainder < 0) {
-                    s.share--;
-                    remainder++;
-                }
+            // Sort by ID to make rounding deterministic in this view
+            const sortedCalculatedShares = calculatedShares.sort((a,b) => a.id.localeCompare(b.id));
+
+            for (let i = 0; i < Math.abs(remainder); i++) {
+                const amountToDistribute = remainder > 0 ? 1 : -1;
+                sortedCalculatedShares[i % sortedCalculatedShares.length].share += amountToDistribute;
             }
-            calculatedShares.forEach(s => shares[s.id] = s.share);
+            sortedCalculatedShares.forEach(s => shares[s.id] = s.share);
         } else {
             assignees.forEach(id => shares[id] = 0);
         }

@@ -9,7 +9,11 @@ function distributeAmount(
 ): { distributed: Map<string, number>, adjustments: { participantName: string, amount: number }[] } {
   const distributed = new Map<string, number>();
   const adjustments: { participantName: string, amount: number }[] = [];
-  const pidsWithShares = [...shares.keys()].filter(pid => (shares.get(pid) || 0) > 0);
+  // Sort the participants to ensure deterministic distribution of rounding errors
+  const pidsWithShares = [...shares.keys()]
+    .filter(pid => (shares.get(pid) || 0) > 0)
+    .sort((a,b) => a.localeCompare(b));
+
   const totalShares = pidsWithShares.reduce((sum, pid) => sum + (shares.get(pid) || 0), 0);
 
   if (totalShares === 0 || totalAmount === 0) {
@@ -129,7 +133,12 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
             if (remainder !== 0) {
                 roundingOccurred = true;
                 itemCausedRounding = true;
-                const assigneesSortedByDebt = calculatedShares.sort((a, b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0));
+                const assigneesSortedByDebt = calculatedShares.sort((a, b) => {
+                  const debtA = participantRoundingDebt.get(a.id) || 0;
+                  const debtB = participantRoundingDebt.get(b.id) || 0;
+                  if (debtA !== debtB) return debtA - debtB;
+                  return a.id.localeCompare(b.id);
+                });
                 
                 const amountToDistribute = remainder > 0 ? 1 : -1;
                 for (let i = 0; i < Math.abs(remainder); i++) {
@@ -158,7 +167,12 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
           let remainder = effectiveItemCost % item.assignees.length;
           item.assignees.forEach(id => netShares.set(id, baseShare));
           if (remainder > 0) {
-            const assigneesSortedByDebt = [...item.assignees].sort((a, b) => (participantRoundingDebt.get(a) || 0) - (participantRoundingDebt.get(b) || 0));
+            const assigneesSortedByDebt = [...item.assignees].sort((a, b) => {
+              const debtA = participantRoundingDebt.get(a) || 0;
+              const debtB = participantRoundingDebt.get(b) || 0;
+              if (debtA !== debtB) return debtA - debtB;
+              return a.localeCompare(b); // a stable sort for equal debt
+            });
             for (let i = 0; i < remainder; i++) {
                 const pidToAdjust = assigneesSortedByDebt[i % assigneesSortedByDebt.length];
                 netShares.set(pidToAdjust, (netShares.get(pidToAdjust) || 0) + 1);
@@ -248,7 +262,7 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
         roundingOccurred = true;
         serviceChargeRoundings.push({
             receiptName: receipt.name,
-            description: `Tip/Fee on "${receipt.name}"`,
+            description: `Fee on "${receipt.name}"`,
             totalAmount: localServiceCharge,
             adjustments: serviceChargeAdjustments
         });
@@ -309,7 +323,12 @@ export const calculateSplits = (session: SessionState): SplitSummary => {
   if (Math.abs(roundingDifference) > 0.5) { // Only adjust if difference is more than half a cent
     roundingOccurred = true;
     const payers = [...finalSummaries.values()].filter(s => s.totalPaid > 0).sort((a,b) => b.totalPaid - a.totalPaid);
-    const personToAdjust = (payers.length > 0 ? payers : [...finalSummaries.values()]).sort((a,b) => (participantRoundingDebt.get(a.id) || 0) - (participantRoundingDebt.get(b.id) || 0))[0];
+    const personToAdjust = (payers.length > 0 ? payers : [...finalSummaries.values()]).sort((a,b) => {
+        const debtA = participantRoundingDebt.get(a.id) || 0;
+        const debtB = participantRoundingDebt.get(b.id) || 0;
+        if (debtA !== debtB) return debtA - debtB;
+        return a.id.localeCompare(b.id);
+    })[0];
 
     if (personToAdjust) {
         const summaryToAdjust = finalSummaries.get(personToAdjust.id);
