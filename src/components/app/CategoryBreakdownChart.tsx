@@ -1,16 +1,12 @@
-
 "use client";
 
 import React from 'react';
-import { Bar, BarChart, XAxis, YAxis, Tooltip, Cell } from 'recharts';
-import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { Item } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { type ChartConfig } from '@/components/ui/chart';
+import { type Item } from '@/lib/types';
+import { formatCurrency, cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { LayoutGrid, ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
-import { Separator } from '../ui/separator';
-import { cn } from '@/lib/utils';
 
 interface CategoryBreakdownChartProps {
   items: Item[];
@@ -63,11 +59,6 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
       .sort((a, b) => CATEGORIES_ORDER.indexOf(a.category as any) - CATEGORIES_ORDER.indexOf(b.category as any));
   }, [items]);
 
-  const chartData = categoryTotals.map(d => ({
-    category: d.category,
-    total: d.total / 100, // convert to float for chart
-  }));
-
   const chartConfig = {
     total: { label: 'Total', color: 'hsl(var(--primary))' },
     Food: { label: 'Food', color: 'hsl(var(--chart-1))' },
@@ -87,68 +78,49 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
     )
   }
 
+  const grandTotal = categoryTotals.reduce((sum, cat) => sum + cat.total, 0);
+
   return (
-    <>
-        <ChartContainer config={chartConfig} className="min-h-[100px] w-full">
-            <BarChart
-                accessibilityLayer
-                data={chartData}
-                layout="vertical"
-                margin={{ left: 10, right: 10 }}
-                barCategoryGap="25%"
-            >
-                <YAxis
-                dataKey="category"
-                type="category"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                tickFormatter={(value) => chartConfig[value as keyof typeof chartConfig]?.label}
-                className="fill-muted-foreground text-xs"
-                />
-                <XAxis type="number" hide />
-                <Tooltip
-                cursor={{ fill: 'hsl(var(--accent) / 0.3)' }}
-                content={<ChartTooltipContent
-                    formatter={(value) => formatCurrency(Number(value) * 100, globalCurrency)}
-                    hideLabel
-                />}
-                />
-                <Bar dataKey="total" layout="vertical" barSize={16} radius={[0, 8, 8, 0]}>
-                    {chartData.map((entry) => (
-                        <Cell key={`cell-${entry.category}`} fill={chartConfig[entry.category as keyof typeof chartConfig]?.color} />
-                    ))}
-                </Bar>
-            </BarChart>
-        </ChartContainer>
-        <Separator className="my-4" />
-        <div className="space-y-2">
-            <h4 className="font-medium text-sm">Detailed Breakdown</h4>
-            {categoryTotals.map(cat => (
-                <Collapsible key={cat.category} className="rounded-lg border px-4">
-                    <CollapsibleTrigger className="flex justify-between items-center w-full py-3 group">
-                        <div className="flex items-center gap-3">
-                            <span className="text-lg w-6 text-center">{getCategoryEmoji(cat.category)}</span>
-                            <span className="font-semibold">{cat.category}</span>
+    <div className="space-y-2">
+      {categoryTotals.map((cat, index) => {
+        const percentage = grandTotal > 0 ? (cat.total / grandTotal) * 100 : 0;
+        const color = chartConfig[cat.category as keyof typeof chartConfig]?.color || chartConfig.total.color;
+        
+        return (
+          <Collapsible key={cat.category} defaultOpen={index < 2}>
+            <CollapsibleTrigger className="group flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-accent/50 data-[state=open]:bg-accent/50">
+              <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                      <span className="text-lg w-6 text-center">{getCategoryEmoji(cat.category)}</span>
+                      <span className="font-semibold">{cat.category}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                      <span className="font-mono font-medium">{formatCurrency(cat.total, globalCurrency)}</span>
+                      <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                  </div>
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                  <div 
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${percentage}%`, backgroundColor: color }} 
+                  />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <div className="space-y-1.5 px-3 py-2">
+                    {cat.subCategories.length > 0 ? cat.subCategories.map(sub => (
+                        <div key={sub.name} className="flex justify-between items-center text-sm text-muted-foreground pl-9">
+                            <span>{sub.name}</span>
+                            <span className="font-mono">{formatCurrency(sub.total, globalCurrency)}</span>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <span className="font-mono font-medium">{formatCurrency(cat.total, globalCurrency)}</span>
-                            <ChevronDown className={cn("h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180")} />
-                        </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                        <div className="pb-3 pl-5 space-y-1">
-                            {cat.subCategories.map(sub => (
-                                <div key={sub.name} className="flex justify-between items-center text-sm text-muted-foreground">
-                                    <span>{sub.name}</span>
-                                    <span className="font-mono">{formatCurrency(sub.total, globalCurrency)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </CollapsibleContent>
-                </Collapsible>
-            ))}
-        </div>
-    </>
+                    )) : (
+                        <div className="pl-9 text-sm text-muted-foreground">No sub-categories found.</div>
+                    )}
+                </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )
+      })}
+    </div>
   );
 }
