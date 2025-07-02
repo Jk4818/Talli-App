@@ -87,8 +87,12 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
         const color = chartConfig[cat.category as keyof typeof chartConfig]?.color || chartConfig.total.color;
         
         return (
-          <Collapsible key={cat.category} defaultOpen={index < 2}>
-            <CollapsibleTrigger className="group flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-accent/50 data-[state=open]:bg-accent/50">
+          <Collapsible
+            key={cat.category}
+            defaultOpen={index < 2}
+            className="rounded-lg border bg-card transition-colors hover:bg-accent/50 data-[state=open]:bg-primary/10 data-[state=open]:border-primary/20"
+          >
+            <CollapsibleTrigger className="group flex w-full flex-col gap-2 p-3 text-left">
               <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                       <span className="text-lg w-6 text-center">{getCategoryEmoji(cat.category)}</span>
@@ -96,7 +100,7 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
                   </div>
                   <div className="flex items-center gap-4">
                       <span className="font-mono font-medium">{formatCurrency(cat.total, globalCurrency)}</span>
-                      <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                   </div>
               </div>
               <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
@@ -107,7 +111,7 @@ export default function CategoryBreakdownChart({ items, globalCurrency }: Catego
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent>
-                <div className="space-y-1.5 px-3 py-2">
+                <div className="space-y-1.5 px-3 pb-3 pt-1 border-t border-inherit">
                     {cat.subCategories.length > 0 ? cat.subCategories.map(sub => (
                         <div key={sub.name} className="flex justify-between items-center text-sm text-muted-foreground pl-9">
                             <span>{sub.name}</span>
