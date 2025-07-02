@@ -24,16 +24,14 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
     <AlertDialogTrigger asChild>
       {trigger}
     </AlertDialogTrigger>
-    <AlertDialogContent className="flex flex-col max-h-[85vh]">
-      <AlertDialogHeader className="border-b p-6">
+    <AlertDialogContent className="flex flex-col max-h-[85vh] p-0">
+      <AlertDialogHeader className="border-b px-6 pt-6 pb-4">
         <AlertDialogTitle>{title}</AlertDialogTitle>
       </AlertDialogHeader>
-      <ScrollArea className="flex-1 p-0">
-          <AlertDialogDescription asChild>
-            <div className="space-y-4 text-left text-sm text-foreground/80 p-6">
-              {description}
-            </div>
-          </AlertDialogDescription>
+      <ScrollArea className="flex-1">
+        <div className="space-y-4 text-left text-sm text-foreground/80 p-6">
+          {description}
+        </div>
       </ScrollArea>
       <AlertDialogFooter className="border-t p-6">
         <AlertDialogAction>Got it</AlertDialogAction>
@@ -421,8 +419,10 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             title="Top Saver"
                             description="Benefited most from discounts."
                         >
-                            <p className="font-medium text-foreground truncate">{topSaver.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatCurrency(topSaver.amount)}</p>
+                            <div className='text-right'>
+                                <p className="font-medium text-foreground truncate">{topSaver.name}</p>
+                                <p className="text-xs text-muted-foreground">{formatCurrency(topSaver.amount)}</p>
+                            </div>
                         </SmartSummaryItem>
                     )}
                     {socialButterfly && (
@@ -431,8 +431,10 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             title="Social Butterfly"
                             description="Shared items with the most people."
                         >
-                           <p className="font-medium text-foreground truncate">{socialButterfly.name}</p>
-                           <p className="text-xs text-muted-foreground">{socialButterfly.count} connections</p>
+                           <div className='text-right'>
+                                <p className="font-medium text-foreground truncate">{socialButterfly.name}</p>
+                                <p className="text-xs text-muted-foreground">{socialButterfly.count} connections</p>
+                           </div>
                         </SmartSummaryItem>
                     )}
                     {highestPayer && highestPayer.totalPaid > 0 && (
@@ -441,8 +443,10 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             title="Top Payer"
                             description="Contributed the most money."
                         >
-                            <p className="font-medium text-foreground truncate">{highestPayer.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatCurrency(highestPayer.totalPaid)}</p>
+                            <div className='text-right'>
+                                <p className="font-medium text-foreground truncate">{highestPayer.name}</p>
+                                <p className="text-xs text-muted-foreground">{formatCurrency(highestPayer.totalPaid)}</p>
+                            </div>
                         </SmartSummaryItem>
                     )}
                     {highestShare && highestShare.totalShare > 0 && (
@@ -451,8 +455,10 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             title="Highest Share"
                             description="Largest portion of the final bill."
                         >
-                           <p className="font-medium text-foreground truncate">{highestShare.name}</p>
-                           <p className="text-xs text-muted-foreground">{formatCurrency(highestShare.totalShare)}</p>
+                           <div className='text-right'>
+                                <p className="font-medium text-foreground truncate">{highestShare.name}</p>
+                                <p className="text-xs text-muted-foreground">{formatCurrency(highestShare.totalShare)}</p>
+                           </div>
                         </SmartSummaryItem>
                     )}
                     {mostExpensiveItem && (
@@ -461,8 +467,10 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             title="Priciest Item"
                             description={`Shared between ${mostExpensiveItem.assignees.length} people.`}
                         >
-                             <p className="font-medium text-foreground truncate">{mostExpensiveItem.name}</p>
-                             <p className="text-xs text-muted-foreground">{formatCurrency(mostExpensiveItem.cost)}</p>
+                             <div className='text-right'>
+                                <p className="font-medium text-foreground truncate">{mostExpensiveItem.name}</p>
+                                <p className="text-xs text-muted-foreground">{formatCurrency(mostExpensiveItem.cost)}</p>
+                             </div>
                         </SmartSummaryItem>
                     )}
                 </ul>
