@@ -276,6 +276,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="col-span-3"
+                    autoFocus
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -394,7 +395,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
               </div>
             </div>
           </div>
-          <DialogFooter className="p-6 border-t flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+          <DialogFooter className="p-6 border-t flex-col-reverse sm:flex-row sm:justify-between gap-4">
             <AlertDialog>
                 <AlertDialogTrigger asChild>
                     <Button type="button" variant="destructive" className="w-full sm:w-auto sm:mr-auto">
@@ -415,12 +416,12 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-4">
-                <div className="text-left sm:text-right">
+            <div className="flex w-full flex-col-reverse gap-4 sm:w-auto sm:flex-row sm:items-center">
+                <div className="flex items-center justify-between sm:justify-end gap-4">
                     <p className="text-sm text-muted-foreground">Effective Cost</p>
                     <p className="font-bold text-lg">{formatCurrency(effectiveCost, currentReceiptCurrency)}</p>
                 </div>
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" className="w-full sm:w-auto">Save Changes</Button>
             </div>
           </DialogFooter>
         </form>
