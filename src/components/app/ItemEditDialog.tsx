@@ -36,7 +36,7 @@ import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDra
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-
+import { useToast } from '@/hooks/use-toast';
 
 interface ItemEditDialogProps {
   item: Item | null;
@@ -58,6 +58,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [discountAmountStrings, setDiscountAmountStrings] = useState<Record<string, string>>({});
   const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (item) {
@@ -77,10 +78,29 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
     }
   }, [item]);
 
-  const handleSave = () => {
+  const performSave = () => {
     const costInCents = Math.round(parseFloat(cost) * 100);
     if (item && name.trim() && !isNaN(costInCents) && receiptId) {
       onSave({ id: item.id, name: name.trim(), cost: costInCents, receiptId, discounts, category, subCategory: subCategory.trim() });
+      return true;
+    }
+    return false;
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = performSave();
+    if (success) {
+      toast({
+        title: 'Item Saved',
+        description: `Changes to "${name.trim()}" have been saved.`,
+      });
+    }
+  };
+
+  const handleSaveAndClose = () => {
+    const success = performSave();
+    if (success) {
       onOpenChange(false);
     }
   };
@@ -176,16 +196,17 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] flex flex-col">
-        <DialogHeader className="p-6 pb-4">
+      <DialogContent className="max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>Edit Item</DialogTitle>
           <DialogDescription>
-            Update the details for this item. Click save when you're done.
+            Update the details for this item. Press Enter to save, or click the button when you're done.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="space-y-4 px-6 pb-6">
-            {pendingSuggestion && (
+        <form onSubmit={handleFormSubmit} className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6">
+            <div className="space-y-4 py-4">
+              {pendingSuggestion && (
               <div className="mb-4 p-3 rounded-md bg-accent/30 border border-primary/20 space-y-3 text-sm">
                   <div className="flex justify-between items-start">
                       <div className='flex items-center gap-2 font-semibold text-accent-foreground'>
@@ -245,7 +266,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button size="sm" type="button" variant="destructive" className="w-full">
+                          <Button type="button" size="sm" variant="destructive" className="w-full">
                             <Trash2 className="h-4 w-4 mr-1.5" /> Remove Discount
                           </Button>
                         </AlertDialogTrigger>
@@ -264,164 +285,165 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                       </AlertDialog>
                   </div>
               </div>
-            )}
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="cost" className="text-right">
-                  Original Cost
-                </Label>
-                <Input
-                  id="cost"
-                  type="text"
-                  inputMode="decimal"
-                  value={cost}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
-                        setCost(value);
-                    }
-                  }}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="receipt" className="text-right">
-                  Receipt
-                </Label>
-                <div className="col-span-3">
-                  <ResponsiveSelect value={receiptId} onValueChange={setReceiptId}>
-                    <ResponsiveSelectTrigger id="receipt" disabled={receipts.length === 0} placeholder="Select a receipt">
-                      {receipts.find((r) => r.id === receiptId)?.name}
-                    </ResponsiveSelectTrigger>
-                    <ResponsiveSelectContent>
-                      <ResponsiveSelectLabel>Select a Receipt</ResponsiveSelectLabel>
-                      {receipts.map((r) => (
-                        <ResponsiveSelectItem key={r.id} value={r.id}>
-                          {r.name}
-                        </ResponsiveSelectItem>
-                      ))}
-                    </ResponsiveSelectContent>
-                  </ResponsiveSelect>
+              )}
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="col-span-3"
+                  />
                 </div>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Category</Label>
-                <div className="col-span-3">
-                  <RadioGroup
-                    value={category}
-                    onValueChange={(v: 'Food' | 'Drink' | 'Other') => setCategory(v)}
-                    className="flex items-center gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Food" id={`cat-food-${item.id}`} />
-                      <Label htmlFor={`cat-food-${item.id}`} className="font-normal cursor-pointer">Food</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Drink" id={`cat-drink-${item.id}`} />
-                      <Label htmlFor={`cat-drink-${item.id}`} className="font-normal cursor-pointer">Drink</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Other" id={`cat-other-${item.id}`} />
-                      <Label htmlFor={`cat-other-${item.id}`} className="font-normal cursor-pointer">Other</Label>
-                    </div>
-                  </RadioGroup>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="cost" className="text-right">
+                    Original Cost
+                  </Label>
+                  <Input
+                    id="cost"
+                    type="text"
+                    inputMode="decimal"
+                    value={cost}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
+                          setCost(value);
+                      }
+                    }}
+                    className="col-span-3"
+                  />
                 </div>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="sub-category" className="text-right">
-                  Sub-category
-                </Label>
-                <Input
-                  id="sub-category"
-                  value={subCategory}
-                  onChange={(e) => setSubCategory(e.target.value)}
-                  className="col-span-3"
-                  placeholder="e.g. Pizza, Beer, Side"
-                />
-              </div>
-              <Separator />
-              <div>
-                <Label>Item Discounts</Label>
-                <div className="mt-2 space-y-2">
-                  {discounts.map(discount => (
-                    <div key={discount.id} className="flex flex-col sm:flex-row items-start sm:items-end gap-2 rounded-md border p-3 bg-secondary/30">
-                      <div className='space-y-1.5 flex-1 min-w-[100px]'>
-                          <Label htmlFor={`item-discount-name-${discount.id}`} className="text-xs text-muted-foreground">Discount Name</Label>
-                          <Input 
-                              id={`item-discount-name-${discount.id}`}
-                              placeholder="Discount name"
-                              value={discount.name}
-                              onChange={(e) => handleDiscountNameChange(discount.id, e.target.value)}
-                          />
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="receipt" className="text-right">
+                    Receipt
+                  </Label>
+                  <div className="col-span-3">
+                    <ResponsiveSelect value={receiptId} onValueChange={setReceiptId}>
+                      <ResponsiveSelectTrigger id="receipt" disabled={receipts.length === 0} placeholder="Select a receipt">
+                        {receipts.find((r) => r.id === receiptId)?.name}
+                      </ResponsiveSelectTrigger>
+                      <ResponsiveSelectContent>
+                        <ResponsiveSelectLabel>Select a Receipt</ResponsiveSelectLabel>
+                        {receipts.map((r) => (
+                          <ResponsiveSelectItem key={r.id} value={r.id}>
+                            {r.name}
+                          </ResponsiveSelectItem>
+                        ))}
+                      </ResponsiveSelectContent>
+                    </ResponsiveSelect>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Category</Label>
+                  <div className="col-span-3">
+                    <RadioGroup
+                      value={category}
+                      onValueChange={(v: 'Food' | 'Drink' | 'Other') => setCategory(v)}
+                      className="flex items-center gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Food" id={`cat-food-${item.id}`} />
+                        <Label htmlFor={`cat-food-${item.id}`} className="font-normal cursor-pointer">Food</Label>
                       </div>
-                      <div className="flex w-full items-end justify-between gap-2 sm:w-auto sm:justify-start">
-                          <div className='space-y-1.5'>
-                              <Label htmlFor={`item-discount-amount-${discount.id}`} className="text-xs text-muted-foreground">Amount</Label>
-                              <Input 
-                                  id={`item-discount-amount-${discount.id}`}
-                                  type="text"
-                                  inputMode="decimal"
-                                  placeholder="0.00"
-                                  value={discountAmountStrings[discount.id] ?? ''}
-                                  onChange={(e) => handleDiscountAmountStringChange(discount.id, e.target.value)}
-                                  onBlur={() => handleDiscountAmountBlur(discount.id)}
-                                  className="w-28 text-right"
-                              />
-                          </div>
-                          <Button variant="ghost" type="button" size="icon" className="mb-[1px]" onClick={() => handleRemoveDiscount(discount.id)}>
-                              <Trash2 className="h-4 w-4" />
-                          </Button>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Drink" id={`cat-drink-${item.id}`} />
+                        <Label htmlFor={`cat-drink-${item.id}`} className="font-normal cursor-pointer">Drink</Label>
                       </div>
-                    </div>
-                  ))}
-                  <Button variant="outline" type="button" size="sm" onClick={handleAddDiscount} className="w-full">
-                      <Plus className="h-4 w-4 mr-2"/> Add Item Discount
-                    </Button>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Other" id={`cat-other-${item.id}`} />
+                        <Label htmlFor={`cat-other-${item.id}`} className="font-normal cursor-pointer">Other</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="sub-category" className="text-right">
+                    Sub-category
+                  </Label>
+                  <Input
+                    id="sub-category"
+                    value={subCategory}
+                    onChange={(e) => setSubCategory(e.target.value)}
+                    className="col-span-3"
+                    placeholder="e.g. Pizza, Beer, Side"
+                  />
+                </div>
+                <Separator />
+                <div>
+                  <Label>Item Discounts</Label>
+                  <div className="mt-2 space-y-2">
+                    {discounts.map(discount => (
+                      <div key={discount.id} className="flex flex-col sm:flex-row items-start sm:items-end gap-2 rounded-md border p-3 bg-secondary/30">
+                        <div className='space-y-1.5 flex-1 min-w-[100px]'>
+                            <Label htmlFor={`item-discount-name-${discount.id}`} className="text-xs text-muted-foreground">Discount Name</Label>
+                            <Input 
+                                id={`item-discount-name-${discount.id}`}
+                                placeholder="Discount name"
+                                value={discount.name}
+                                onChange={(e) => handleDiscountNameChange(discount.id, e.target.value)}
+                            />
+                        </div>
+                        <div className="flex w-full items-end justify-between gap-2 sm:w-auto sm:justify-start">
+                            <div className='space-y-1.5'>
+                                <Label htmlFor={`item-discount-amount-${discount.id}`} className="text-xs text-muted-foreground">Amount</Label>
+                                <Input 
+                                    id={`item-discount-amount-${discount.id}`}
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0.00"
+                                    value={discountAmountStrings[discount.id] ?? ''}
+                                    onChange={(e) => handleDiscountAmountStringChange(discount.id, e.target.value)}
+                                    onBlur={() => handleDiscountAmountBlur(discount.id)}
+                                    className="w-28 text-right"
+                                />
+                            </div>
+                            <Button type="button" variant="ghost" size="icon" className="mb-[1px]" onClick={() => handleRemoveDiscount(discount.id)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddDiscount} className="w-full">
+                        <Plus className="h-4 w-4 mr-2"/> Add Item Discount
+                      </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <DialogFooter className="flex-col sm:flex-row sm:justify-between sm:space-x-2 border-t p-6">
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button type="button" variant="destructive" className="sm:mr-auto mt-2 sm:mt-0 w-full sm:w-auto">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Item
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the item "{item?.name}". This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteItem}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <div className="flex items-center gap-4">
-                <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Effective Cost</p>
-                    <p className="font-bold text-lg">{formatCurrency(effectiveCost, currentReceiptCurrency)}</p>
-                </div>
-                <Button type="button" onClick={handleSave}>Save Changes</Button>
-            </div>
-        </DialogFooter>
+          <DialogFooter className="p-6 border-t flex-col sm:flex-row sm:justify-between sm:space-x-2">
+              <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                      <Button type="button" variant="destructive" className="sm:mr-auto mt-2 sm:mt-0 w-full sm:w-auto">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Item
+                      </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              This will permanently delete the item "{item?.name}". This action cannot be undone.
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteItem}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                  </AlertDialogContent>
+              </AlertDialog>
+              <div className="flex items-center gap-4">
+                  <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Effective Cost</p>
+                      <p className="font-bold text-lg">{formatCurrency(effectiveCost, currentReceiptCurrency)}</p>
+                  </div>
+                  <Button type="button" onClick={handleSaveAndClose}>Save Changes</Button>
+              </div>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
