@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
 import { formatCurrency } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 export default function Step2Assignment() {
   const { items, currentAssignmentIndex, receipts, globalCurrency } = useSelector((state: RootState) => state.session);
@@ -83,6 +84,10 @@ export default function Step2Assignment() {
   };
   
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     if (!emblaApi) return;
 
     const onSelect = (api: UseEmblaCarouselType[1]) => {
@@ -135,7 +140,11 @@ export default function Step2Assignment() {
             </div>
             <Progress value={itemsWithCost.length > 0 ? (assignedItemsCount / itemsWithCost.length) * 100 : 100} />
         </motion.div>
-        <motion.div variants={fadeInUp} className="flex flex-col items-center justify-center" ref={assignmentSectionRef}>
+        <motion.div 
+            variants={fadeInUp} 
+            className="flex flex-col items-center justify-center scroll-mt-20" 
+            ref={assignmentSectionRef}
+        >
             <div className="w-full max-w-md">
                 <div className="overflow-hidden" ref={emblaRef}>
                     <div className="flex" style={{ marginLeft: '-1rem' }}>
@@ -187,8 +196,8 @@ export default function Step2Assignment() {
                             <CardDescription>These items have incomplete assignments. Click an item to fix it.</CardDescription>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="max-h-72 rounded-md border">
+                    <CardContent className="p-0">
+                        <ScrollArea className="max-h-72">
                             <div className="divide-y divide-border">
                                 {itemsRequiringAttention.map(({ item, index, issue }) => {
                                     const receipt = receipts.find(r => r.id === item.receiptId);
