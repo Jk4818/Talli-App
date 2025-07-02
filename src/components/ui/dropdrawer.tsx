@@ -135,19 +135,31 @@ const DropDrawerItem = React.forwardRef<
 >(({ children, icon, className, ...props }, ref) => {
   const { isMobile, setOpen } = useDropDrawer();
 
-  const handleInteraction = (event: React.SyntheticEvent) => {
+  const handleInteraction = (event: React.SyntheticEvent | Event) => {
     // The consumer might pass an `onSelect` prop to prevent default behavior.
-    props.onSelect?.(event as Event);
+    // Radix's `onSelect` expects a native Event.
+    if (props.onSelect) {
+      if ("nativeEvent" in event) {
+        // It's a SyntheticEvent, so we pass the underlying native event.
+        props.onSelect(event.nativeEvent);
+      } else {
+        // It's already a native Event.
+        props.onSelect(event);
+      }
+    }
 
     // The consumer might pass an `onClick` prop (e.g., from an AlertDialogTrigger).
-    // This is a bit of a hack since DropdownMenuItem doesn't natively have onClick,
-    // but it's passed via {...props} when using `asChild`.
-    // We cast `props` to `any` to access it without a TS error.
     const consumerOnClick = (props as any).onClick;
     consumerOnClick?.(event);
 
+    // Check if default action was prevented, for both event types.
+    const wasDefaultPrevented =
+      "isDefaultPrevented" in event
+        ? event.isDefaultPrevented()
+        : event.defaultPrevented;
+
     // If the event was not default-prevented, close the menu.
-    if (!event.defaultPrevented) {
+    if (!wasDefaultPrevented) {
       setOpen(false);
     }
   };
