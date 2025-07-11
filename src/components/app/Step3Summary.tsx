@@ -65,25 +65,19 @@ export default function Step3Summary() {
 
   const recapText = useMemo(() => {
     const lines = [];
-    lines.push(`Total: ${formatCurrency(calculatedSummary.total)}`);
-    lines.push(''); // blank line
+    lines.push(`💰 Bill Summary (Total: ${formatCurrency(calculatedSummary.total)})`);
+    lines.push('--------------------');
     
-    calculatedSummary.participantSummaries.forEach(p => {
-        if (p.balance < -0.5) {
-            lines.push(`${p.name} owes ${formatCurrency(Math.abs(p.balance))}`);
-        } else if (p.balance > 0.5) {
-            lines.push(`${p.name} gets back ${formatCurrency(p.balance)}`);
-        }
-    });
-
     if (calculatedSummary.settlements.length > 0) {
-        lines.push('');
-        lines.push('---');
         lines.push('To settle up:');
         calculatedSummary.settlements.forEach(s => {
-            lines.push(`- ${s.from} pays ${s.to} ${formatCurrency(s.amount)}`);
+            lines.push(`- ${s.from} ➡️ ${s.to}: ${formatCurrency(s.amount)}`);
         });
+    } else {
+        lines.push("✅ All settled up! No payments needed.");
     }
+    lines.push('--------------------');
+    lines.push('Generated with Talli');
 
     return lines.join('\n');
   }, [calculatedSummary, formatCurrency]);
