@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { restoreSession } from '@/lib/redux/slices/sessionSlice';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
-import { type SessionState, type ParticipantSummary, type BreakdownEntry } from '@/lib/types';
+import { type SessionState, type ParticipantSummary, type BreakdownEntry, type Item } from '@/lib/types';
 import { Logo } from '@/components/Logo';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
@@ -180,7 +180,7 @@ export default function ReportPage() {
     return new Map(sessionState.participants.map(p => [p.id, p]));
   }, [sessionState.participants]);
 
-  const getShareDetails = (item: SessionState['items'][0]) => {
+  const getShareDetails = (item: Item) => {
     if (sessionState.participants.length === 0) return '';
     const assignees = item.assignees.map(pid => participantMap.get(pid)?.name || '?');
     if (assignees.length === 0) return 'Unassigned';
@@ -319,6 +319,7 @@ export default function ReportPage() {
                                     <thead>
                                         <tr className="border-b">
                                             <th className="text-left font-medium p-2">Item</th>
+                                            <th className="text-center font-medium p-2">Qty</th>
                                             <th className="text-left font-medium p-2">Split Details</th>
                                             <th className="text-right font-medium p-2">Cost</th>
                                         </tr>
@@ -332,6 +333,7 @@ export default function ReportPage() {
                                                     <div key={d.id} className='text-xs text-destructive'>↳ {d.name} ({formatCurrency(-d.amount, receipt.currency)})</div>
                                                   ))}
                                                 </td>
+                                                <td className="p-2 align-top text-center">{item.quantity}</td>
                                                 <td className="p-2 align-top text-muted-foreground text-xs break-words">
                                                     {getShareDetails(item)}
                                                 </td>

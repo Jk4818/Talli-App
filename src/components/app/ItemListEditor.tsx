@@ -199,7 +199,10 @@ export default function ItemListEditor() {
                   >
                     <div className="flex justify-between items-start gap-4">
                         <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold leading-snug truncate">{item.name}</h3>
+                            <h3 className="font-semibold leading-snug truncate">
+                              {item.name}
+                              {item.quantity > 1 && <span className="text-muted-foreground font-light ml-1.5">x{item.quantity}</span>}
+                            </h3>
                             <p className="text-sm text-muted-foreground truncate" title={receipt?.name || 'N/A'}>
                                 From: {receipt?.name || 'N/A'}
                             </p>
@@ -224,9 +227,9 @@ export default function ItemListEditor() {
                             <p className="font-mono text-xl font-bold text-foreground">
                                 {formatCurrency(effectiveCost, currency)}
                             </p>
-                            {totalItemDiscount > 0 && (
+                            {(totalItemDiscount > 0 || (item.quantity > 1 && item.unitCost)) && (
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    (was {formatCurrency(item.cost, currency)})
+                                    {item.quantity > 1 && item.unitCost ? `@ ${formatCurrency(item.unitCost, currency)} each` : `(was ${formatCurrency(item.cost, currency)})`}
                                 </p>
                             )}
                         </div>

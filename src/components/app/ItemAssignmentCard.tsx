@@ -39,6 +39,7 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
   
   const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
   const effectiveCost = item.cost - totalItemDiscount;
+  const showUnitCost = item.quantity > 1 && item.unitCost;
 
   return (
     <>
@@ -53,7 +54,10 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
                         </AccessibleTooltip>
                     )}
                     <AccessibleTooltip content={<p>{item.name}</p>}>
-                      <CardTitle className="text-2xl font-headline truncate cursor-default">{item.name}</CardTitle>
+                      <CardTitle className="text-2xl font-headline truncate cursor-default">
+                        {item.name}
+                        {item.quantity > 1 && <span className="text-muted-foreground font-light ml-2">x{item.quantity}</span>}
+                      </CardTitle>
                     </AccessibleTooltip>
                 </div>
                   <CardDescription>
@@ -68,9 +72,10 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
                   <Badge variant="secondary" className="text-lg">
                       {formatCurrency(effectiveCost, receipt?.currency || 'USD')}
                   </Badge>
-                  {totalItemDiscount > 0 && (
+                  {(totalItemDiscount > 0 || showUnitCost) && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      (was {formatCurrency(item.cost, receipt?.currency || 'USD')})
+                      {showUnitCost && `@ ${formatCurrency(item.unitCost!, receipt?.currency || 'USD')} each`}
+                      {totalItemDiscount > 0 && ` (was ${formatCurrency(item.cost, receipt?.currency || 'USD')})`}
                     </p>
                   )}
                 </div>

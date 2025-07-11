@@ -7,7 +7,9 @@ export interface Item {
   id: string;
   receiptId: string;
   name: string;
-  cost: number; // in cents, represents the original, pre-discount cost
+  quantity: number; // The number of units for this line item
+  unitCost?: number; // The cost of a single unit, in cents
+  cost: number; // in cents, represents the original, pre-discount cost for all units (quantity * unitCost)
   discounts: Discount[]; // Item-specific discounts
   assignees: string[]; // array of participant IDs
   splitMode: 'equal' | 'percentage' | 'exact';

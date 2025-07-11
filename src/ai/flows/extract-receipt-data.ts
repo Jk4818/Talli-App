@@ -28,7 +28,9 @@ export type ExtractReceiptDataInput = z.infer<typeof ExtractReceiptDataInputSche
 const ItemSchema = z.object({
   id: z.string().describe('A temporary, unique identifier for this item within this response (e.g., "item-1", "item-2").'),
   name: z.string().describe('The name of the item.'),
-  cost: z.number().describe('The cost of the item.'),
+  quantity: z.number().int().min(1).default(1).describe('The quantity of this item. Default to 1 if not specified.'),
+  unitCost: z.number().optional().describe('The cost of a single unit of the item. If provided, the `cost` field should equal `quantity` * `unitCost`.'),
+  cost: z.number().describe('The total cost for the line item (quantity * unit cost).'),
   category: z.enum(['Food', 'Drink', 'Other']).describe("The primary category of the item. Use 'Other' if unsure."),
   subCategory: z.string().optional().describe("A specific, one-or-two-word sub-category for the item (e.g., 'Pizza', 'Beer', 'Side', 'Dessert')."),
   confidence: z.number().min(0).max(100).optional().describe('A percentage confidence score (0-100) on the accuracy of this item extraction.'),
@@ -82,7 +84,9 @@ For a good quality receipt, extract the following information:
 1.  A list of all individual items. For each item, you MUST provide:
     - a temporary unique \`id\` (e.g., "item-1").
     - its \`name\`.
-    - its \`cost\`.
+    - its \`quantity\`. If not specified, default to 1.
+    - its total \`cost\` for all quantities.
+    - its optional \`unitCost\` if specified on the receipt.
     - its primary \`category\` ('Food', 'Drink', or 'Other').
     - a concise \`subCategory\` (e.g., "Pizza", "Beer", "Side", "Dessert", "Cocktail").
 2.  A list of all discounts. For each discount, provide its \`name\` and its \`amount\` (as a positive number).
@@ -107,10 +111,10 @@ const extractReceiptDataFlow = ai.defineFlow(
   async (input) => {
     assertAuth(input.user);
 
-    let output: ExtractReceiptDataOutput | undefined;
+    let output: ExtractReceiptDataOutput | undefined | null;
     try {
       const response = await extractReceiptDataPrompt(input);
-      output = response.output || undefined;
+      output = response.output;
     } catch (error) {
       console.error("Error in AI service call:", error);
       // This catch block is ONLY for true service failures (e.g. network, API key issues).

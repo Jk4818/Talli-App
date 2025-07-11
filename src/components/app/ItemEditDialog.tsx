@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Item, Receipt, Discount } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -49,7 +49,9 @@ interface ItemEditDialogProps {
 
 export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenChange, onSave, onDelete, pendingSuggestion }: ItemEditDialogProps) {
   const [name, setName] = useState('');
-  const [cost, setCost] = useState('');
+  const [costStr, setCostStr] = useState('');
+  const [unitCostStr, setUnitCostStr] = useState('');
+  const [quantity, setQuantity] = useState(1);
   const [receiptId, setReceiptId] = useState('');
   const [category, setCategory] = useState<'Food' | 'Drink' | 'Other'>('Other');
   const [subCategory, setSubCategory] = useState('');
@@ -57,10 +59,40 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const [discountAmountStrings, setDiscountAmountStrings] = useState<Record<string, string>>({});
   const dispatch = useDispatch<AppDispatch>();
 
+  const updateCosts = useCallback((source: 'total' | 'unit' | 'quantity', value: number) => {
+    let newTotal = parseFloat(costStr) * 100 || 0;
+    let newUnit = parseFloat(unitCostStr) * 100 || 0;
+    let newQty = quantity;
+
+    if (source === 'quantity') {
+      newQty = value;
+      if (newUnit > 0) {
+        newTotal = newUnit * newQty;
+      } else if (newTotal > 0 && newQty > 0) {
+        newUnit = newTotal / newQty;
+      }
+    } else if (source === 'total') {
+      newTotal = value;
+      if (newQty > 0) {
+        newUnit = newTotal / newQty;
+      }
+    } else if (source === 'unit') {
+      newUnit = value;
+      if (newQty > 0) {
+        newTotal = newUnit * newQty;
+      }
+    }
+    
+    setCostStr((newTotal / 100).toFixed(2));
+    setUnitCostStr((newUnit / 100).toFixed(2));
+  }, [costStr, unitCostStr, quantity]);
+
   useEffect(() => {
     if (item) {
       setName(item.name);
-      setCost((item.cost / 100).toFixed(2));
+      setQuantity(item.quantity);
+      setCostStr((item.cost / 100).toFixed(2));
+      setUnitCostStr(item.unitCost ? (item.unitCost / 100).toFixed(2) : '');
       setReceiptId(item.receiptId);
       setCategory(item.category || 'Other');
       setSubCategory(item.subCategory || '');
@@ -77,13 +109,23 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
 
   const handleSaveAndClose = (e: React.FormEvent) => {
     e.preventDefault();
-    const costInCents = Math.round(parseFloat(cost) * 100);
+    const costInCents = Math.round(parseFloat(costStr) * 100);
+    const unitCostInCents = quantity > 0 ? Math.round(costInCents / quantity) : 0;
     if (item && name.trim() && !isNaN(costInCents) && receiptId) {
-      onSave({ id: item.id, name: name.trim(), cost: costInCents, receiptId, discounts, category, subCategory: subCategory.trim() });
+      onSave({ 
+        id: item.id, 
+        name: name.trim(), 
+        cost: costInCents, 
+        quantity,
+        unitCost: unitCostInCents,
+        receiptId, 
+        discounts, 
+        category, 
+        subCategory: subCategory.trim() 
+      });
       onOpenChange(false);
     }
   };
-
 
   const handleDeleteItem = () => {
     if(item) {
@@ -169,7 +211,7 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
   const currentReceipt = receipts.find(r => r.id === receiptId);
   const currentReceiptCurrency = currentReceipt?.currency || 'USD';
   
-  const originalCostInCents = Math.round(parseFloat(cost) * 100) || 0;
+  const originalCostInCents = Math.round(parseFloat(costStr) * 100) || 0;
   const totalItemDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
   const effectiveCost = originalCostInCents - totalItemDiscounts;
   const isSuggestionConflict = !!(pendingSuggestion && item && pendingSuggestion.discount.amount > item.cost);
@@ -279,21 +321,65 @@ export default function ItemEditDialog({ item, items, receipts, isOpen, onOpenCh
                     autoFocus
                   />
                 </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="quantity" className="text-right">
+                    Quantity
+                  </Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={quantity}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val) && val >= 1) {
+                          setQuantity(val);
+                          updateCosts('quantity', val);
+                      }
+                    }}
+                    className="col-span-3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="unitcost" className="text-right">
+                    Unit Cost
+                  </Label>
+                  <Input
+                    id="unitcost"
+                    type="text"
+                    inputMode="decimal"
+                    value={unitCostStr}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
+                          setUnitCostStr(value);
+                      }
+                    }}
+                    onBlur={(e) => updateCosts('unit', Math.round(parseFloat(e.target.value) * 100))}
+                    className="col-span-3"
+                    placeholder='Auto'
+                  />
+                </div>
+
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="cost" className="text-right">
-                    Original Cost
+                    Total Cost
                   </Label>
                   <Input
                     id="cost"
                     type="text"
                     inputMode="decimal"
-                    value={cost}
+                    value={costStr}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
-                          setCost(value);
+                          setCostStr(value);
                       }
                     }}
+                    onBlur={(e) => updateCosts('total', Math.round(parseFloat(e.target.value) * 100))}
                     className="col-span-3"
                   />
                 </div>
