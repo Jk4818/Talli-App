@@ -132,19 +132,14 @@ const DropDrawerItem = React.forwardRef<
   HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof DropdownMenuItem> & {
     icon?: React.ReactNode;
+    asChild?: boolean;
   }
->(({ children, icon, className, onSelect, ...props }, ref) => {
+>(({ children, icon, className, onSelect, asChild, ...props }, ref) => {
   const { isMobile, setOpen } = useDropDrawer();
 
   const handleInteraction = (event: React.SyntheticEvent | Event) => {
     // The consumer might pass an `onSelect` prop to prevent default behavior.
-    if (onSelect) {
-      if (event instanceof Event) {
-        onSelect(event);
-      } else if (event.nativeEvent instanceof Event) {
-        onSelect(event.nativeEvent);
-      }
-    }
+    onSelect?.(event as any);
 
     // The consumer might pass an `onClick` prop (e.g., from an AlertDialogTrigger).
     const consumerOnClick = (props as any).onClick;
@@ -155,8 +150,9 @@ const DropDrawerItem = React.forwardRef<
         ? event.isDefaultPrevented()
         : event.defaultPrevented;
 
-    // If the event was not default-prevented, close the menu.
-    if (!wasDefaultPrevented) {
+    // Do not close the drawer if this item is a trigger for another component (like a dialog)
+    // or if the event was explicitly prevented.
+    if (!wasDefaultPrevented && !asChild) {
       setOpen(false);
     }
   };
@@ -167,7 +163,8 @@ const DropDrawerItem = React.forwardRef<
       <div
         ref={ref as React.Ref<HTMLDivElement>}
         className={cn(
-          "flex items-center gap-3 p-3 -mx-4 rounded-lg text-foreground hover:bg-accent",
+          "flex items-center gap-3 p-3 -mx-4 rounded-lg text-foreground",
+          !props.disabled && "hover:bg-accent",
           props.disabled && "opacity-50 pointer-events-none",
           className
         )}
@@ -186,9 +183,23 @@ const DropDrawerItem = React.forwardRef<
       onSelect={handleInteraction}
       {...props}
       className={cn("gap-2", className)}
+      asChild={asChild}
     >
-      {icon}
-      {children}
+      {/* 
+        When using asChild, DropdownMenuItem expects a single child that it can pass its props to.
+        So we wrap the icon and children in a fragment if asChild is true, or render them directly otherwise.
+        This ensures the icon is displayed correctly in both cases.
+      */}
+      {asChild ? (
+        <>
+          {children}
+        </>
+      ) : (
+        <>
+          {icon}
+          {children}
+        </>
+      )}
     </DropdownMenuItem>
   );
 });
