@@ -4,6 +4,7 @@ import type { SessionState, Participant, Receipt, Item, Discount, ServiceCharge 
 import { MOCK_DATA } from '@/lib/mock-data';
 import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 import type { AuthUser } from '@/ai/auth';
+import { normalizeImageForAI } from '@/lib/image-utils';
 
 const initialState: SessionState = {
   step: 1,
@@ -22,12 +23,8 @@ export const uploadAndProcessReceipt = createAsyncThunk(
   'session/uploadAndProcessReceipt',
   async ({ file, user }: { file: File; user: AuthUser | null }, { rejectWithValue }) => {
     try {
-      const imageDataUri = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(new Error('Failed to read file.'));
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
+      // Normalize the image before uploading
+      const imageDataUri = await normalizeImageForAI(file);
 
       if (!user) {
         throw new Error('User authentication is required to process receipts.');
