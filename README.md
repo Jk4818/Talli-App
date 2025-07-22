@@ -1,6 +1,28 @@
-# Talli
+# Talli - Effortless Bill Splitting, Powered by AI
 
-This is a NextJS app for splitting bills, built in Firebase Studio.
+Talli is a modern, intelligent application designed to eliminate the friction from shared expenses. Stop arguing over the bill and let our AI-powered platform do the hard work. Just snap a photo of your receipt, assign items to your friends, and Talli will provide a penny-perfect breakdown of who owes what.
+
+It's the perfect tool for dinners with friends, group trips, and any situation where you need to split costs fairly and accurately.
+
+## Key Features
+
+- **🤖 AI-Powered Receipt Scanning**: Snap a photo, and our AI will digitize every item, price, discount, and service charge in seconds.
+- **🙋‍♀️ Intuitive Item Assignment**: Easily assign items to one or more people with a simple, visual interface. Talli supports equal, percentage, and exact amount splits.
+- **💸 Penny-Perfect Settlements**: Our robust calculation engine handles complex splits, tips, and taxes to ensure everyone pays their exact share, down to the last penny.
+- **📊 Insightful Summaries**: Get a clear, visual breakdown of who paid for what, and a simple settlement plan of who owes whom.
+- **📄 Shareable Reports**: Generate a clean, print-friendly report of the entire bill split, complete with receipt images and itemized breakdowns, to share with your group.
+- **🌍 Multi-Currency Support**: Handle bills in different currencies and settle up in a single, global currency of your choice.
+
+## Technology Stack
+
+Talli is built with a modern, scalable, and high-performance tech stack:
+
+- **Framework**: [Next.js](https://nextjs.org/) with the App Router
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **UI**: [React](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/), and [shadcn/ui](https://ui.shadcn.com/)
+- **State Management**: [Redux Toolkit](https://redux-toolkit.js.org/)
+- **Backend & Auth**: [Firebase](https://firebase.google.com/) (Authentication, Firestore, Storage)
+- **Generative AI**: [Google's Genkit](https://firebase.google.com/docs/genkit) with the Gemini family of models.
 
 ## Local Development
 
