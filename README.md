@@ -6,12 +6,27 @@ It's the perfect tool for dinners with friends, group trips, and any situation w
 
 ## Key Features
 
-- **🤖 AI-Powered Receipt Scanning**: Snap a photo, and our AI will digitize every item, price, discount, and service charge in seconds.
-- **🙋‍♀️ Intuitive Item Assignment**: Easily assign items to one or more people with a simple, visual interface. Talli supports equal, percentage, and exact amount splits.
-- **💸 Penny-Perfect Settlements**: Our robust calculation engine handles complex splits, tips, and taxes to ensure everyone pays their exact share, down to the last penny.
-- **📊 Insightful Summaries**: Get a clear, visual breakdown of who paid for what, and a simple settlement plan of who owes whom.
-- **📄 Shareable Reports**: Generate a clean, print-friendly report of the entire bill split, complete with receipt images and itemized breakdowns, to share with your group.
-- **🌍 Multi-Currency Support**: Handle bills in different currencies and settle up in a single, global currency of your choice.
+### 🤖 AI-Powered Receipt Scanning & Normalization
+- **From Photo to Structured JSON in Seconds**: At the core of Talli is a powerful Genkit flow utilizing Google's Gemini model. It doesn't just OCR the receipt; it intelligently extracts items, quantities, costs, discounts, and service charges into a clean, structured JSON format.
+- **Client-Side Image Optimization**: To ensure maximum reliability and performance, we normalize all images on the client *before* they are sent to the AI. Mobile uploads are automatically resized and converted to optimized JPEGs, dramatically reducing upload times and ensuring the backend receives a consistent, high-quality input every time.
+- **Intelligent Discount Suggestions**: The AI goes a step further by analyzing discounts and suggesting which line item they should apply to, streamlining the editing process.
+
+### 🙋‍♀️ Flexible, Real-Time Splitting Engine
+- **Intuitive Item Assignment**: Our UI, built with React and powered by Redux for ephemeral state management, provides a seamless, single-page application experience. Assign items to one or more people with a simple, visual interface.
+- **Three Powerful Split Modes**: Talli's robust calculation engine supports any scenario:
+    1.  **Equal Split**: The default one-click solution for evenly shared items.
+    2.  **Percentage Split**: For complex shares, assign custom percentages to participants. The UI provides real-time validation to ensure the total adds up to 100%.
+    3.  **Exact Amount Split**: For ultimate control, specify the exact monetary share for each person. The UI validates that the amounts sum perfectly to the item's effective cost.
+
+### 💸 Penny-Perfect, Deterministic Settlements
+- **Advanced Rounding Algorithm**: We've engineered a sophisticated, deterministic rounding algorithm that handles the "un-splittable penny" problem with grace. It distributes rounding differences fairly and transparently across participants, ensuring the final settlement is always penny-perfect.
+- **Complex Calculation Handling**: The engine flawlessly manages multiple receipts, item-specific discounts, receipt-wide discounts, and percentage-based service charges, calculating each participant's final balance with complete accuracy.
+
+### 🔐 Secure, Scalable Backend
+- **Firebase Authentication**: User identity is managed through Firebase Authentication, providing a reliable and secure system for user sign-up, sign-in, and password management. All accounts require email verification, ensuring a valid user base.
+- **Secure-by-Default Data**: All session data is stored in Cloud Firestore and protected by a robust set of Security Rules. This ensures that users can **only** ever access their own data. The architecture is designed to be zero-trust, with authorization enforced on the backend, not the client.
+- **Invite-Only System**: For controlled rollouts, the application includes a server-side invite-only system via an email allowlist, making it easy to manage access during beta phases.
+- **Serverless Architecture**: By leveraging Firebase's serverless platform, Talli benefits from automatic scaling, high availability, and minimal maintenance overhead, allowing the team to focus on building features, not managing infrastructure.
 
 ## Technology Stack
 
