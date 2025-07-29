@@ -1,6 +1,6 @@
 # Talli - Effortless Bill Splitting, Powered by AI
 
-Talli is a modern, intelligent application designed to eliminate the friction from shared expenses. Stop arguing over the bill and let our AI-powered platform do the hard work. Just snap a photo of your receipt, assign items to your friends, and Talli will provide a penny-perfect breakdown of who owes what.
+Talli is a modern, intelligent application designed to eliminate the friction from shared expenses. Stop arguing over the bill and let our AI-powered platform do the hard work. Just snap a photo of your receipt, assign items to your friends, and Talli will provide a penny-perfect breakdown of who owes what!
 
 It's the perfect tool for dinners with friends, group trips, and any situation where you need to split costs fairly and accurately.
 
