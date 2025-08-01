@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "./scroll-area";
 
 type DropDrawerContextValue = {
   open: boolean;
@@ -68,7 +69,7 @@ const DropDrawer = ({
   if (isMobile) {
     return (
       <DropDrawerContext.Provider value={value}>
-        <Drawer open={effectiveOpen} onOpenChange={effectiveSetOpen}>
+        <Drawer open={effectiveOpen} onOpen-change={effectiveSetOpen}>
           {children}
         </Drawer>
       </DropDrawerContext.Provider>
@@ -77,7 +78,7 @@ const DropDrawer = ({
 
   return (
     <DropDrawerContext.Provider value={value}>
-      <DropdownMenu open={effectiveOpen} onOpenChange={effectiveSetOpen}>
+      <DropdownMenu open={effectiveOpen} onOpen-change={effectiveSetOpen}>
         {children}
       </DropdownMenu>
     </DropDrawerContext.Provider>
@@ -108,9 +109,11 @@ const DropDrawerContent = React.forwardRef<
   if (isMobile) {
     return (
       <DrawerContent ref={ref as React.Ref<HTMLDivElement>} className={cn("p-4", drawerClassName)}>
-        <div className="flex flex-col gap-2">
-            {children}
-        </div>
+        <ScrollArea className="max-h-[70vh]">
+          <div className="flex flex-col gap-2 p-1">
+              {children}
+          </div>
+        </ScrollArea>
         <DrawerFooter className="pt-4 px-0 pb-0">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
@@ -163,7 +166,7 @@ const DropDrawerItem = React.forwardRef<
       <div
         ref={ref as React.Ref<HTMLDivElement>}
         className={cn(
-          "flex items-center gap-3 p-3 -mx-4 rounded-lg text-foreground",
+          "flex items-center gap-3 p-3 -mx-1 rounded-lg text-foreground",
           !props.disabled && "hover:bg-accent",
           props.disabled && "opacity-50 pointer-events-none",
           className
@@ -227,7 +230,7 @@ const DropDrawerSeparator = React.forwardRef<
 >((props, ref) => {
   const { isMobile } = useDropDrawer();
   if (isMobile) {
-    return <div className="h-px bg-muted -mx-4 my-2" />;
+    return <div className="h-px bg-muted -mx-1 my-2" />;
   }
   return <DropdownMenuSeparator ref={ref} {...props} />;
 });
