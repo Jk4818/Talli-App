@@ -6,8 +6,9 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { addParticipant, removeParticipant } from '@/lib/redux/slices/sessionSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, UserPlus, User } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { X, UserPlus } from 'lucide-react';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 
 export default function ParticipantManager() {
   const [name, setName] = useState('');
@@ -44,25 +45,31 @@ export default function ParticipantManager() {
           <UserPlus className="h-4 w-4" />
         </Button>
       </form>
-      <div className="space-y-2">
-        {participants.length > 0 ? (
-          participants.map((p) => (
-            <div key={p.id} className="flex items-center justify-between rounded-md p-2 bg-secondary/50">
-                <div className="flex items-center gap-3">
-                    <Avatar>
-                        <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{p.name}</span>
-                </div>
-              <Button variant="ghost" size="icon" onClick={() => dispatch(removeParticipant(p.id))} aria-label={`Remove ${p.name}`}>
-                <X className="h-4 w-4" />
-              </Button>
+      
+      <ScrollArea className="w-full whitespace-nowrap">
+        <div className="flex w-max space-x-3 pb-4">
+          {participants.length > 0 ? (
+            participants.map((p) => (
+              <div key={p.id} className="inline-flex items-center justify-between rounded-full pl-2 pr-1 py-1 bg-secondary/80">
+                  <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6 text-xs">
+                          <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium text-sm pr-1">{p.name}</span>
+                  </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => dispatch(removeParticipant(p.id))} aria-label={`Remove ${p.name}`}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))
+          ) : (
+            <div className="w-full">
+              <p className="text-sm text-center py-4 text-muted-foreground">No participants added yet.</p>
             </div>
-          ))
-        ) : (
-          <p className="text-sm text-center py-4 text-muted-foreground">No participants added yet.</p>
-        )}
-      </div>
+          )}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </div>
   );
 }
