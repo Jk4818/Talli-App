@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -47,7 +48,7 @@ export default function ParticipantManager() {
       </form>
       
       <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex w-max space-x-3 pb-4">
+        <div className="flex w-max space-x-3 pb-4 pt-3 pr-3">
           {participants.length > 0 ? (
             participants.map((p) => (
               <div key={p.id} className="relative group flex flex-col items-center justify-center p-3 rounded-lg bg-secondary/80 w-24 h-24">
