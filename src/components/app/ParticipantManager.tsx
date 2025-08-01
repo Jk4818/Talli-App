@@ -47,34 +47,66 @@ export default function ParticipantManager() {
         </Button>
       </form>
       
-      <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex w-max space-x-3 pb-4 pt-3 pr-3">
-          {participants.length > 0 ? (
-            participants.map((p) => (
-              <div key={p.id} className="relative group flex flex-col items-center justify-center p-3 rounded-lg bg-secondary/80 w-24 h-24">
-                <Avatar className="h-10 w-10 text-base mb-2">
-                    <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
-                </Avatar>
-                <span className="font-medium text-sm text-center w-full truncate" title={p.name}>{p.name}</span>
-                <Button 
-                    variant="destructive" 
-                    size="icon" 
-                    className="absolute top-0 right-0 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity -translate-y-1/2 translate-x-1/2" 
-                    onClick={() => dispatch(removeParticipant(p.id))} 
-                    aria-label={`Remove ${p.name}`}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+      {/* Mobile: Horizontal Scrolling Cards */}
+      <div className="md:hidden">
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex w-max space-x-3 pb-4 pt-3 pr-3">
+            {participants.length > 0 ? (
+              participants.map((p) => (
+                <div key={p.id} className="relative group flex flex-col items-center justify-center p-3 rounded-lg bg-secondary/80 w-24 h-24">
+                  <Avatar className="h-10 w-10 text-base mb-2">
+                      <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium text-sm text-center w-full truncate" title={p.name}>{p.name}</span>
+                  <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-0 right-0 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity -translate-y-1/2 translate-x-1/2" 
+                      onClick={() => dispatch(removeParticipant(p.id))} 
+                      aria-label={`Remove ${p.name}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="w-full">
+                <p className="text-sm text-center py-4 text-muted-foreground">No participants added yet.</p>
               </div>
-            ))
-          ) : (
-            <div className="w-full">
-              <p className="text-sm text-center py-4 text-muted-foreground">No participants added yet.</p>
+            )}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
+
+      {/* Desktop: Vertical List */}
+      <div className="hidden md:block">
+        <ScrollArea className="h-48">
+            <div className="space-y-2 pr-4">
+                {participants.length > 0 ? (
+                    participants.map((p) => (
+                        <div key={p.id} className="group flex items-center p-2 rounded-md hover:bg-secondary/80">
+                            <Avatar className="h-8 w-8 text-xs mr-3">
+                                <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium text-sm flex-1 truncate" title={p.name}>{p.name}</span>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => dispatch(removeParticipant(p.id))}
+                                aria-label={`Remove ${p.name}`}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-sm text-center py-4 text-muted-foreground">No participants added yet.</p>
+                )}
             </div>
-          )}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
