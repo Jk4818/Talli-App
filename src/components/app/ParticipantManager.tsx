@@ -33,7 +33,7 @@ export default function ParticipantManager() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 h-full flex flex-col">
       <form onSubmit={handleAdd} className="flex gap-2">
         <Input
           type="text"
@@ -80,8 +80,8 @@ export default function ParticipantManager() {
       </div>
 
       {/* Desktop: Vertical List */}
-      <div className="hidden lg:block">
-        <ScrollArea className="h-48">
+      <div className="hidden lg:block flex-1 min-h-0">
+        <ScrollArea className="h-full">
             <div className="space-y-2 pr-4">
                 {participants.length > 0 ? (
                     participants.map((p) => (

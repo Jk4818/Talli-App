@@ -251,8 +251,8 @@ export default function Step1Setup() {
         )}
       </motion.div>
 
-      <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-1">
+      <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <Card className="lg:col-span-1 flex flex-col h-full">
           <CardHeader className="flex flex-row items-center gap-4 space-y-0">
             <Users className="w-8 h-8 text-primary" />
             <div>
@@ -262,7 +262,7 @@ export default function Step1Setup() {
               <CardDescription>Add or remove people from the split.</CardDescription>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col">
             <ParticipantManager />
           </CardContent>
         </Card>
