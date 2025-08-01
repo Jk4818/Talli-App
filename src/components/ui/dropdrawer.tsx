@@ -69,7 +69,7 @@ const DropDrawer = ({
   if (isMobile) {
     return (
       <DropDrawerContext.Provider value={value}>
-        <Drawer open={effectiveOpen} onOpen-change={effectiveSetOpen}>
+        <Drawer open={effectiveOpen} onOpenChange={effectiveSetOpen}>
           {children}
         </Drawer>
       </DropDrawerContext.Provider>
@@ -78,7 +78,7 @@ const DropDrawer = ({
 
   return (
     <DropDrawerContext.Provider value={value}>
-      <DropdownMenu open={effectiveOpen} onOpen-change={effectiveSetOpen}>
+      <DropdownMenu open={effectiveOpen} onOpenChange={effectiveSetOpen}>
         {children}
       </DropdownMenu>
     </DropDrawerContext.Provider>
