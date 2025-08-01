@@ -47,10 +47,10 @@ export default function ParticipantManager() {
         </Button>
       </form>
       
-      {/* Mobile: Horizontal Scrolling Cards */}
-      <div className="md:hidden">
+      {/* Mobile & Tablet: Horizontal Scrolling Cards */}
+      <div className="lg:hidden">
         <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex w-max space-x-3 pb-4 pt-3 pr-3">
+          <div className="flex w-max space-x-3 pt-3 pb-4 pr-3">
             {participants.length > 0 ? (
               participants.map((p) => (
                 <div key={p.id} className="relative group flex flex-col items-center justify-center p-3 rounded-lg bg-secondary/80 w-24 h-24">
@@ -80,7 +80,7 @@ export default function ParticipantManager() {
       </div>
 
       {/* Desktop: Vertical List */}
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <ScrollArea className="h-48">
             <div className="space-y-2 pr-4">
                 {participants.length > 0 ? (
