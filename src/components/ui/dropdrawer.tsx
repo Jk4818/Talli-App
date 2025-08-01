@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -108,13 +107,15 @@ const DropDrawerContent = React.forwardRef<
 
   if (isMobile) {
     return (
-      <DrawerContent ref={ref as React.Ref<HTMLDivElement>} className={cn("p-4", drawerClassName)}>
-        <ScrollArea className="max-h-[70vh]">
-          <div className="flex flex-col gap-2 p-1">
-              {children}
-          </div>
-        </ScrollArea>
-        <DrawerFooter className="pt-4 px-0 pb-0">
+      <DrawerContent ref={ref as React.Ref<HTMLDivElement>} className={cn("flex flex-col h-[80vh]", drawerClassName)}>
+        <div className="flex-1 min-h-0">
+            <ScrollArea className="h-full">
+                <div className="flex flex-col gap-2 p-4">
+                    {children}
+                </div>
+            </ScrollArea>
+        </div>
+        <DrawerFooter className="pt-4">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>
