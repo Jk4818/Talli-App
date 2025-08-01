@@ -256,8 +256,10 @@ export default function Step1Setup() {
           <CardHeader className="flex flex-row items-center gap-4 space-y-0">
             <Users className="w-8 h-8 text-primary" />
             <div>
-              <CardTitle>Participants</CardTitle>
-              <CardDescription>Who is splitting the bill?</CardDescription>
+              <CardTitle>
+                {participants.length > 0 ? `${participants.length} Participant(s)` : 'Participants'}
+              </CardTitle>
+              <CardDescription>Add or remove people from the split.</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
