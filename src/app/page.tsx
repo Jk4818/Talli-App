@@ -149,7 +149,7 @@ export default function Home() {
       </header>
       <main className="flex-1">
         <div className="h-screen md:container md:mx-auto md:px-4 ">
-        <div className="min-h-[85vh] relative isolate overflow-hidden bg-[url('/images/hand_mockup.jpeg')] bg-cover bg-bottom rounded-b-3xl">
+        <div className="min-h-[85vh] relative isolate overflow-hidden bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%),url('/images/hand_mockup.jpeg')] bg-cover bg-bottom rounded-b-3xl">
             <div className="flex flex-col">
               <motion.section
                 className="container mx-auto px-8 py-16 lg:py-28"
@@ -166,7 +166,7 @@ export default function Home() {
                   Talli makes group expenses simple. Upload a receipt, assign items, and we'll tell you exactly who owes what. Fair, fast, and free.
                 </motion.p>
                 <motion.div variants={fadeInUp} className="mt-8 flex justify-start">
-                  <Alert className="max-w-md text-left">
+                  <Alert className="max-w-2xl text-left">
                     <Rocket className="h-4 w-4" />
                     <AlertTitle>Welcome to the Beta!</AlertTitle>
                     <AlertDescription>
