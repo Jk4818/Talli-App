@@ -149,8 +149,7 @@ export default function Home() {
       </header>
       <main className="flex-1">
         <div className="h-screen md:container md:mx-auto md:px-4 ">
-        <div className="min-h-[85vh] relative isolate overflow-hidden bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%),url('/images/hand_mockup.jpeg')] bg-cover bg-bottom rounded-b-3xl">
-            <div className="flex flex-col">
+        <div className="min-h-[85vh] flex flex-col md:justify-center isolate overflow-hidden bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%),url('/images/hand_mockup.jpeg')] bg-cover bg-bottom rounded-b-3xl">
               <motion.section
                 className="container mx-auto px-8 py-16 lg:py-28"
                 variants={staggerContainer(0.3, 0.2)}
@@ -160,9 +159,9 @@ export default function Home() {
                 <motion.h1 variants={fadeInUp} className="font-headline text-background font-bold tracking-tight text-5xl lg:text-6xl">
                   Stop arguing over the bill.
                   <br />
-                  <span className="text-secondary">Split it with AI.</span>
+                  <span className="text-secondary">Split it with AI.*</span>
                 </motion.h1>
-                <motion.p variants={fadeInUp} className="mx-auto mt-6 max-w-2xl text-lg text-background">
+                <motion.p variants={fadeInUp} className="mt-6 max-w-2xl text-lg text-background">
                   Talli makes group expenses simple. Upload a receipt, assign items, and we'll tell you exactly who owes what. Fair, fast, and free.
                 </motion.p>
                 <motion.div variants={fadeInUp} className="mt-8 flex justify-start">
@@ -183,8 +182,8 @@ export default function Home() {
                   </Button>
                 </motion.div>
               </motion.section>
-            </div>
           </div>
+          <div className="h-full text-right pt-4">*AI can make mistakes, so double-check it</div>
         </div>
 
         <section className="py-16 lg:py-24">
