@@ -11,7 +11,7 @@ export default function DemoLayout({ children }: { children: ReactNode }) {
         <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4">
           <div className="flex items-center gap-4">
             <Logo />
-            <div className="hidden rounded-full bg-accent/20 px-3 py-1 text-sm font-medium text-accent-foreground sm:block">
+            <div className="hidden font-headline rounded-full bg-accent/20 px-3 py-1 text-sm font-bold text-accent-foreground sm:block">
               Demo Mode
             </div>
           </div>

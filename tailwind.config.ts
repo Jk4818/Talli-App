@@ -18,7 +18,7 @@ export default {
     extend: {
       fontFamily: {
         body: ['Rubik', 'sans-serif'],
-        headline: ['"Space Grotesk"', 'sans-serif'],
+        headline: ['"Doto"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {

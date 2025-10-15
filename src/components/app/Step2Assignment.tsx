@@ -151,7 +151,7 @@ export default function Step2Assignment() {
       exit="exit"
     >
         <motion.div variants={fadeInUp} className="max-w-md mx-auto space-y-2">
-            <div className="flex justify-between text-sm font-medium text-muted-foreground">
+            <div className="flex justify-between text-sm font-headline font-black text-muted-foreground">
                 <p>Assignment Progress</p>
                 <p>{assignedItemsCount} of {itemsWithCost.length} items assigned</p>
             </div>
