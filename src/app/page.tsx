@@ -148,41 +148,44 @@ export default function Home() {
         </div>
       </header>
       <main className="flex-1">
-        <motion.section 
-          className="container mx-auto px-4 py-16 text-center lg:py-28"
-          variants={staggerContainer(0.3, 0.2)}
-          initial="hidden"
-          animate="show"
-        >
-          <motion.h1 variants={fadeInUp} className="font-headline text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Stop arguing over the bill.
-            <br />
-            <span className="text-primary">Split it with AI.</span>
-          </motion.h1>
-          <motion.p variants={fadeInUp} className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Talli makes group expenses simple. Upload a receipt, assign items, and we'll tell you exactly who owes what. Fair, fast, and free.
-          </motion.p>
-          <motion.div variants={fadeInUp} className="mt-8 flex justify-center">
-            <Alert className="max-w-md text-left">
-                <Rocket className="h-4 w-4" />
-                <AlertTitle>Welcome to the Beta!</AlertTitle>
-                <AlertDescription>
-                    Talli is currently in an invite-only beta. Functionality may change as we improve the app.
-                </AlertDescription>
-            </Alert>
-          </motion.div>
-          <motion.div variants={fadeInUp} className="mt-8 flex justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link href={user ? "/app" : "/login"}>
-                Start Splitting
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/demo">Try a Live Demo</Link>
-            </Button>
-          </motion.div>
-        </motion.section>
+        <div className="h-screen md:container md:mx-auto md:px-4 ">
+        <div className="min-h-[85vh] relative isolate overflow-hidden bg-[url('/images/hand_mockup.jpeg')] bg-cover bg-bottom rounded-b-3xl">
+            <div className="flex flex-col">
+              <motion.section
+                className="container mx-auto px-8 py-16 lg:py-28"
+                variants={staggerContainer(0.3, 0.2)}
+                initial="hidden"
+                animate="show"
+              >
+                <motion.h1 variants={fadeInUp} className="font-headline text-background font-bold tracking-tight text-5xl lg:text-6xl">
+                  Stop arguing over the bill.
+                  <br />
+                  <span className="text-secondary">Split it with AI.</span>
+                </motion.h1>
+                <motion.p variants={fadeInUp} className="mx-auto mt-6 max-w-2xl text-lg text-background">
+                  Talli makes group expenses simple. Upload a receipt, assign items, and we'll tell you exactly who owes what. Fair, fast, and free.
+                </motion.p>
+                <motion.div variants={fadeInUp} className="mt-8 flex justify-start">
+                  <Alert className="max-w-md text-left">
+                    <Rocket className="h-4 w-4" />
+                    <AlertTitle>Welcome to the Beta!</AlertTitle>
+                    <AlertDescription>
+                      Talli is currently in an invite-only beta. Functionality may change as we improve the app.
+                    </AlertDescription>
+                  </Alert>
+                </motion.div>
+                <motion.div variants={fadeInUp} className="mt-8 flex self-start gap-4">
+                  <Button size="lg" asChild>
+                    <Link href={user ? "/app" : "/login"}>
+                      Start Splitting Now
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                  </Button>
+                </motion.div>
+              </motion.section>
+            </div>
+          </div>
+        </div>
 
         <section className="py-16 lg:py-24">
           <div className="container mx-auto px-4">

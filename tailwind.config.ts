@@ -17,11 +17,16 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
+        body: ['Rubik', 'sans-serif'],
         headline: ['"Space Grotesk"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
+        'ice-cold': '#a0d2eb',
+        'freeze-purple': '#e5eaf5',
+        'medium-purple': '#d0bdf4',
+        'purple-pain': '#8458B3',
+        'heavy-purple': '#494d5f',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
