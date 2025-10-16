@@ -225,7 +225,7 @@ export default function Home() {
 
           </div>
         </section>
-        <section className="w-full">
+        <section className="w-full pb-10">
           <Carousel className="h-screen w-full">
             <CarouselContent className='h-screen'>
               {features.map((feature, index) => (
@@ -243,7 +243,7 @@ export default function Home() {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <div className='absolute bottom-10 flex w-full justify-between items-center sm:px-40 px-20'>
+            <div className='absolute bottom-10 flex w-full justify-between items-center sm:px-40 xl:px-96 px-20'>
               <CarouselPrevious className='px-10'/>
               <CarouselNext className='px-10'/>
             </div>
