@@ -22,6 +22,13 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp, fadeIn } from '@/lib/animations';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -34,24 +41,28 @@ export default function Home() {
 
   const features = [
     {
-      emoji: '📸',
       title: 'Snap & Scan',
-      description: 'Forget typing. Just snap a photo of your receipt and our AI will digitize every item and price in seconds.',
+      subtitle: 'Forget typing. Upload once and get a clean, digital breakdown in seconds.',
+      description: "Just snap a photo of your receipt, and Talli instantly gets to work. Powered by cutting-edge AI (thanks to Google's Gemini), our system doesn’t just read the text—it understands it. Items, quantities, modifiers, discounts, tax, tips—it’s all extracted and structured automatically.",
+      image: '/images/receipt_hand.png'
     },
     {
-      emoji: '🙋‍♀️',
-      title: 'Drag, Drop, Done',
-      description: 'Assigning items is a breeze. Drag items to friends, split shared dishes, and watch the math solve itself. "Who had the wagyu?" Solved.',
+      title: 'Split With Anyone',
+      subtitle: 'One tap to share the cost, your way.',
+      description: 'Our intuitive interface makes item assignment fast and flexible. Drag and drop your friends onto what they ordered, or let them assign themselves. Whether you’re splitting equally, by percentage, or by exact dollar amount—Talli adapts in real time.',
+      image: '/images/travel.png'
     },
     {
-      emoji: '💸',
       title: 'Settle Up Simply',
-      description: 'No more awkward IOUs. Get a simple, clear breakdown of who owes whom. Settle up in seconds and stay friends.',
+      subtitle: 'Every cent, every time — perfectly calculated.',
+      description: 'We’ve engineered a deterministic rounding system that distributes every cent fairly—even when the numbers don’t divide evenly. Discounts, service fees, taxes, and multi-person shares? Handled. Automatically. Accurately. Transparently. You and your friends get a clear summary of who owes what — no confusion, no arguments, just clean math and clear communication.',
+      image: '/images/wedding.png'
     },
     {
-      emoji: '📊',
       title: 'Visualize-a-bill-ity',
-      description: "Get a bird's-eye view of the spending. Cool charts show who spent what, making everything transparent and fair.",
+      subtitle: 'Clear breakdowns, at a glance.',
+      description: "Talli gives you a bird's-eye view of group spending with clean, easy-to-read charts that show exactly who paid what, who owes whom, and how items were distributed. From individual contributions to overall group totals, the visualizations make it simple to understand the financial breakdown of any shared expense. It's a straightforward way to keep everything transparent and easy to reconcile, without digging through line items or doing the math yourself.",
+      image: '/images/fountain.png'
     },
   ];
 
@@ -148,7 +159,7 @@ export default function Home() {
       </header>
       <main className="flex-1">
         <div className="h-screen md:container md:mx-auto md:px-4 ">
-          <div className="min-h-[85vh] flex flex-col md:justify-center isolate overflow-hidden bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%),url('/images/hand_mockup.jpeg')] bg-cover bg-bottom rounded-b-3xl">
+          <div className="min-h-[85vh] md:min-h-[75vh] md:mt-10 flex flex-col md:justify-center isolate overflow-hidden bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%),url('/images/hand_mockup.jpeg')] bg-cover bg-bottom rounded-b-3xl md:rounded-3xl">
             <motion.section
               className="container mx-auto px-8 py-16 lg:py-28"
               variants={staggerContainer(0.3, 0.2)}
@@ -213,32 +224,30 @@ export default function Home() {
             </div>
 
           </div>
-
-          <div className="bg-secondary/50 rounded-3xl p-8 md:p-16">
-            <motion.div
-              className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4"
-              variants={staggerContainer(0.2, 0.3)}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.2 }}
-            >
-              {features.map((feature) => (
-                <motion.div variants={fadeInUp} key={feature.title}>
-                  <Card className="text-center h-full border-0">
-                    <CardHeader>
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                        <span className="text-3xl">{feature.emoji}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <CardTitle className="font-headline text-xl">{feature.title}</CardTitle>
-                      <CardDescription>{feature.description}</CardDescription>
+        </section>
+        <section className="w-full">
+          <Carousel className="h-screen w-full">
+            <CarouselContent className='h-screen'>
+              {features.map((feature, index) => (
+                <CarouselItem key={index}>
+                  <Card 
+                    className="h-full border-0 overflow-hidden bg-cover bg-bottom rounded-3xl"
+                    style={{ backgroundImage: `radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%), url('${feature.image}')` }}
+                  >
+                    <CardContent className="flex flex-col md:items-center justify-center p-6 pt-20 md:mx-32 text-background md:text-center gap-4">
+                      <CardTitle className="font-headline text-3xl md:text-4xl mb-2">{feature.title}</CardTitle>
+                      <CardDescription className='text-muted-background font-bold md:text-xl'>{feature.subtitle}</CardDescription>
+                      <p className='text-muted-background'>{feature.description}</p>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </CarouselItem>
               ))}
-            </motion.div>
-          </div>
+            </CarouselContent>
+            <div className='absolute bottom-10 flex w-full justify-between items-center sm:px-40 px-20'>
+              <CarouselPrevious className='px-10'/>
+              <CarouselNext className='px-10'/>
+            </div>
+          </Carousel>
         </section>
       </main>
       <footer className="border-t py-6">
