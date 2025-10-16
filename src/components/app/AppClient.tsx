@@ -157,7 +157,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
 
   return (
     <>
-      <div className="flex-1 p-4 md:p-8">
+      <div className="flex-1 bg-background p-4 md:p-8">
         {renderStep()}
       </div>
       <footer className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">

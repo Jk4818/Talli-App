@@ -17,8 +17,8 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-dvh bg-secondary/50">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="flex flex-col min-h-dvh bg-background">
+      <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4">
           <Logo />
           <Button asChild variant="outline">
@@ -35,7 +35,7 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold font-headline tracking-tight text-foreground">About Talli</h1>
-            <p className="text-lg md:text-xl text-muted-foreground">
+            <p className="text-lg md:text-xl font-bold text-muted-background">
               Fair, fast, and free bill splitting powered by AI.
             </p>
           </div>

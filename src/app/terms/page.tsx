@@ -22,8 +22,8 @@ export default function TermsPage() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-dvh bg-secondary/50">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="flex flex-col min-h-dvh bg-background">
+      <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4">
           <Logo />
           <Button asChild variant="outline">
@@ -53,7 +53,7 @@ export default function TermsPage() {
               animate="show"
             >
               <motion.div variants={fadeInUp}>
-                <p>
+                <p className="font-bold">
                     Please read these terms and conditions carefully before using Our Service.
                 </p>
               </motion.div>

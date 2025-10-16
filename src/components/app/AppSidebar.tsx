@@ -79,7 +79,7 @@ export default function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar className='border-0'>
       <SidebarHeader>
         <Logo />
       </SidebarHeader>

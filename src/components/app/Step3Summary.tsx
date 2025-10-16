@@ -257,7 +257,7 @@ export default function Step3Summary() {
                         return (
                           <li
                             key={s.id}
-                            className={cn("rounded-lg border bg-card/80 transition-opacity", isPaid && "opacity-60")}
+                            className={cn("rounded-lg bg-card/80 transition-opacity", isPaid && "opacity-60")}
                           >
                            <Label
                               htmlFor={`paid-${s.id}`}

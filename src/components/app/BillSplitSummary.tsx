@@ -32,7 +32,7 @@ const ParticipantCard = ({ participant, currency }: { participant: ParticipantSu
 
     return (
         <Card className={cn(
-            "overflow-hidden shadow-sm transition-shadow hover:shadow-md border-l-4",
+            "overflow-hidden bg-background shadow-sm transition-shadow hover:shadow-md border-l-4",
             isOwed && "border-accent",
             owes && "border-destructive",
             isSettled && "border-border"
@@ -43,7 +43,7 @@ const ParticipantCard = ({ participant, currency }: { participant: ParticipantSu
                         <Avatar className="h-10 w-10 shrink-0">
                             <AvatarFallback>{getInitials(participant.name)}</AvatarFallback>
                         </Avatar>
-                        <p className="text-lg font-semibold truncate font-headline">{participant.name}</p>
+                        <p className="text-lg font-black truncate font-headline">{participant.name}</p>
                     </div>
                     <div className="text-right shrink-0">
                         <p className="text-2xl font-bold">{formatCurrency(Math.abs(participant.balance))}</p>

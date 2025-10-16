@@ -166,7 +166,7 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
                 return (
                 <Collapsible
                     key={cat.category}
-                    className="rounded-lg border bg-card transition-colors data-[state=open]:bg-primary/10 data-[state=open]:border-primary/20"
+                    className="rounded-lg bg-card transition-colors data-[state=open]:bg-primary/10 data-[state=open]:border-primary/20"
                 >
                     <CollapsibleTrigger className="group flex w-full flex-col gap-2 p-3 text-left">
                         <div className="flex justify-between items-center">

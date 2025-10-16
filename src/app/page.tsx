@@ -196,12 +196,12 @@ export default function Home() {
           <div className="h-full font-headline font-bold text-right pt-4 px-4">AI can make mistakes, so double-check it</div>
         </div>
 
-        <section className="py-16 lg:py-24 space-y-4">
+        <section className="container px-4  py-16 lg:py-24 space-y-4">
           <div>
             <h2 className="px-4 pb-2 font-headline text-3xl font-bold tracking-tight sm:text-4xl">Split Bills. Not Friendships.</h2>
             <h3 className="px-4 pb-4 font-headline text-primary text-lg">Because Everyone Hates Doing the Math</h3>
           </div>
-          <div className="container mx-auto px-4 flex flex-col gap-10">
+          <div className=" mx-auto flex flex-col gap-10">
             <div
               className="rounded-3xl bg-cover bg-center flex flex-col justify-end min-h-[600px]"
               style={{ backgroundImage: "url('/images/feature1.png')" }}
