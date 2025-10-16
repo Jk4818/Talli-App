@@ -7,7 +7,7 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles, Check } from 'lucide-react';
+import { ArrowUpDown, ListOrdered, Search, ListX, Scale, SlidersHorizontal, Share2, Sparkles, Check, Edit } from 'lucide-react';
 import { updateItem, removeItem, addItem } from '@/lib/redux/slices/sessionSlice';
 import ItemEditDialog from './ItemEditDialog';
 import { Item, Discount } from '@/lib/types';
@@ -28,6 +28,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 export default function ItemListEditor() {
   const { items, receipts, globalCurrency, participants } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
+  const isMobile = useSelector((state: RootState) => state.ui.isMobile);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<'default' | 'name-asc' | 'name-desc' | 'cost-asc' | 'cost-desc'>('default');
@@ -130,7 +131,7 @@ export default function ItemListEditor() {
                 <ListOrdered className="w-8 h-8 text-primary" />
                 <div>
                     <CardTitle>Item List</CardTitle>
-                    <CardDescription>Review and edit all items from your receipts. Click a card to edit.</CardDescription>
+                    <CardDescription>Review and edit all items from your receipts. Click an item to edit.</CardDescription>
                 </div>
             </div>
         </CardHeader>
@@ -169,13 +170,13 @@ export default function ItemListEditor() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredItems.length > 0 ? (
               filteredItems.map(item => {
                 const receipt = receipts.find(r => r.id === item.receiptId);
                 const currency = receipt?.currency || globalCurrency;
                 const assignedParticipants = item.assignees.map(pid => participantMap.get(pid)).filter(Boolean) as {id: string, name: string}[];
-                const MAX_AVATARS = 5;
+                const MAX_AVATARS = isMobile ? 3 : 4;
                 const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
                 const effectiveCost = item.cost - totalItemDiscount;
                 const suggestion = pendingSuggestionsMap.get(item.id);
@@ -185,8 +186,8 @@ export default function ItemListEditor() {
                   <div
                     key={item.id}
                     className={cn(
-                        "group rounded-lg border bg-card/50 p-4 flex flex-col gap-2 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer",
-                        suggestion && "border-primary/50 ring-2 ring-primary/20 shadow-md"
+                        "group relative rounded-lg bg-card/50 p-3 flex flex-col gap-3 transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer",
+                        suggestion && "ring-2 ring-red-400/30 shadow-md"
                     )}
                     onClick={() => handleEditClick(item)}
                     tabIndex={0}
@@ -197,82 +198,81 @@ export default function ItemListEditor() {
                       }
                     }}
                   >
-                    <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold leading-snug truncate">
-                              {item.name}
-                              {item.quantity > 1 && <span className="text-muted-foreground font-light ml-1.5">x{item.quantity}</span>}
-                            </h3>
-                            <p className="text-sm text-muted-foreground truncate" title={receipt?.name || 'N/A'}>
-                                From: {receipt?.name || 'N/A'}
-                            </p>
-                            <div className="flex items-center gap-x-3 gap-y-1 mt-1 flex-wrap">
-                                {item.confidence !== undefined && (
-                                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                                        <Sparkles className="h-3 w-3 text-primary" />
-                                        <span>{item.confidence}%</span>
-                                    </div>
-                                )}
-                                {suggestion && (
-                                    <AccessibleTooltip content={<p>AI has a discount suggestion for this item. Click to review.</p>}>
-                                        <Badge variant="outline" className="border-primary/50 text-primary font-medium">
-                                            <Sparkles className="h-3 w-3 mr-1.5" />
-                                            Suggestion
-                                        </Badge>
-                                    </AccessibleTooltip>
-                                )}
-                            </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                            <p className="font-mono text-xl font-bold text-foreground">
-                                {formatCurrency(effectiveCost, currency)}
-                            </p>
-                            {(totalItemDiscount > 0 || (item.quantity > 1 && item.unitCost)) && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {item.quantity > 1 && item.unitCost ? `@ ${formatCurrency(item.unitCost, currency)} each` : `(was ${formatCurrency(item.cost, currency)})`}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                    
-                    <div className="flex items-center min-h-[32px] flex-grow">
-                        {assignedParticipants.length > 0 ? (
-                            <div className="flex items-center -space-x-2">
-                                {assignedParticipants.slice(0, MAX_AVATARS).map(p => (
-                                    <AccessibleTooltip key={p.id} content={<p>{p.name}</p>}>
-                                        <Avatar className="h-8 w-8 border-2 border-background">
-                                            <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
-                                        </Avatar>
-                                    </AccessibleTooltip>
-                                ))}
-                                {assignedParticipants.length > MAX_AVATARS && (
-                                    <Avatar className="h-8 w-8 border-2 border-background">
-                                        <AvatarFallback>+{assignedParticipants.length - MAX_AVATARS}</AvatarFallback>
-                                    </Avatar>
-                                )}
-                            </div>
-                        ) : (
-                            <span className="text-sm text-muted-foreground">
-                                No one assigned yet
-                            </span>
-                        )}
-                    </div>
+                    <Button variant="secondary" size="icon" className="absolute top-0 right-0 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity translate-x-1/3 -translate-y-1/3 z-10 hover:bg-secondary">
+                        <Edit className="h-4 w-4" />
+                    </Button>
 
-                    <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
-                        <div className="flex items-center gap-1.5" title={`Category: ${item.category}`}>
-                            {categoryEmoji ? <span>{categoryEmoji}</span> : <div className="w-4 h-4" />}
-                            <span className="capitalize">{item.subCategory || item.category}</span>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold leading-snug truncate">
+                                  {item.name}
+                                  {item.quantity > 1 && <span className="text-muted-foreground font-light ml-1.5">x{item.quantity}</span>}
+                                </h3>
+                                <p className="text-sm text-muted-foreground truncate" title={receipt?.name || 'N/A'}>
+                                    From: {receipt?.name || 'N/A'}
+                                </p>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                                <p className="font-mono text-lg font-bold text-foreground">
+                                    {formatCurrency(effectiveCost, currency)}
+                                </p>
+                                {(totalItemDiscount > 0 || (item.quantity > 1 && item.unitCost)) && (
+                                    <p className="text-xs text-muted-foreground">
+                                        {item.quantity > 1 && item.unitCost ? `@ ${formatCurrency(item.unitCost, currency)}` : `(was ${formatCurrency(item.cost, currency)})`}
+                                    </p>
+                                )}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1.5" title={`Split mode: ${item.splitMode}`}>
-                            {getSplitModeIcon(item.splitMode)}
-                            <span className="capitalize">{item.splitMode}</span>
+                    </div>
+                    <div className="flex items-center min-h-[2rem] justify-between">
+                      <div className="flex items-center gap-2">
+                          {assignedParticipants.length > 0 ? (
+                              <div className="flex items-center -space-x-2">
+                                  {assignedParticipants.slice(0, MAX_AVATARS).map(p => (
+                                      <AccessibleTooltip key={p.id} content={<p>{p.name}</p>}>
+                                          <Avatar className="h-6 w-6 border-2 border-background">
+                                              <AvatarFallback className="text-[10px]">{getInitials(p.name)}</AvatarFallback>
+                                          </Avatar>
+                                      </AccessibleTooltip>
+                                  ))}
+                                  {assignedParticipants.length > MAX_AVATARS && (
+                                      <Avatar className="h-6 w-6 border-2 border-background">
+                                          <AvatarFallback className="text-[10px]">+{assignedParticipants.length - MAX_AVATARS}</AvatarFallback>
+                                      </Avatar>
+                                  )}
+                              </div>
+                          ) : (
+                              <span className="text-xs text-muted-foreground pl-1">
+                                  Unassigned
+                              </span>
+                          )}
+
+                          {suggestion && (
+                              <AccessibleTooltip content={<p>AI has a discount suggestion. Click to review.</p>}>
+                                  <Badge variant="outline" className="h-6 border-primary/80 text-primary font-medium">
+                                      <Sparkles className="h-3 w-3 mr-1.5" />
+                                      Suggestion
+                                  </Badge>
+                              </AccessibleTooltip>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {categoryEmoji && (
+                            <AccessibleTooltip content={<p>{item.category}</p>}>
+                                <span className='text-base h-6 w-6 flex items-center justify-center'>{categoryEmoji}</span>
+                            </AccessibleTooltip>
+                          )}
+                          <AccessibleTooltip content={<p className='capitalize'>{item.splitMode} Split</p>}>
+                            <Badge variant="outline" className="h-6 p-1.5">{getSplitModeIcon(item.splitMode)}</Badge>
+                          </AccessibleTooltip>
                         </div>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="h-32 text-center flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg md:col-span-2 space-y-2">
+              <div className="md:col-span-2 lg:col-span-3 h-32 text-center flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg space-y-2">
                 <ListX className="h-8 w-8" />
                 <div>
                   <p className='font-medium'>No items found</p>
@@ -301,3 +301,5 @@ export default function ItemListEditor() {
     </>
   );
 }
+
+
