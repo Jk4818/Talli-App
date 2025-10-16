@@ -2,13 +2,18 @@
 "use client";
 
 import { useSelector, useDispatch } from 'react-redux';
+import Link from 'next/link';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { setStep } from '@/lib/redux/slices/sessionSlice';
 import { Logo } from '../Logo';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, LogOut } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { UserNav } from '../auth/UserNav';
+import { calculateSplits } from '@/lib/splitter';
+import { Progress } from '../ui/progress';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 const steps = [
     { id: 1, name: 'Setup', description: 'Add participants & receipts' },
@@ -18,7 +23,8 @@ const steps = [
 
 export function AppHeader() {
   const dispatch = useDispatch<AppDispatch>();
-  const { step: currentStep, participants, items, receipts } = useSelector((state: RootState) => state.session);
+  const sessionState = useSelector((state: RootState) => state.session);
+  const { step: currentStep, participants, items, receipts, paidSettlements, isDemoSession } = sessionState;
 
   const isStep1Complete = participants.length > 0 && receipts.length > 0 && receipts.every(r => r.payerId !== null);
   
@@ -46,6 +52,24 @@ export function AppHeader() {
     });
   }, [items]);
 
+  const summary = useMemo(() => {
+    if (participants.length === 0) return null;
+    return calculateSplits(sessionState);
+  }, [sessionState]);
+
+  const isStep3Complete = useMemo(() => {
+    if (!summary) return false;
+    if (summary.settlements.length === 0) return true; // Already settled
+    return summary.settlements.every(s => paidSettlements[s.id]);
+  }, [summary, paidSettlements]);
+
+  const stepCompletionStatus = {
+    1: isStep1Complete,
+    2: isStep1Complete && isStep2Complete,
+    3: isStep1Complete && isStep2Complete && isStep3Complete,
+  };
+
+
   const canNavigateTo = (targetStep: number) => {
     if (targetStep < currentStep) return true;
     if (targetStep > currentStep) {
@@ -61,13 +85,29 @@ export function AppHeader() {
     }
   };
 
+  const currentStepInfo = steps.find(s => s.id === currentStep);
+  const progressValue = (currentStep / steps.length) * 100;
+
   return (
     <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <div className="flex-1">
+        <div className="flex flex-1 items-center gap-4">
           <Logo />
+          {isDemoSession && (
+              <Badge variant="outline" className="hidden sm:inline-flex border-primary/80 text-primary">Live Demo</Badge>
+          )}
         </div>
-        <nav aria-label="Progress" className="hidden sm:block">
+
+        {/* Mobile progress indicator */}
+        <div className="lg:hidden flex-1 max-w-[200px]">
+            <div className="w-full text-center">
+                <div className="text-sm font-semibold text-foreground mb-1">{currentStepInfo?.name}</div>
+                <Progress value={progressValue} className="h-2" />
+            </div>
+        </div>
+
+        {/* Desktop progress indicator */}
+        <nav aria-label="Progress" className="hidden lg:block">
           <ol role="list" className="flex items-center">
             {steps.map((step, stepIdx) => (
               <React.Fragment key={step.name}>
@@ -81,7 +121,7 @@ export function AppHeader() {
                         )}
                         aria-label={`Go to step ${step.id}: ${step.name}`}
                     >
-                    {step.id < currentStep ? (
+                    {step.id < currentStep || stepCompletionStatus[step.id as keyof typeof stepCompletionStatus] ? (
                       <div className="flex items-center">
                         <span className="flex h-9 items-center">
                           <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-primary">
@@ -134,7 +174,15 @@ export function AppHeader() {
             ))}
           </ol>
         </nav>
-        <div className="flex-1 flex justify-end">
+        <div className="flex-1 flex justify-end items-center gap-4">
+            {isDemoSession && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Exit Demo
+                </Link>
+              </Button>
+            )}
             <UserNav />
         </div>
       </div>

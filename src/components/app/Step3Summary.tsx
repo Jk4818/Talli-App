@@ -199,12 +199,12 @@ export default function Step3Summary() {
                     <DropDrawerSeparator />
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                             <DropDrawerItem
-                                asChild
+                            <DropDrawerItem
+                                onSelect={(e) => e.preventDefault()}
                                 className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                                 icon={<RefreshCw className="h-4 w-4"/>}
                             >
-                                <button className='w-max'>Reset Session</button>
+                                Reset Session
                             </DropDrawerItem>
                         </AlertDialogTrigger>
                         <AlertDialogContent>

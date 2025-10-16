@@ -162,8 +162,8 @@ export default function Home() {
         </div>
       </header>
       <main className="flex-1">
-        <div className="h-screen md:container md:mx-auto md:px-4 ">
-          <div className="min-h-[85vh] md:min-h-[75vh] md:mt-10 flex flex-col md:justify-center isolate overflow-hidden bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%),url('/images/hand_mockup.jpeg')] bg-cover bg-bottom rounded-b-3xl md:rounded-3xl">
+        <div className="md:container md:mx-auto md:px-4 ">
+          <div className="min-h-[75vh] md:mt-10 flex flex-col md:justify-center isolate overflow-hidden bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%),url('/images/hand_mockup.jpeg')] bg-cover bg-bottom rounded-b-3xl md:rounded-3xl">
             <motion.section
               className="container mx-auto px-8 py-16 lg:py-28"
               variants={staggerContainer(0.3, 0.2)}
@@ -290,3 +290,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
