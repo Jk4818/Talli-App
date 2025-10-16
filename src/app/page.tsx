@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -201,12 +200,18 @@ export default function Home() {
           <div className="h-full font-headline font-bold text-right pt-4 px-4">AI can make mistakes, so double-check it</div>
         </div>
 
-        <section className="container px-4  py-16 lg:py-24 space-y-4">
-          <div>
+        <motion.section 
+          className="container px-4  py-16 lg:py-24 space-y-4"
+          variants={staggerContainer(0.2, 0.1)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          <motion.div variants={fadeInUp}>
             <h2 className="px-4 pb-2 font-headline text-3xl font-bold tracking-tight sm:text-4xl">Split Bills. Not Friendships.</h2>
             <h3 className="px-4 pb-4 font-headline text-primary text-lg">Because Everyone Hates Doing the Math</h3>
-          </div>
-          <div className=" mx-auto flex flex-col gap-10">
+          </motion.div>
+          <motion.div variants={fadeInUp} className=" mx-auto flex flex-col gap-10">
             <div
               className="rounded-3xl bg-cover bg-center flex flex-col justify-end min-h-[600px]"
               style={{ backgroundImage: "url('/images/feature1.png')" }}
@@ -228,9 +233,15 @@ export default function Home() {
               </motion.div>
             </div>
 
-          </div>
-        </section>
-        <section className="w-full pb-10">
+          </motion.div>
+        </motion.section>
+        <motion.section 
+          className="w-full pb-10"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={fadeInUp}
+        >
           <Carousel className="h-screen w-full">
             <CarouselContent className='h-screen'>
               {features.map((feature, index) => (
@@ -262,11 +273,17 @@ export default function Home() {
               <CarouselNext className='border-0'/>
             </div>
           </Carousel>
-        </section>
+        </motion.section>
         
-        <section className="container px-4 py-16 lg:py-24">
+        <motion.section 
+          className="container px-4 py-16 lg:py-24"
+          variants={staggerContainer(0.2, 0.1)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <div className="flex flex-col items-start gap-6 text-left">
+              <motion.div variants={fadeInUp} className="flex flex-col items-start gap-6 text-left">
                   <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
                       No phone? No problem.
                   </h2>
@@ -279,8 +296,8 @@ export default function Home() {
                           <ArrowRight className="ml-2 h-5 w-5" />
                       </Link>
                   </Button>
-              </div>
-              <div className="flex justify-center">
+              </motion.div>
+              <motion.div variants={fadeInUp} className="flex justify-center">
                   <Image 
                       src="/images/pinky.png"
                       alt="Friends celebrating together"
@@ -288,25 +305,39 @@ export default function Home() {
                       height={500}
                       className="rounded-3xl aspect-square object-cover"
                   />
-              </div>
+              </motion.div>
           </div>
-        </section>
+        </motion.section>
         
-        <section className="container px-4 py-16 lg:py-24 text-left md:text-center">
+        <motion.section 
+          className="container px-4 py-16 lg:py-24 text-left md:text-center"
+          variants={staggerContainer(0.2, 0.1)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           <div className="max-w-2xl mx-auto flex flex-col items-start md:items-center gap-6">
-              <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
+              <motion.h2 variants={fadeInUp} className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
                   Precision engineered for every penny
-              </h2>
-              <Button size="lg" asChild>
-                  <Link href={user ? "/app" : "/signup"}>
-                      Try Talli Now
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-              </Button>
+              </motion.h2>
+              <motion.div variants={fadeInUp}>
+                <Button size="lg" asChild>
+                    <Link href={user ? "/app" : "/signup"}>
+                        Try Talli Now
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                </Button>
+              </motion.div>
           </div>
-        </section>
+        </motion.section>
       </main>
-      <footer className="border-t py-6">
+      <motion.footer 
+        className="border-t py-6"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={fadeInUp}
+      >
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 text-center text-sm text-muted-foreground md:flex-row">
           <Logo />
           <p className="order-last md:order-none">&copy; {currentYear} Talli. Effortless bill splitting for everyone.</p>
@@ -316,7 +347,8 @@ export default function Home() {
             <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           </nav>
         </div>
-      </footer>
+      </motion.footer>
     </div>
   );
-}
+
+    
