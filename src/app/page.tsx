@@ -249,6 +249,19 @@ export default function Home() {
             </div>
           </Carousel>
         </section>
+        <section className="container px-4 py-16 lg:py-24">
+          <div className="mx-auto flex max-w-2xl flex-col items-start gap-6 text-left md:items-center md:text-center">
+            <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
+              Precision engineered for every penny
+            </h2>
+            <Button size="lg" asChild>
+              <Link href={user ? "/app" : "/signup"}>
+                Start Splitting Now
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
+        </section>
       </main>
       <footer className="border-t py-6">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 text-center text-sm text-muted-foreground md:flex-row">
