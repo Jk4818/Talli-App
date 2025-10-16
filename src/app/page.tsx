@@ -62,7 +62,7 @@ export default function Home() {
       title: 'Visualize-a-bill-ity',
       subtitle: 'Clear breakdowns, at a glance.',
       description: "Talli gives you a bird's-eye view of group spending with clean, easy-to-read charts that show exactly who paid what, who owes whom, and how items were distributed. From individual contributions to overall group totals, the visualizations make it simple to understand the financial breakdown of any shared expense. It's a straightforward way to keep everything transparent and easy to reconcile, without digging through line items or doing the math yourself.",
-      image: '/images/fountain.png'
+      image: '/images/straw.avif'
     },
   ];
 
@@ -232,7 +232,7 @@ export default function Home() {
                 <CarouselItem key={index}>
                   <Card 
                     className="h-full border-0 overflow-hidden bg-cover bg-bottom rounded-3xl"
-                    style={{ backgroundImage: `radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%), url('${feature.image}')` }}
+                    style={{ backgroundImage: `radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.7) 100%), url('${feature.image}')` }}
                   >
                     <CardContent className="flex flex-col md:items-center justify-center p-6 pt-20 md:mx-32 text-background md:text-center gap-4">
                       <CardTitle className="font-headline text-3xl md:text-4xl mb-2">{feature.title}</CardTitle>
