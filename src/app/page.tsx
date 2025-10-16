@@ -350,5 +350,4 @@ export default function Home() {
       </motion.footer>
     </div>
   );
-
-    
+}
