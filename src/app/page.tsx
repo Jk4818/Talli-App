@@ -44,25 +44,29 @@ export default function Home() {
       title: 'Snap & Scan',
       subtitle: 'Forget typing. Upload once and get a clean, digital breakdown in seconds.',
       description: "Just snap a photo of your receipt, and Talli instantly gets to work. Powered by cutting-edge AI (thanks to Google's Gemini), our system doesn’t just read the text—it understands it. Items, quantities, modifiers, discounts, tax, tips—it’s all extracted and structured automatically.",
-      image: '/images/receipt_hand.png'
+      image: '/images/receipt_hand.png',
+      image_int: '/images/dream_int.png',
     },
     {
       title: 'Split With Anyone',
       subtitle: 'One tap to share the cost, your way.',
       description: 'Our intuitive interface makes item assignment fast and flexible. Drag and drop your friends onto what they ordered, or let them assign themselves. Whether you’re splitting equally, by percentage, or by exact dollar amount—Talli adapts in real time.',
-      image: '/images/travel.png'
+      image: '/images/travel.png',
+      image_int: '/images/newad_int.png',
     },
     {
       title: 'Settle Up Simply',
       subtitle: 'Every cent, every time — perfectly calculated.',
       description: 'We’ve engineered a deterministic rounding system that distributes every cent fairly—even when the numbers don’t divide evenly. Discounts, service fees, taxes, and multi-person shares? Handled. Automatically. Accurately. Transparently. You and your friends get a clear summary of who owes what — no confusion, no arguments, just clean math and clear communication.',
-      image: '/images/wedding.png'
+      image: '/images/wedding.png',
+      image_int: '/images/big_int.png',
     },
     {
       title: 'Visualize-a-bill-ity',
       subtitle: 'Clear breakdowns, at a glance.',
       description: "Talli gives you a bird's-eye view of group spending with clean, easy-to-read charts that show exactly who paid what, who owes whom, and how items were distributed. From individual contributions to overall group totals, the visualizations make it simple to understand the financial breakdown of any shared expense. It's a straightforward way to keep everything transparent and easy to reconcile, without digging through line items or doing the math yourself.",
-      image: '/images/straw.avif'
+      image: '/images/straw.avif',
+      image_int: '/images/newad_int.png',
     },
   ];
 
@@ -229,23 +233,32 @@ export default function Home() {
           <Carousel className="h-screen w-full">
             <CarouselContent className='h-screen'>
               {features.map((feature, index) => (
-                <CarouselItem key={index}>
+                <CarouselItem key={index} className="relative">
                   <Card 
-                    className="h-full border-0 overflow-hidden bg-cover bg-bottom rounded-3xl"
+                    className="h-full border-0 overflow-hidden bg-cover bg-bottom rounded-3xl flex flex-col"
                     style={{ backgroundImage: `radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.7) 100%), url('${feature.image}')` }}
                   >
-                    <CardContent className="flex flex-col md:items-center justify-center p-6 pt-20 md:mx-32 text-background md:text-center gap-4">
+                    <CardContent className="flex flex-col md:items-center justify-center pt-20 md:mx-32 text-background md:text-center gap-4 z-10">
                       <CardTitle className="font-headline text-3xl md:text-4xl mb-2">{feature.title}</CardTitle>
                       <CardDescription className='text-muted-background font-bold md:text-xl'>{feature.subtitle}</CardDescription>
                       <p className='text-muted-background'>{feature.description}</p>
                     </CardContent>
+
+                    <div className="max-h-50 flex-grow relative w-full h-full">
+                      <Image 
+                        src={feature.image_int}
+                        alt=""
+                        fill
+                        className="object-contain object-top"
+                      />
+                    </div>
                   </Card>
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <div className='absolute bottom-10 flex w-full justify-between items-center sm:px-40 xl:px-96 px-20'>
-              <CarouselPrevious className='px-10'/>
-              <CarouselNext className='px-10'/>
+            <div className='absolute bottom-0 flex w-full justify-center items-center gap-4 px-4 z-20'>
+              <CarouselPrevious className='border-0'/>
+              <CarouselNext className='border-0'/>
             </div>
           </Carousel>
         </section>
