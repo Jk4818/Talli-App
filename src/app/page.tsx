@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -262,17 +263,46 @@ export default function Home() {
             </div>
           </Carousel>
         </section>
+        
         <section className="container px-4 py-16 lg:py-24">
-          <div className="mx-auto flex max-w-2xl flex-col items-start gap-6 text-left md:items-center md:text-center">
-            <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
-              Precision engineered for every penny
-            </h2>
-            <Button size="lg" asChild>
-              <Link href={user ? "/app" : "/signup"}>
-                Start Splitting Now
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div className="flex flex-col items-start gap-6 text-left">
+                  <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
+                      No phone? No problem.
+                  </h2>
+                  <p className="text-lg text-muted-foreground">
+                      Talli is built for the web, which means it works beautifully on your desktop, laptop, or tablet—no app download required. Start a split on your phone and finish it on your computer seamlessly.
+                  </p>
+                  <Button size="lg" asChild>
+                      <Link href={user ? "/app" : "/signup"}>
+                          Start Splitting Now
+                          <ArrowRight className="ml-2 h-5 w-5" />
+                      </Link>
+                  </Button>
+              </div>
+              <div className="flex justify-center">
+                  <Image 
+                      src="/images/pinky.png"
+                      alt="Friends celebrating together"
+                      width={500}
+                      height={500}
+                      className="rounded-3xl aspect-square object-cover"
+                  />
+              </div>
+          </div>
+        </section>
+        
+        <section className="container px-4 py-16 lg:py-24 text-left md:text-center">
+          <div className="max-w-2xl mx-auto flex flex-col items-start md:items-center gap-6">
+              <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
+                  Precision engineered for every penny
+              </h2>
+              <Button size="lg" asChild>
+                  <Link href={user ? "/app" : "/signup"}>
+                      Try Talli Now
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+              </Button>
           </div>
         </section>
       </main>
@@ -290,5 +320,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
