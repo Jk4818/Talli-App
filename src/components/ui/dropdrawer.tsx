@@ -107,7 +107,7 @@ const DropDrawerContent = React.forwardRef<
 
   if (isMobile) {
     return (
-      <DrawerContent ref={ref as React.Ref<HTMLDivElement>} className={cn("flex flex-col h-[80vh]", drawerClassName)}>
+      <DrawerContent ref={ref as React.Ref<HTMLDivElement>} className={cn("flex flex-col h-max max-h-screen", drawerClassName)}>
         <div className="flex-1 min-h-0">
             <ScrollArea className="h-full">
                 <div className="flex flex-col gap-2 p-4">

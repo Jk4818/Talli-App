@@ -204,7 +204,7 @@ export default function Step3Summary() {
                                 className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                                 icon={<RefreshCw className="h-4 w-4"/>}
                             >
-                                <button className='w-full'>Reset Session</button>
+                                <button className='w-max'>Reset Session</button>
                             </DropDrawerItem>
                         </AlertDialogTrigger>
                         <AlertDialogContent>

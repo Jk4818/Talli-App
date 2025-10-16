@@ -167,7 +167,7 @@ export default function Home() {
               animate="show"
             >
               <motion.h1 variants={fadeInUp} className="font-headline text-background font-black tracking-tight text-5xl lg:text-6xl">
-                Stop arguing over the bill.
+                Stop arguing over the bill,
                 <br />
                 <span className="text-secondary">Split it with AI.</span>
               </motion.h1>
