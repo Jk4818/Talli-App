@@ -244,12 +244,12 @@ export default function Home() {
                       <p className='text-muted-background'>{feature.description}</p>
                     </CardContent>
 
-                    <div className="max-h-50 flex-grow relative w-full h-full">
+                    <div className="max-h-50 min-h-32 flex-grow relative w-full h-full">
                       <Image 
                         src={feature.image_int}
                         alt=""
                         fill
-                        className="object-contain object-top"
+                        className="object-cover object-top"
                       />
                     </div>
                   </Card>
