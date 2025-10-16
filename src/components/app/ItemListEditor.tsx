@@ -85,7 +85,22 @@ export default function ItemListEditor() {
 
   const handleAddNewItem = () => {
     if (receipts.length > 0) {
-      dispatch(addItem({ receiptId: receipts[0].id }));
+      const newItem: Item = {
+        id: `item_${new Date().getTime()}`,
+        receiptId: receipts[0].id,
+        name: 'New Item',
+        quantity: 1,
+        cost: 0,
+        discounts: [],
+        assignees: [],
+        splitMode: 'equal',
+        percentageAssignments: {},
+        exactAssignments: {},
+        category: 'Other',
+        subCategory: undefined,
+      };
+      dispatch(addItem(newItem));
+      setEditingItem(newItem); // Open the dialog for the new item
     }
   };
 
@@ -301,5 +316,3 @@ export default function ItemListEditor() {
     </>
   );
 }
-
-

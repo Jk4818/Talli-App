@@ -244,22 +244,8 @@ const sessionSlice = createSlice({
         discount.suggestedItemId = null;
       }
     },
-    addItem: (state, action: PayloadAction<{ receiptId: string }>) => {
-      const newItem: Item = {
-        id: `item_${new Date().getTime()}`,
-        receiptId: action.payload.receiptId,
-        name: 'New Item',
-        quantity: 1,
-        cost: 0,
-        discounts: [],
-        assignees: [],
-        splitMode: 'equal',
-        percentageAssignments: {},
-        exactAssignments: {},
-        category: 'Other',
-        subCategory: undefined,
-      };
-      state.items.push(newItem);
+    addItem: (state, action: PayloadAction<Item>) => {
+        state.items.push(action.payload);
     },
     updateItem: (state, action: PayloadAction<Partial<Item> & { id: string }>) => {
       const item = state.items.find(i => i.id === action.payload.id);

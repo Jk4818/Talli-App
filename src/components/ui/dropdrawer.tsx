@@ -102,7 +102,7 @@ DropDrawerTrigger.displayName = "DropDrawerTrigger";
 const DropDrawerContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuContent> & {drawerClassName?: string}
->(({ children, className, drawerClassName, ...props }, ref) => {
+>(({ children, className, drawerClassName, align = "end", ...props }, ref) => {
   const { isMobile } = useDropDrawer();
 
   if (isMobile) {
@@ -125,7 +125,7 @@ const DropDrawerContent = React.forwardRef<
   }
 
   return (
-    <DropdownMenuContent ref={ref} className={className} {...props}>
+    <DropdownMenuContent ref={ref} className={className} align={align} {...props}>
       {children}
     </DropdownMenuContent>
   );
