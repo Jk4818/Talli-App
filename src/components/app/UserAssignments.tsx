@@ -200,68 +200,72 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
         </Button>
       </div>
 
-      <div className="space-y-1 rounded-md border p-3">
-        {participants.map(p => {
-            const isChecked = assignees.includes(p.id);
-            return (
-                <div 
-                    key={p.id} 
-                    className={cn(
-                      "flex items-center justify-between rounded-md p-2 -mx-1 transition-colors",
-                      splitMode === 'equal' && "hover:bg-secondary/80 cursor-pointer"
-                    )}
-                    onClick={splitMode === 'equal' ? () => handleAssignmentChange(p.id, !isChecked) : undefined}
-                >
-                    <div className='flex items-center space-x-3'>
-                        <Switch
-                            id={`assign-${itemId}-${p.id}`}
-                            checked={isChecked}
-                            onCheckedChange={(checked) => handleAssignmentChange(p.id, checked)}
-                        />
-                        <Label htmlFor={`assign-${itemId}-${p.id}`} className="font-normal text-base cursor-pointer">
-                            {p.name}
-                        </Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {splitMode === 'percentage' && isChecked && (
-                            <div className="relative w-20">
-                                <Input
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={item?.percentageAssignments[p.id] || ''}
-                                    onChange={e => handlePercentageChange(p.id, e.target.value)}
-                                    className="pr-6 text-right"
-                                    placeholder="0"
-                                />
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                            </div>
-                        )}
-                        {splitMode === 'exact' && isChecked && (
-                            <div className="relative w-24">
-                                <Input
-                                    type="text"
-                                    inputMode="decimal"
-                                    value={exactAmountStrings[p.id] || ''}
-                                    onChange={e => handleLocalExactAmountChange(p.id, e.target.value)}
-                                    onBlur={() => handleExactAmountBlur(p.id)}
-                                    className="pl-4 text-right"
-                                    placeholder="0.00"
-                                />
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{receipt?.currency}</span>
-                            </div>
-                        )}
-                        {shares[p.id] ? (
-                            <span className="font-mono text-sm text-muted-foreground w-20 text-right">
-                                {formatCurrency(shares[p.id], receipt?.currency || 'USD' )}
-                            </span>
-                        ) : <div className='w-20'/>}
-                    </div>
-                </div>
-            )
-        })}
-        {participants.length === 0 && (
-            <p className="text-center text-muted-foreground py-4">Add participants in Step 1 to assign items.</p>
-        )}
+      <div className="space-y-1">
+        <div className="rounded-md border p-3">
+          {participants.map(p => {
+              const isChecked = assignees.includes(p.id);
+              return (
+                  <div 
+                      key={p.id} 
+                      className={cn(
+                        "flex items-center justify-between rounded-md p-2 -mx-1 transition-colors",
+                        splitMode === 'equal' && "hover:bg-secondary/80 cursor-pointer"
+                      )}
+                      onClick={splitMode === 'equal' ? () => handleAssignmentChange(p.id, !isChecked) : undefined}
+                  >
+                      <div className='flex items-center space-x-3'>
+                          <Switch
+                              id={`assign-${itemId}-${p.id}`}
+                              checked={isChecked}
+                              onCheckedChange={(checked) => handleAssignmentChange(p.id, checked)}
+                          />
+                          <Label htmlFor={`assign-${itemId}-${p.id}`} className="font-normal text-base cursor-pointer">
+                              {p.name}
+                          </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                          {splitMode === 'percentage' && isChecked && (
+                              <div className="relative w-20">
+                                  <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      value={item?.percentageAssignments[p.id] || ''}
+                                      onChange={e => handlePercentageChange(p.id, e.target.value)}
+                                      className="pr-6 text-right"
+                                      placeholder="0"
+                                  />
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                              </div>
+                          )}
+                          {splitMode === 'exact' && isChecked && (
+                              <div className="relative w-24">
+                                  <Input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={exactAmountStrings[p.id] || ''}
+                                      onChange={e => handleLocalExactAmountChange(p.id, e.target.value)}
+                                      onBlur={() => handleExactAmountBlur(p.id)}
+                                      className="pl-4 text-right"
+                                      placeholder="0.00"
+                                  />
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{receipt?.currency}</span>
+                              </div>
+                          )}
+                          {shares[p.id] ? (
+                              <span className="font-mono text-sm text-muted-foreground w-20 text-right">
+                                  {formatCurrency(shares[p.id], receipt?.currency || 'USD' )}
+                              </span>
+                          ) : <div className='w-20'/>}
+                      </div>
+                  </div>
+              )
+          })}
+          {participants.length === 0 && (
+              <p className="text-center text-muted-foreground py-4">Add participants in Step 1 to assign items.</p>
+          )}
+        </div>
+
+        {assignees.length === 0 && itemCost > 0 && participants.length > 0 && <p className="text-center text-destructive text-sm pt-2">This item must be assigned to at least one person.</p>}
       </div>
 
       {splitMode === 'percentage' && assignees.length > 0 && totalPercentage !== 100 && (
@@ -283,8 +287,6 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
           </AlertDescription>
         </Alert>
       )}
-
-      {assignees.length === 0 && itemCost > 0 && participants.length > 0 && <p className="text-center text-destructive text-sm pt-2">This item must be assigned to at least one person.</p>}
     </div>
   );
 }

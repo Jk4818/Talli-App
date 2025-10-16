@@ -157,110 +157,112 @@ export default function Step2Assignment() {
             </div>
             <Progress value={itemsWithCost.length > 0 ? (assignedItemsCount / itemsWithCost.length) * 100 : 100} />
         </motion.div>
-        <motion.div 
-            variants={fadeInUp} 
-            className="flex flex-col items-center justify-center scroll-mt-48" 
-            ref={assignmentSectionRef}
-        >
-            <div className="w-full max-w-md">
-                <div className="overflow-hidden" ref={emblaRef}>
-                    <div className="flex" style={{ marginLeft: '-1rem' }}>
-                        {itemsWithCost.map((item, index) => (
-                        <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
-                            <ItemAssignmentCard 
-                              item={item} 
-                              itemNumber={index + 1} 
-                              totalItems={itemsWithCost.length} 
-                              hasIssue={issueItems.has(item.id)}
-                              issueText={issueItems.get(item.id)}
-                            />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <motion.div 
+                variants={fadeInUp} 
+                className="lg:col-start-1 lg:col-span-3 xl:col-start-2 xl:col-span-1 flex flex-col items-center justify-center scroll-mt-48" 
+                ref={assignmentSectionRef}
+            >
+                <div className="w-full max-w-md">
+                    <div className="overflow-hidden" ref={emblaRef}>
+                        <div className="flex" style={{ marginLeft: '-1rem' }}>
+                            {itemsWithCost.map((item, index) => (
+                            <div className="min-w-0 shrink-0 grow-0 basis-full" style={{ paddingLeft: '1rem' }} key={item.id}>
+                                <ItemAssignmentCard 
+                                  item={item} 
+                                  itemNumber={index + 1} 
+                                  totalItems={itemsWithCost.length} 
+                                  hasIssue={issueItems.has(item.id)}
+                                  issueText={issueItems.get(item.id)}
+                                />
+                            </div>
+                            ))}
                         </div>
-                        ))}
                     </div>
                 </div>
-            </div>
-            <div className="flex items-center justify-center gap-4 mt-4">
-                <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-28"
-                    onClick={scrollPrev}
-                    disabled={!canScrollPrev}
-                >
-                    <ArrowLeft className="h-5 w-5" />
-                    <span>Prev</span>
-                </Button>
-                <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-28"
-                    onClick={scrollNext}
-                    disabled={!canScrollNext}
-                >
-                    <span>Next</span>
-                    <ArrowRight className="h-5 w-5" />
-                </Button>
-            </div>
-        </motion.div>
+                <div className="flex items-center justify-center gap-4 mt-4">
+                    <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-28"
+                        onClick={scrollPrev}
+                        disabled={!canScrollPrev}
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                        <span>Prev</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-28"
+                        onClick={scrollNext}
+                        disabled={!canScrollNext}
+                    >
+                        <span>Next</span>
+                        <ArrowRight className="h-5 w-5" />
+                    </Button>
+                </div>
+            </motion.div>
 
-        {itemsRequiringAttention.length > 0 && (
-            <motion.div variants={fadeInUp}>
-                <Card className="max-w-2xl mx-auto flex flex-col">
-                    <CardHeader className='flex-row items-center gap-4 space-y-0'>
-                        <AlertCircle className="w-6 h-6 text-destructive"/>
-                        <div>
-                            <CardTitle>Items Requiring Attention</CardTitle>
-                            <CardDescription>These items have incomplete assignments. Click an item to fix it.</CardDescription>
-                        </div>
-                    </CardHeader>
-                    {/* The fix is here: remove flex sizing from CardContent and apply a fixed height to ScrollArea */}
-                    <CardContent className="p-0">
-                        <ScrollArea className="h-72">
-                            <div className="divide-y divide-border">
-                                {itemsRequiringAttention.map(({ item, index, issue }) => {
-                                    const receipt = receipts.find(r => r.id === item.receiptId);
-                                    const currency = receipt?.currency || globalCurrency;
-                                    const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
-                                    const effectiveCost = item.cost - totalItemDiscount;
-                                    const isError = issue !== 'This item is unassigned.';
+            {itemsRequiringAttention.length > 0 && (
+                <motion.div variants={fadeInUp} className="lg:col-span-3 xl:col-span-1 xl:col-start-3">
+                    <Card className="max-w-2xl mx-auto flex flex-col">
+                        <CardHeader className='flex-row items-center gap-4 space-y-0'>
+                            <AlertCircle className="w-6 h-6 text-destructive"/>
+                            <div>
+                                <CardTitle>Items Requiring Attention</CardTitle>
+                                <CardDescription>These items have incomplete assignments. Click an item to fix it.</CardDescription>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <ScrollArea className="h-72">
+                                <div className="divide-y divide-border">
+                                    {itemsRequiringAttention.map(({ item, index, issue }) => {
+                                        const receipt = receipts.find(r => r.id === item.receiptId);
+                                        const currency = receipt?.currency || globalCurrency;
+                                        const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+                                        const effectiveCost = item.cost - totalItemDiscount;
+                                        const isError = issue !== 'This item is unassigned.';
 
-                                    return (
-                                        <div 
-                                          key={item.id} 
-                                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 hover:bg-accent/50 cursor-pointer"
-                                          onClick={() => handleJumpToItem(index)}
-                                        >
-                                            <div className="flex-1 space-y-1.5 min-w-0">
-                                                <div className="flex justify-between items-center gap-4">
-                                                    <p className="font-medium leading-snug truncate" title={item.name}>{item.name}</p>
-                                                    <p className="text-sm font-mono text-muted-foreground whitespace-nowrap shrink-0">
-                                                        {formatCurrency(effectiveCost, currency)}
+                                        return (
+                                            <div 
+                                              key={item.id} 
+                                              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 hover:bg-accent/50 cursor-pointer"
+                                              onClick={() => handleJumpToItem(index)}
+                                            >
+                                                <div className="flex-1 space-y-1.5 min-w-0">
+                                                    <div className="flex justify-between items-start gap-4">
+                                                        <p className="font-medium leading-snug truncate" title={item.name}>{item.name}</p>
+                                                        <p className="text-sm font-mono text-muted-foreground whitespace-nowrap shrink-0">
+                                                            {formatCurrency(effectiveCost, currency)}
+                                                        </p>
+                                                    </div>
+                                                    <p className={cn("text-sm font-medium truncate", isError ? "text-destructive" : "text-muted-foreground")}>
+                                                      {issue}
                                                     </p>
                                                 </div>
-                                                <p className={cn("text-sm font-medium", isError ? "text-destructive" : "text-muted-foreground")}>
-                                                  {issue}
-                                                </p>
+                                                <Button 
+                                                  variant="outline" 
+                                                  size="sm" 
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleJumpToItem(index);
+                                                  }} 
+                                                  className="w-full sm:w-auto shrink-0"
+                                                >
+                                                    Go to Item
+                                                </Button>
                                             </div>
-                                            <Button 
-                                              variant="outline" 
-                                              size="sm" 
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleJumpToItem(index);
-                                              }} 
-                                              className="w-full sm:w-auto shrink-0"
-                                            >
-                                                Go to Item
-                                            </Button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
-            </motion.div>
-        )}
+                                        );
+                                    })}
+                                </div>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            )}
+        </div>
     </motion.div>
   );
 }
