@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, Pencil, Layers, FileWarning } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, Pencil, Layers, FileWarning, MoreHorizontal } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -36,7 +37,7 @@ import {
   ResponsiveSelectTrigger,
 } from '../ui/responsive-select';
 import { Badge } from '../ui/badge';
-import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerTrigger } from '../ui/dropdrawer';
+import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerSub, DropDrawerSubContent, DropDrawerSubTrigger, DropDrawerTrigger } from '../ui/dropdrawer';
 
 const getFriendlyErrorMessage = (error?: string | null): string => {
     if (!error) {
@@ -98,11 +99,11 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   }, [isPayerMissing, hasSuggestions, receipt.status]);
 
   useEffect(() => {
-    // Automatically expand the discounts section if there's a conflict
-    if (hasConflict && isCardOpen) {
+    // Automatically expand the discounts section if there's a conflict or suggestions
+    if ((hasConflict || hasSuggestions) && isCardOpen) {
       setOpenAccordion('discounts');
     }
-  }, [hasConflict, isCardOpen]);
+  }, [hasConflict, hasSuggestions, isCardOpen]);
   
   const handleRemoveReceipt = () => {
     dispatch(removeReceipt(receipt.id));
@@ -136,7 +137,8 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
           'bg-card/50 overflow-hidden', 
           hasConflict && 'border-destructive',
           isPayerMissing && !hasConflict && isCardOpen && 'border-primary',
-          receipt.status === 'failed' && 'border-destructive bg-destructive/10'
+          receipt.status === 'failed' && 'border-destructive bg-destructive/10',
+          !isCardOpen && hasSuggestions && 'ring-2 ring-red-400/30'
         )}>
             <div className="flex items-start p-6">
                 <CardHeader className="flex-1 p-0">
@@ -360,11 +362,15 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
 
                     <Accordion type="single" collapsible className="w-full" value={openAccordion} onValueChange={setOpenAccordion}>
                       <AccordionItem value="discounts">
-                        <AccordionTrigger className='hover:no-underline'>
+                        <AccordionTrigger className={cn(
+                          'hover:no-underline rounded-md -mx-3 px-3',
+                          hasSuggestions && 'ring-2 ring-red-400/30 data-[state=open]:ring-0'
+                        )}>
                           <div className="flex items-center justify-between w-full">
                               <div className="flex items-center gap-2">
                                   <span>Receipt-Wide Discounts ({formatCurrency(totalReceiptDiscounts, receipt.currency)})</span>
-                                  {hasDiscountConfidence && (
+                                  {hasSuggestions && <Sparkles className="h-4 w-4 text-primary" />}
+                                  {hasDiscountConfidence && !hasSuggestions && (
                                       <AccessibleTooltip content={
                                         <div className="p-1 space-y-1 text-xs max-w-xs">
                                             <p className="font-bold mb-1">AI Confidence Scores</p>
@@ -388,14 +394,14 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                               </div>
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="space-y-2 pt-2">
+                        <AccordionContent className="space-y-2 pt-2 px-1">
                           {discounts.map(discount => {
                             const suggestedItem = discount.suggestedItemId ? items.find(i => i.id === discount.suggestedItemId) : null;
     
                             if (suggestedItem) {
                               const isConflict = discount.amount > suggestedItem.cost;
                               return (
-                                <div key={discount.id} className="p-3 rounded-md bg-accent/30 border border-primary/20 space-y-3">
+                                <div key={discount.id} className="p-3 rounded-md ring-2 ring-red-400/30 space-y-3">
                                   {isConflict && (
                                     <Alert variant="destructive" className="my-2">
                                         <AlertCircle className="h-4 w-4" />
@@ -417,56 +423,64 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                           AI suggests applying to: <strong className="text-accent-foreground">{suggestedItem.name}</strong>
                                       </p>
                                   </div>
-                                  <div className="space-y-2">
-                                      <div className="grid grid-cols-2 gap-2">
-                                          <AccessibleTooltip content={isConflict ? "Cannot apply discount greater than item cost." : "Apply this discount to the item"}>
-                                            <span className="w-full" tabIndex={0}>
-                                              <Button size="sm" className="w-full" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))} disabled={isConflict}>
-                                                <Check className="mr-1.5 h-4 w-4" /> Apply
-                                              </Button>
-                                            </span>
-                                          </AccessibleTooltip>
-                                          <DropDrawer>
-                                              <DropDrawerTrigger asChild>
-                                                  <Button size="sm" variant="secondary" className="w-full">
-                                                      <Pencil className="mr-1.5 h-4 w-4" /> Reassign
-                                                  </Button>
-                                              </DropDrawerTrigger>
-                                              <DropDrawerContent>
-                                                  <DropDrawerLabel>Reassign to another item</DropDrawerLabel>
-                                                  {items.filter(i => i.receiptId === receipt.id).map(item => (
-                                                      <DropDrawerItem 
-                                                          key={item.id}
-                                                          onClick={() => dispatch(reassignSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id, newTargetItemId: item.id }))}
-                                                      >
-                                                          {item.name}
-                                                      </DropDrawerItem>
-                                                  ))}
-                                              </DropDrawerContent>
-                                          </DropDrawer>
-                                      </div>
-                                      <Button size="sm" variant="ghost" className="w-full" onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                        <Layers className="mr-1.5 h-4 w-4" /> Convert to Receipt-Wide Discount
-                                      </Button>
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                          <Button size="sm" variant="destructive" className="w-full">
-                                            <Trash2 className="h-4 w-4 mr-1.5" /> Remove Discount
+                                  <div className="grid grid-cols-2 gap-2">
+                                      <AccessibleTooltip content={isConflict ? "Cannot apply discount greater than item cost." : "Apply this discount to the item"}>
+                                        <span className="w-full" tabIndex={0}>
+                                          <Button size="sm" className="w-full" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))} disabled={isConflict}>
+                                            <Check className="mr-1.5 h-4 w-4" /> Apply
                                           </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                  This will permanently remove the AI-suggested &quot;{discount.name}&quot; discount. This action cannot be undone.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>Delete</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
+                                        </span>
+                                      </AccessibleTooltip>
+                                      <DropDrawer>
+                                        <DropDrawerTrigger asChild>
+                                            <Button size="sm" variant="outline" className="w-full">
+                                                <MoreHorizontal className="h-4 w-4" /> More Options
+                                            </Button>
+                                        </DropDrawerTrigger>
+                                        <DropDrawerContent>
+                                            <DropDrawerLabel>More Options</DropDrawerLabel>
+                                            <DropDrawerSub>
+                                                <DropDrawerSubTrigger icon={<Pencil className="h-4 w-4" />}>Reassign...</DropDrawerSubTrigger>
+                                                <DropDrawerSubContent>
+                                                    <DropDrawerLabel>Reassign to another item</DropDrawerLabel>
+                                                    {items.filter(i => i.receiptId === receipt.id).map(item => (
+                                                        <DropDrawerItem 
+                                                            key={item.id}
+                                                            onClick={() => dispatch(reassignSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id, newTargetItemId: item.id }))}
+                                                        >
+                                                            {item.name}
+                                                        </DropDrawerItem>
+                                                    ))}
+                                                </DropDrawerSubContent>
+                                            </DropDrawerSub>
+                                            <DropDrawerItem onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))} icon={<Layers className="h-4 w-4" />}>
+                                                Make Receipt-Wide
+                                            </DropDrawerItem>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <DropDrawerItem
+                                                        onSelect={(e) => e.preventDefault()}
+                                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                                        icon={<Trash2 className="h-4 w-4"/>}
+                                                    >
+                                                        Remove Discount
+                                                    </DropDrawerItem>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                        This will permanently remove the AI-suggested &quot;{discount.name}&quot; discount. This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </DropDrawerContent>
+                                    </DropDrawer>
                                   </div>
                                 </div>
                               )
