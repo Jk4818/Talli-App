@@ -13,7 +13,7 @@ import { Pencil, AlertCircle, Tag } from 'lucide-react';
 import ItemEditDialog from './ItemEditDialog';
 import { updateItem, removeItem } from '@/lib/redux/slices/sessionSlice';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 
 interface ItemAssignmentCardProps {
   item: Item;
@@ -24,7 +24,7 @@ interface ItemAssignmentCardProps {
 }
 
 export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIssue, issueText }: ItemAssignmentCardProps) {
-  const { receipts, items } = useSelector((state: RootState) => state.session);
+  const { receipts, items, participants } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const receipt = receipts.find(r => r.id === item.receiptId);
   const [isEditing, setIsEditing] = useState(false);
@@ -40,10 +40,11 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
   const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
   const effectiveCost = item.cost - totalItemDiscount;
   const showUnitCost = item.quantity > 1 && item.unitCost;
+  const needsAssignment = item.assignees.length === 0 && effectiveCost > 0;
 
   return (
     <>
-      <Card className="shadow-lg">
+      <Card className="flex flex-col">
         <CardHeader>
           <div className="flex justify-between items-start gap-4">
               <div className='flex-1 min-w-0'>
@@ -82,12 +83,13 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
               </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           <p className="text-sm font-medium mb-2">Who is sharing this item?</p>
           <UserAssignments itemId={item.id} />
         </CardContent>
-        <CardFooter className="text-sm text-muted-foreground justify-center">
-          Item {itemNumber} of {totalItems}
+        <CardFooter className={cn("flex-col gap-2 text-sm text-muted-foreground text-center transition-all pt-4", needsAssignment && participants.length > 0 ? "border-t" : "")}>
+           {needsAssignment && participants.length > 0 && <p className="text-center text-destructive text-sm font-medium">This item must be assigned to at least one person.</p>}
+          <p>Item {itemNumber} of {totalItems}</p>
         </CardFooter>
       </Card>
       <ItemEditDialog

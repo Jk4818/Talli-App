@@ -1,3 +1,4 @@
+
 import { SessionState, ParticipantSummary, Settlement, SplitSummary, BreakdownEntry, Item } from './types';
 
 // A helper function to distribute a total amount based on shares, handling rounding.
@@ -9,9 +10,9 @@ function distributeAmount(
 ): { distributed: Map<string, number>, adjustments: { participantName: string, amount: number }[] } {
   const distributed = new Map<string, number>();
   const adjustments: { participantName: string, amount: number }[] = [];
-  // Sort the participants to ensure deterministic distribution of rounding errors
+  // Sort the participants to ensure deterministic distribution of rounding errors, excluding 'unassigned'
   const pidsWithShares = [...shares.keys()]
-    .filter(pid => (shares.get(pid) || 0) > 0)
+    .filter(pid => pid !== 'unassigned' && (shares.get(pid) || 0) > 0)
     .sort((a,b) => a.localeCompare(b));
 
   const totalShares = pidsWithShares.reduce((sum, pid) => sum + (shares.get(pid) || 0), 0);
@@ -32,7 +33,7 @@ function distributeAmount(
 
   // Distribute rounding difference
   let remainder = totalAmount - amountDistributed;
-  if (remainder !== 0) {
+  if (remainder !== 0 && pidsWithShares.length > 0) {
     let i = 0;
     while (remainder !== 0) {
         const pid = pidsWithShares[i % pidsWithShares.length];

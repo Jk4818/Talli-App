@@ -14,6 +14,7 @@ import { Input } from '../ui/input';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
+import { ResponsiveSelect, ResponsiveSelectContent, ResponsiveSelectItem, ResponsiveSelectTrigger, ResponsiveSelectLabel } from '../ui/responsive-select';
 
 
 interface UserAssignmentsProps {
@@ -180,13 +181,17 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <Tabs value={splitMode} onValueChange={handleModeChange} className="w-full sm:w-auto">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="equal">Equal</TabsTrigger>
-            <TabsTrigger value="percentage">Percent</TabsTrigger>
-            <TabsTrigger value="exact">Exact</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <ResponsiveSelect value={splitMode} onValueChange={handleModeChange}>
+          <ResponsiveSelectTrigger className="w-full sm:w-[180px]">
+            <span className="capitalize">{splitMode} Split</span>
+          </ResponsiveSelectTrigger>
+          <ResponsiveSelectContent>
+            <ResponsiveSelectLabel>Split Mode</ResponsiveSelectLabel>
+            <ResponsiveSelectItem value="equal">Equal</ResponsiveSelectItem>
+            <ResponsiveSelectItem value="percentage">Percentage</ResponsiveSelectItem>
+            <ResponsiveSelectItem value="exact">Exact</ResponsiveSelectItem>
+          </ResponsiveSelectContent>
+        </ResponsiveSelect>
 
         <Button
           variant="outline"
@@ -264,8 +269,6 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
               <p className="text-center text-muted-foreground py-4">Add participants in Step 1 to assign items.</p>
           )}
         </div>
-
-        {assignees.length === 0 && itemCost > 0 && participants.length > 0 && <p className="text-center text-destructive text-sm pt-2">This item must be assigned to at least one person.</p>}
       </div>
 
       {splitMode === 'percentage' && assignees.length > 0 && totalPercentage !== 100 && (
@@ -290,3 +293,5 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
     </div>
   );
 }
+
+    
