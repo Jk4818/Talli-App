@@ -404,27 +404,27 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                 <div key={discount.id} className="p-3 rounded-md ring-2 ring-red-400/30 space-y-3">
                                   {isConflict && (
                                     <Alert variant="destructive" className="my-2">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertTitle>Potential Conflict</AlertTitle>
-                                        <AlertDescription>
-                                            Applying this discount would make the item cost negative. Please reassign or remove it.
-                                        </AlertDescription>
+                                      <AlertCircle className="h-4 w-4" />
+                                      <AlertTitle>Potential Conflict</AlertTitle>
+                                      <AlertDescription>
+                                        Applying this discount would make the item cost negative.
+                                      </AlertDescription>
                                     </Alert>
                                   )}
-                                  <div>
-                                      <div className="flex justify-between items-start">
-                                          <div>
-                                              <p className="font-semibold">{discount.name}</p>
-                                              <p className="text-sm text-muted-foreground">- {formatCurrency(discount.amount, receipt.currency)}</p>
-                                          </div>
-                                          {discount.confidence !== undefined && <Badge variant="secondary" className="text-primary font-medium"><Sparkles className='h-3 w-3 mr-1.5' /> {discount.confidence}%</Badge>}
+                                  <div className="flex justify-between items-start gap-4">
+                                    <div className="flex-1">
+                                      <div className='flex items-center gap-2 font-semibold text-primary'>
+                                          <Sparkles className="h-4 w-4" />
+                                          AI Suggestion
                                       </div>
-                                      <p className="text-xs text-center text-accent-foreground/80 mt-2">
-                                          AI suggests applying to: <strong className="text-accent-foreground">{suggestedItem.name}</strong>
+                                      <p className="mt-1 text-sm text-muted-foreground">
+                                        Apply <span className="font-medium text-foreground">{discount.name}</span> (-{formatCurrency(discount.amount, receipt.currency)}) to <span className="font-medium text-foreground">{suggestedItem.name}</span>?
                                       </p>
+                                    </div>
+                                    {discount.confidence && <Badge variant="secondary" className="text-primary font-medium shrink-0"><Sparkles className='h-3 w-3 mr-1.5' /> {discount.confidence}%</Badge>}
                                   </div>
                                   <div className="grid grid-cols-2 gap-2">
-                                      <AccessibleTooltip content={isConflict ? "Cannot apply discount greater than item cost." : "Apply this discount to the item"}>
+                                      <AccessibleTooltip content={isConflict ? "Cannot apply: discount exceeds item cost." : "Apply this discount to the item"}>
                                         <span className="w-full" tabIndex={0}>
                                           <Button size="sm" className="w-full" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))} disabled={isConflict}>
                                             <Check className="mr-1.5 h-4 w-4" /> Apply
@@ -438,7 +438,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                             </Button>
                                         </DropDrawerTrigger>
                                         <DropDrawerContent>
-                                            <DropDrawerLabel>More Options</DropDrawerLabel>
+                                            <DropDrawerLabel>More Options for "{discount.name}"</DropDrawerLabel>
                                             <DropDrawerSub>
                                                 <DropDrawerSubTrigger icon={<Pencil className="h-4 w-4" />}>Reassign...</DropDrawerSubTrigger>
                                                 <DropDrawerSubContent>
@@ -468,7 +468,7 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                         <AlertDialogDescription>
                                                         This will permanently remove the AI-suggested &quot;{discount.name}&quot; discount. This action cannot be undone.
                                                         </AlertDialogDescription>
@@ -587,3 +587,5 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     </>
   );
 }
+
+    
