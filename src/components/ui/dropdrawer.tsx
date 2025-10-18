@@ -27,11 +27,16 @@ import {
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "./scroll-area";
+import { ArrowLeft, ChevronRight } from "lucide-react";
+import { Slot } from "@radix-ui/react-slot";
 
 type DropDrawerContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
   isMobile: boolean | null;
+  viewStack: React.ReactNode[];
+  pushView: (view: React.ReactNode) => void;
+  popView: () => void;
 };
 
 const DropDrawerContext = React.createContext<DropDrawerContextValue | null>(null);
@@ -46,8 +51,8 @@ const useDropDrawer = () => {
 
 const DropDrawer = ({
   children,
-  open,
-  onOpenChange,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
 }: {
   children: React.ReactNode;
   open?: boolean;
@@ -55,31 +60,40 @@ const DropDrawer = ({
 }) => {
   const isMobile = useSelector((state: RootState) => state.ui.isMobile);
   const [internalOpen, setInternalOpen] = React.useState(false);
+  const [viewStack, setViewStack] = React.useState<React.ReactNode[]>([]);
 
-  const effectiveOpen = open ?? internalOpen;
-  const effectiveSetOpen = onOpenChange ?? setInternalOpen;
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = setControlledOpen ?? setInternalOpen;
+  
+  React.useEffect(() => {
+    if (!open) {
+      setViewStack([]);
+    }
+  }, [open]);
 
-  const value = React.useMemo(() => ({
-    open: effectiveOpen,
-    setOpen: effectiveSetOpen,
+  const pushView = (view: React.ReactNode) => {
+    setViewStack(prev => [...prev, view]);
+  };
+  
+  const popView = () => {
+    setViewStack(prev => prev.slice(0, -1));
+  };
+  
+  const value: DropDrawerContextValue = {
+    open,
+    setOpen,
     isMobile,
-  }), [effectiveOpen, effectiveSetOpen, isMobile]);
+    viewStack,
+    pushView,
+    popView,
+  };
 
-  if (isMobile) {
-    return (
-      <DropDrawerContext.Provider value={value}>
-        <Drawer open={effectiveOpen} onOpenChange={effectiveSetOpen}>
-          {children}
-        </Drawer>
-      </DropDrawerContext.Provider>
-    );
-  }
-
+  const Comp = isMobile ? Drawer : DropdownMenu;
   return (
     <DropDrawerContext.Provider value={value}>
-      <DropdownMenu open={effectiveOpen} onOpenChange={effectiveSetOpen}>
+      <Comp open={open} onOpenChange={setOpen}>
         {children}
-      </DropdownMenu>
+      </Comp>
     </DropDrawerContext.Provider>
   );
 };
@@ -92,30 +106,41 @@ const DropDrawerTrigger = React.forwardRef<
   const { isMobile } = useDropDrawer();
   const Comp = isMobile ? DrawerTrigger : DropdownMenuTrigger;
   return (
-    <Comp {...props} ref={ref}>
-      {children}
+    <Comp {...props} ref={ref} asChild>
+        {children}
     </Comp>
   );
 });
 DropDrawerTrigger.displayName = "DropDrawerTrigger";
 
+
 const DropDrawerContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuContent> & {drawerClassName?: string}
 >(({ children, className, drawerClassName, align = "end", ...props }, ref) => {
-  const { isMobile } = useDropDrawer();
-
+  const { isMobile, viewStack, popView } = useDropDrawer();
+  
+  const activeView = viewStack.length > 0 ? viewStack[viewStack.length - 1] : children;
+  
   if (isMobile) {
     return (
-      <DrawerContent ref={ref as React.Ref<HTMLDivElement>} className={cn("flex flex-col h-max max-h-screen", drawerClassName)}>
+      <DrawerContent ref={ref as React.Ref<HTMLDivElement>} className={cn("flex flex-col h-max max-h-[90vh]", drawerClassName)}>
+        {viewStack.length > 0 && (
+          <DrawerHeader className="p-4 border-b flex-shrink-0">
+             <Button variant="ghost" size="sm" className="justify-start w-fit p-0 h-auto" onClick={popView}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </DrawerHeader>
+        )}
         <div className="flex-1 min-h-0">
             <ScrollArea className="h-full">
-                <div className="flex flex-col gap-2 p-4">
-                    {children}
+                <div className="flex flex-col gap-1 p-4">
+                    {activeView}
                 </div>
             </ScrollArea>
         </div>
-        <DrawerFooter className="pt-4">
+        <DrawerFooter className="pt-4 flex-shrink-0">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>
@@ -136,78 +161,70 @@ const DropDrawerItem = React.forwardRef<
   HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof DropdownMenuItem> & {
     icon?: React.ReactNode;
-    asChild?: boolean;
   }
->(({ children, icon, className, onSelect, asChild, ...props }, ref) => {
+>(({ children, icon, className, onSelect, ...props }, ref) => {
   const { isMobile, setOpen } = useDropDrawer();
 
-  const handleInteraction = (event: React.SyntheticEvent | Event) => {
-    // The consumer might pass an `onSelect` prop to prevent default behavior.
-    onSelect?.(event as any);
+  const handleInteraction = (event: React.MouseEvent<HTMLDivElement>) => {
+    const isTrigger = props.role === 'menuitem' && (event.currentTarget.getAttribute('aria-haspopup') === 'true' || event.currentTarget.getAttribute('data-state') === 'open');
 
-    // The consumer might pass an `onClick` prop (e.g., from an AlertDialogTrigger).
-    const consumerOnClick = (props as any).onClick;
-    consumerOnClick?.(event);
-
-    const wasDefaultPrevented =
-      "isDefaultPrevented" in event
-        ? event.isDefaultPrevented()
-        : event.defaultPrevented;
-
-    // Do not close the drawer if this item is a trigger for another component (like a dialog)
-    // or if the event was explicitly prevented.
-    if (!wasDefaultPrevented && !asChild) {
+    // Propagate the original onClick if it exists.
+    props.onClick?.(event);
+    
+    // The `onSelect` prop from DropdownMenuItem is used to control closing.
+    // If it's present, we call it. It might call `event.preventDefault()`.
+    if (onSelect) {
+      const selectEvent = new CustomEvent("select", { cancelable: true });
+      onSelect(selectEvent);
+      if (selectEvent.defaultPrevented) {
+        return; // If `preventDefault` was called, do not close the drawer.
+      }
+    }
+    
+    // If it's not a sub-trigger, close the drawer.
+    if (!isTrigger) {
       setOpen(false);
     }
   };
 
   if (isMobile) {
-    const { onClick, ...restOfProps } = props as any;
+    const { asChild } = props;
+    const Comp = asChild ? Slot : "div";
+
+    // Detect if this item is a trigger for a dialog/sub-component
+    const isAlertDialogTrigger = onSelect?.toString().includes("preventDefault");
+    
+    const mobileProps = {
+      ...props,
+      ref: ref,
+      className: cn(
+        "flex items-center gap-3 p-3 -mx-1 rounded-lg text-foreground",
+        !props.disabled && "active:bg-accent",
+        props.disabled && "opacity-50 pointer-events-none",
+        className
+      ),
+      onClick: handleInteraction,
+      // Add this attribute if it's a trigger, to prevent vaul from closing the drawer.
+      ...(isAlertDialogTrigger && { "data-vaul-no-close": "" }),
+    };
+
     return (
-      <div
-        ref={ref as React.Ref<HTMLDivElement>}
-        className={cn(
-          "flex items-center gap-3 p-3 -mx-1 rounded-lg text-foreground",
-          !props.disabled && "hover:bg-accent",
-          props.disabled && "opacity-50 pointer-events-none",
-          className
-        )}
-        onClick={!props.disabled ? handleInteraction : undefined}
-        {...restOfProps}
-      >
+      <Comp {...mobileProps}>
         {icon && <div className="w-5 h-5 flex items-center justify-center shrink-0">{icon}</div>}
         <span className="flex-1">{children}</span>
-      </div>
+      </Comp>
     );
   }
 
   return (
-    <DropdownMenuItem
-      ref={ref}
-      onSelect={handleInteraction}
-      {...props}
-      className={cn("gap-2", className)}
-      asChild={asChild}
-    >
-      {/* 
-        When using asChild, DropdownMenuItem expects a single child that it can pass its props to.
-        So we wrap the icon and children in a fragment if asChild is true, or render them directly otherwise.
-        This ensures the icon is displayed correctly in both cases.
-      */}
-      {asChild ? (
-        <>
-          {children}
-        </>
-      ) : (
-        <>
-          {icon}
-          {children}
-        </>
-      )}
+    <DropdownMenuItem ref={ref} onSelect={onSelect} {...props} className={cn("gap-2", className)}>
+      {icon}
+      {children}
     </DropdownMenuItem>
   );
 });
 DropDrawerItem.displayName = "DropDrawerItem";
+
 
 const DropDrawerLabel = React.forwardRef<
   React.ElementRef<typeof DropdownMenuLabel>,
@@ -231,7 +248,7 @@ const DropDrawerSeparator = React.forwardRef<
 >((props, ref) => {
   const { isMobile } = useDropDrawer();
   if (isMobile) {
-    return <div className="h-px bg-muted -mx-1 my-2" />;
+    return <div className="h-px bg-muted -mx-4 my-2" />;
   }
   return <DropdownMenuSeparator ref={ref} {...props} />;
 });
@@ -249,18 +266,31 @@ const DropDrawerGroup = React.forwardRef<
 });
 DropDrawerGroup.displayName = "DropDrawerGroup";
 
+
 const DropDrawerSub = ({ children }: { children: React.ReactNode }) => {
-    const { isMobile } = useDropDrawer();
-    if (isMobile) {
-        // Submenus are not supported in drawer mode, just render the trigger as disabled
-        const subTrigger = React.Children.toArray(children).find(
-            (child) => React.isValidElement(child) && ((child.type as any).displayName === "DropDrawerSubTrigger")
-        );
-        return <>{subTrigger}</>;
+  const { isMobile, pushView } = useDropDrawer();
+
+  const subTrigger = React.Children.toArray(children).find(
+    (child) => React.isValidElement(child) && (child.type as any).displayName === 'DropDrawerSubTrigger'
+  );
+  const subContent = React.Children.toArray(children).find(
+    (child) => React.isValidElement(child) && (child.type as any).displayName === 'DropDrawerSubContent'
+  );
+
+  if (isMobile) {
+    if (!subTrigger || !React.isValidElement(subTrigger)) {
+      return null;
     }
-    return <DropdownMenuSub>{children}</DropdownMenuSub>
-}
+    // Clone the trigger and inject the onClick handler to push the content to the view stack
+    return React.cloneElement(subTrigger, {
+      onClick: () => pushView(subContent),
+    });
+  }
+
+  return <DropdownMenuSub>{children}</DropdownMenuSub>;
+};
 DropDrawerSub.displayName = "DropDrawerSub";
+
 
 const DropDrawerSubTrigger = React.forwardRef<
   React.ElementRef<typeof DropdownMenuSubTrigger>,
@@ -269,11 +299,13 @@ const DropDrawerSubTrigger = React.forwardRef<
   }
 >(({ children, icon, className, ...props }, ref) => {
     const { isMobile } = useDropDrawer();
+    
     if (isMobile) {
         return (
-            <div className={cn("flex items-center gap-3 p-3 -mx-4 rounded-lg text-foreground opacity-50 cursor-not-allowed", className)}>
+            <div ref={ref as React.Ref<HTMLDivElement>} className={cn("flex items-center gap-3 p-3 -mx-1 rounded-lg text-foreground active:bg-accent", className)} {...props}>
                 {icon && <div className="w-5 h-5 flex items-center justify-center shrink-0">{icon}</div>}
                 <span className="flex-1">{children}</span>
+                <ChevronRight className="h-4 w-4 ml-auto" />
             </div>
         )
     }
@@ -284,13 +316,17 @@ DropDrawerSubTrigger.displayName = "DropDrawerSubTrigger";
 const DropDrawerSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuSubContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuSubContent>
->((props, ref) => {
+>(({children, ...props}, ref) => {
     const { isMobile } = useDropDrawer();
     if (isMobile) {
-        return null; // Submenus are not supported in drawer mode
+        // This content is programmatically pushed to the view stack on mobile.
+        // It does not render itself directly.
+        return <>{children}</>;
     }
     return (
-        <DropdownMenuSubContent ref={ref} {...props} />
+        <DropdownMenuSubContent ref={ref} {...props}>
+            {children}
+        </DropdownMenuSubContent>
     );
 });
 DropDrawerSubContent.displayName = "DropDrawerSubContent";
