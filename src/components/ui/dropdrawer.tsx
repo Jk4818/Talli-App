@@ -161,15 +161,14 @@ const DropDrawerItem = React.forwardRef<
   HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof DropdownMenuItem> & {
     icon?: React.ReactNode;
+    asChild?: boolean;
   }
->(({ children, icon, className, onSelect, ...props }, ref) => {
+>(({ children, icon, className, onSelect, asChild, ...props }, ref) => {
   const { isMobile, setOpen } = useDropDrawer();
 
-  const handleInteraction = (event: React.MouseEvent<HTMLDivElement>) => {
-    const isTrigger = props.role === 'menuitem' && (event.currentTarget.getAttribute('aria-haspopup') === 'true' || event.currentTarget.getAttribute('data-state') === 'open');
-
+  const handleInteraction = (event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
     // Propagate the original onClick if it exists.
-    props.onClick?.(event);
+    props.onClick?.(event as React.MouseEvent<HTMLDivElement>);
     
     // The `onSelect` prop from DropdownMenuItem is used to control closing.
     // If it's present, we call it. It might call `event.preventDefault()`.
@@ -181,18 +180,14 @@ const DropDrawerItem = React.forwardRef<
       }
     }
     
-    // If it's not a sub-trigger, close the drawer.
-    if (!isTrigger) {
-      setOpen(false);
-    }
+    setOpen(false);
   };
-
+  
   if (isMobile) {
-    const { asChild } = props;
     const Comp = asChild ? Slot : "div";
 
     // Detect if this item is a trigger for a dialog/sub-component
-    const isAlertDialogTrigger = onSelect?.toString().includes("preventDefault");
+    const isTrigger = !!onSelect;
     
     const mobileProps = {
       ...props,
@@ -204,8 +199,13 @@ const DropDrawerItem = React.forwardRef<
         className
       ),
       onClick: handleInteraction,
+      onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleInteraction(e);
+        }
+      },
       // Add this attribute if it's a trigger, to prevent vaul from closing the drawer.
-      ...(isAlertDialogTrigger && { "data-vaul-no-close": "" }),
+      ...(isTrigger && { "data-vaul-no-close": "" }),
     };
 
     return (
@@ -217,9 +217,11 @@ const DropDrawerItem = React.forwardRef<
   }
 
   return (
-    <DropdownMenuItem ref={ref} onSelect={onSelect} {...props} className={cn("gap-2", className)}>
-      {icon}
-      {children}
+    <DropdownMenuItem ref={ref} onSelect={onSelect} {...props} asChild={asChild} className={cn("gap-2", className)}>
+      <div>
+        {icon}
+        {children}
+      </div>
     </DropdownMenuItem>
   );
 });
@@ -282,7 +284,7 @@ const DropDrawerSub = ({ children }: { children: React.ReactNode }) => {
       return null;
     }
     // Clone the trigger and inject the onClick handler to push the content to the view stack
-    return React.cloneElement(subTrigger, {
+    return React.cloneElement(subTrigger as React.ReactElement<any>, {
       onClick: () => pushView(subContent),
     });
   }
@@ -296,13 +298,19 @@ const DropDrawerSubTrigger = React.forwardRef<
   React.ElementRef<typeof DropdownMenuSubTrigger>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuSubTrigger> & {
     icon?: React.ReactNode;
+    onClick?: () => void;
   }
->(({ children, icon, className, ...props }, ref) => {
+>(({ children, icon, className, onClick, ...props }, ref) => {
     const { isMobile } = useDropDrawer();
     
     if (isMobile) {
         return (
-            <div ref={ref as React.Ref<HTMLDivElement>} className={cn("flex items-center gap-3 p-3 -mx-1 rounded-lg text-foreground active:bg-accent", className)} {...props}>
+            <div 
+              ref={ref as React.Ref<HTMLDivElement>} 
+              className={cn("flex items-center gap-3 p-3 -mx-1 rounded-lg text-foreground active:bg-accent", className)} 
+              onClick={onClick}
+              {...props}
+            >
                 {icon && <div className="w-5 h-5 flex items-center justify-center shrink-0">{icon}</div>}
                 <span className="flex-1">{children}</span>
                 <ChevronRight className="h-4 w-4 ml-auto" />
