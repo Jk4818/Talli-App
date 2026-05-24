@@ -41,13 +41,13 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
 
 
 const SmartSummaryItem = ({ icon, title, description, children }: { icon: React.ReactNode; title: React.ReactNode; description?: React.ReactNode; children: React.ReactNode }) => (
-    <li className="flex items-start gap-4 py-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
+    <li className="flex items-center gap-3 py-2 rounded-md">
+        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
             {icon}
         </div>
         <div className="flex-1 min-w-0">
-            <div className="font-semibold text-foreground">{title}</div>
-            {description && <div className="text-xs text-muted-foreground mt-0.5">{description}</div>}
+            <div className="text-sm font-semibold font-headline text-foreground leading-tight">{title}</div>
+            {description && <div className="text-xs font-body text-muted-foreground mt-0.5">{description}</div>}
         </div>
         <div className="text-right shrink-0">
             {children}
@@ -352,18 +352,20 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
 
     return (
         <Card>
-            <CardHeader className='flex-row items-center gap-4 space-y-0'>
-                <Lightbulb className="w-8 h-8 text-primary" />
+            <CardHeader className="flex-row items-center gap-3 space-y-0 pb-3">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+                    <Lightbulb className="w-3.5 h-3.5 text-primary" />
+                </div>
                 <div>
-                    <CardTitle>Smart Summary</CardTitle>
-                    <CardDescription>A few insights about your split.</CardDescription>
+                    <CardTitle className="text-[13px] font-semibold font-body">Smart Summary</CardTitle>
+                    <CardDescription className="text-xs">A few insights from your split.</CardDescription>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0 px-3 pb-3">
                 <ul className="space-y-0">
                     {aiConfidence !== null && (
                         <SmartSummaryItem
-                            icon={<Bot className="h-5 w-5" />}
+                            icon={<Bot className="h-4 w-4" />}
                             title={
                                 <div className="flex items-center gap-1.5">
                                     AI Confidence
@@ -374,12 +376,12 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             }
                             description="Average AI confidence in receipt scans."
                         >
-                            <p className="font-medium text-foreground">{aiConfidence}%</p>
+                            <p className="text-sm font-bold font-headline tabular-nums text-foreground">{aiConfidence}%</p>
                         </SmartSummaryItem>
                     )}
                     {fairnessMetric && (
                          <SmartSummaryItem
-                            icon={<Scale className="h-5 w-5" />}
+                            icon={<Scale className="h-4 w-4" />}
                             title={
                                 <div className="flex items-center gap-1.5">
                                    Fairness Check
@@ -390,12 +392,12 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             }
                             description="How evenly the bill was shared."
                         >
-                            <p className="font-medium text-foreground">{fairnessMetric.value}</p>
+                            <p className="text-sm font-bold font-headline tabular-nums text-foreground">{fairnessMetric.value}</p>
                         </SmartSummaryItem>
                     )}
                     {summary.roundingOccurred && (
                         <SmartSummaryItem
-                            icon={<Sparkles className="h-5 w-5" />}
+                            icon={<Sparkles className="h-4 w-4" />}
                             title={
                                 <div className="flex items-center gap-1.5">
                                     Penny Perfect
@@ -407,68 +409,68 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                             description="Rounding was applied for accuracy."
                         >
                             <div className="flex items-center gap-2">
-                                <p className="font-medium text-foreground">Adjusted</p>
+                                <p className="text-sm font-semibold font-body text-foreground">Adjusted</p>
                                 <CheckCircle2 className="h-4 w-4 text-accent" />
                             </div>
                         </SmartSummaryItem>
                     )}
                     {topSaver && (
                         <SmartSummaryItem
-                            icon={<Award className="h-5 w-5" />}
+                            icon={<Award className="h-4 w-4" />}
                             title="Top Saver"
                             description="Benefited most from discounts."
                         >
                             <div className='text-right'>
-                                <p className="font-medium text-foreground truncate">{topSaver.name}</p>
-                                <p className="text-xs text-muted-foreground">{formatCurrency(topSaver.amount)}</p>
+                                <p className="text-sm font-semibold font-headline text-foreground truncate">{topSaver.name}</p>
+                                <p className="text-xs font-body text-muted-foreground tabular-nums">{formatCurrency(topSaver.amount)}</p>
                             </div>
                         </SmartSummaryItem>
                     )}
                     {socialButterfly && (
                         <SmartSummaryItem
-                            icon={<HeartHandshake className="h-5 w-5" />}
+                            icon={<HeartHandshake className="h-4 w-4" />}
                             title="Social Butterfly"
                             description="Shared items with the most people."
                         >
                            <div className='text-right'>
-                                <p className="font-medium text-foreground truncate">{socialButterfly.name}</p>
-                                <p className="text-xs text-muted-foreground">{socialButterfly.count} connections</p>
+                                <p className="text-sm font-semibold font-headline text-foreground truncate">{socialButterfly.name}</p>
+                                <p className="text-xs font-body text-muted-foreground">{socialButterfly.count} connections</p>
                            </div>
                         </SmartSummaryItem>
                     )}
                     {highestPayer && highestPayer.totalPaid > 0 && (
                         <SmartSummaryItem
-                            icon={<Trophy className="h-5 w-5" />}
+                            icon={<Trophy className="h-4 w-4" />}
                             title="Top Payer"
                             description="Contributed the most money."
                         >
                             <div className='text-right'>
-                                <p className="font-medium text-foreground truncate">{highestPayer.name}</p>
-                                <p className="text-xs text-muted-foreground">{formatCurrency(highestPayer.totalPaid)}</p>
+                                <p className="text-sm font-semibold font-headline text-foreground truncate">{highestPayer.name}</p>
+                                <p className="text-xs font-body text-muted-foreground tabular-nums">{formatCurrency(highestPayer.totalPaid)}</p>
                             </div>
                         </SmartSummaryItem>
                     )}
                     {highestShare && highestShare.totalShare > 0 && (
                         <SmartSummaryItem
-                            icon={<Pizza className="h-5 w-5" />}
+                            icon={<Pizza className="h-4 w-4" />}
                             title="Highest Share"
                             description="Largest portion of the final bill."
                         >
                            <div className='text-right'>
-                                <p className="font-medium text-foreground truncate">{highestShare.name}</p>
-                                <p className="text-xs text-muted-foreground">{formatCurrency(highestShare.totalShare)}</p>
+                                <p className="text-sm font-semibold font-headline text-foreground truncate">{highestShare.name}</p>
+                                <p className="text-xs font-body text-muted-foreground tabular-nums">{formatCurrency(highestShare.totalShare)}</p>
                            </div>
                         </SmartSummaryItem>
                     )}
                     {mostExpensiveItem && (
                         <SmartSummaryItem
-                            icon={<Gem className="h-5 w-5" />}
+                            icon={<Gem className="h-4 w-4" />}
                             title="Priciest Item"
                             description={`Shared between ${mostExpensiveItem.assignees.length} people.`}
                         >
                              <div className='text-right'>
-                                <p className="font-medium text-foreground truncate">{mostExpensiveItem.name}</p>
-                                <p className="text-xs text-muted-foreground">{formatCurrency(mostExpensiveItem.cost)}</p>
+                                <p className="text-sm font-semibold font-headline text-foreground truncate">{mostExpensiveItem.name}</p>
+                                <p className="text-xs font-body text-muted-foreground tabular-nums">{formatCurrency(mostExpensiveItem.cost)}</p>
                              </div>
                         </SmartSummaryItem>
                     )}

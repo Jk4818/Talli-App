@@ -254,6 +254,48 @@ The scale is a **fluid type** approach: display and headline sizes use `clamp()`
 - **Label-sm (uppercase)**: `+0.06em` — wide tracking is mandatory for legibility at 11px uppercase.
 - **Numeric amounts**: Always `font-variant-numeric: tabular-nums` — financial figures must never reflow.
 
+### Component Typography Conventions
+
+The abstract scale above maps to these concrete sizes for the specific UI contexts in Talli. Use these as the single source of truth — never pick arbitrary sizes between these steps.
+
+| Context | Size | Weight | Font | Tailwind |
+|---|---|---|---|---|
+| Section card title | 13px | 600 | DM Sans | `text-[13px] font-semibold font-body` |
+| Section card description | 12px | 400 | DM Sans | `text-xs font-body text-muted-foreground` |
+| List row primary label | 14px | 600 | Space Grotesk | `text-sm font-semibold font-headline` |
+| List row secondary detail | 12px | 400 | DM Sans | `text-xs font-body text-muted-foreground` |
+| Amount — focal / prominent | 16px | 700 | Space Grotesk | `text-base font-bold font-headline tabular-nums` |
+| Amount — inline / secondary | 13px | 500 | Space Grotesk | `text-[13px] font-medium font-headline tabular-nums` |
+| Amount — grand total | 15px | 700 | Space Grotesk | `text-[15px] font-bold font-headline tabular-nums` |
+| Status badge / tag | 10px | 600 | DM Sans | `text-[10px] font-semibold font-body uppercase tracking-[0.06em]` |
+| Empty-state heading | 13px | 600 | DM Sans | `text-[13px] font-semibold font-body` |
+| Empty-state body | 12px | 400 | DM Sans | `text-xs font-body text-muted-foreground` |
+
+**Rationale:** The 14 → 12px two-level row system (primary → secondary) creates clear hierarchy without needing font-weight alone. Amounts at 16px sit one step above the 14px label, making the money the unambiguous focal point in any financial row. The 4px gap between steps (16 → 12) ensures the hierarchy reads clearly on OLED mobile in low-light conditions.
+
+### Card Header Convention
+
+All section card headers follow a single compact pattern to ensure visual rhythm across the settle step:
+
+```tsx
+<CardHeader className="flex-row items-center gap-3 space-y-0 pb-3">
+  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+    <Icon className="w-3.5 h-3.5 text-primary" />
+  </div>
+  <div>
+    <CardTitle className="text-[13px] font-semibold font-body">Title</CardTitle>
+    <CardDescription className="text-xs">One-line description.</CardDescription>
+  </div>
+</CardHeader>
+```
+
+Rules:
+- Icon container: `h-7 w-7 rounded-md bg-primary/10` — tonal, not filled
+- Icon size: `w-3.5 h-3.5` (14px) — never 32px raw icons
+- Title: `text-[13px] font-semibold font-body` — DM Sans, not Space Grotesk
+- Description: `text-xs font-body text-muted-foreground`
+- No `CardContent` top padding when the content is a list (set `pt-0` or `px-3 pb-3`)
+
 ---
 
 ## Layout & Spacing

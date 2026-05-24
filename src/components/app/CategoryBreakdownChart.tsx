@@ -166,39 +166,45 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
                 return (
                 <Collapsible
                     key={cat.category}
-                    className="rounded-lg bg-card transition-colors data-[state=open]:bg-primary/10"
+                    className="rounded-md bg-secondary/40 transition-colors data-[state=open]:bg-primary/10"
                 >
-                    <CollapsibleTrigger className="group flex w-full flex-col gap-2 p-3 text-left">
+                    <CollapsibleTrigger className="group flex w-full flex-col gap-1.5 px-3 py-2.5 text-left">
                         <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <span className="text-lg w-6 text-center">{getCategoryEmoji(cat.category)}</span>
-                                <span className="font-semibold">{cat.category}</span>
+                            <div className="flex items-center gap-2.5">
+                                <span className="text-base w-5 text-center leading-none">{getCategoryEmoji(cat.category)}</span>
+                                <span className="text-sm font-semibold font-headline">{cat.category}</span>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <span className={cn("font-mono font-medium", isDiscount && "text-destructive")}>
+                            <div className="flex items-center gap-3">
+                                <span className={cn(
+                                  "text-sm font-bold font-headline tabular-nums",
+                                  isDiscount ? "text-destructive" : "text-foreground"
+                                )}>
                                     {formatCurrency(cat.total, globalCurrency)}
                                 </span>
-                                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180 text-muted-foreground" />
                             </div>
                         </div>
                         {!isDiscount && (
-                            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                                <div 
-                                    className="h-full rounded-full transition-all duration-500"
-                                    style={{ width: `${percentage}%`, backgroundColor: color }} 
+                            <div className="h-[2px] w-full rounded-full bg-muted overflow-hidden">
+                                <div
+                                    className="h-full rounded-full transition-[width] duration-500 ease-out"
+                                    style={{ width: `${percentage}%`, backgroundColor: color }}
                                 />
                             </div>
                         )}
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                        <div className="space-y-1.5 px-3 pb-3 pt-2">
+                        <div className="space-y-1 px-3 pb-2.5 pt-1">
                             {cat.subCategories.length > 0 ? cat.subCategories.map(sub => (
-                                <div key={sub.name} className={cn("flex justify-between items-center text-sm text-muted-foreground pl-9", isDiscount && "text-destructive/90")}>
-                                    <span className="break-words pr-2">{sub.name}</span>
-                                    <span className="font-mono">{formatCurrency(sub.total, globalCurrency)}</span>
+                                <div key={sub.name} className={cn(
+                                  "flex justify-between items-center pl-7",
+                                  isDiscount ? "text-destructive/80" : "text-muted-foreground"
+                                )}>
+                                    <span className="text-xs font-body break-words pr-2">{sub.name}</span>
+                                    <span className="text-xs font-headline tabular-nums shrink-0">{formatCurrency(sub.total, globalCurrency)}</span>
                                 </div>
                             )) : (
-                                <div className="pl-9 text-sm text-muted-foreground">No sub-categories found.</div>
+                                <div className="pl-7 text-xs font-body text-muted-foreground">No sub-categories.</div>
                             )}
                         </div>
                     </CollapsibleContent>

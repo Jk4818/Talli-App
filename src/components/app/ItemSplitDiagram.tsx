@@ -128,12 +128,12 @@ export default function ItemSplitDiagram() {
       layout
       onClick={() => handleNodeClick(node.id)}
       className={cn(
-        "relative z-10 flex items-center gap-3 rounded-lg border bg-card p-2 shadow-sm transition-all duration-300 cursor-pointer",
+        "relative z-10 flex items-center gap-3 rounded-md bg-secondary p-2 transition-all duration-200 cursor-pointer",
         highlightedId
           ? (isHighlighted(node)
-            ? 'border-primary shadow-lg ring-2 ring-primary/50 bg-primary/10'
-            : 'opacity-30')
-          : 'hover:bg-accent hover:text-accent-foreground'
+            ? 'bg-primary/15 shadow-[0_0_16px_rgba(168,85,247,0.25)]'
+            : 'opacity-25')
+          : 'hover:bg-secondary/80'
       )}
     >
       {node.type === 'participant' && (
@@ -142,19 +142,21 @@ export default function ItemSplitDiagram() {
         </Avatar>
       )}
       <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{node.label}</p>
-          {node.secondaryLabel && <p className="text-xs text-muted-foreground">{node.secondaryLabel}</p>}
+          <p className="text-sm font-semibold font-headline truncate">{node.label}</p>
+          {node.secondaryLabel && <p className="text-xs font-body text-muted-foreground tabular-nums">{node.secondaryLabel}</p>}
       </div>
     </motion.div>
   );
 
   return (
     <Card>
-      <CardHeader className='flex-row items-center gap-4 space-y-0'>
-        <Spline className="w-8 h-8 text-primary" />
+      <CardHeader className="flex-row items-center gap-3 space-y-0 pb-3">
+        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+          <Spline className="w-3.5 h-3.5 text-primary" />
+        </div>
         <div>
-          <CardTitle>Item Split Diagram</CardTitle>
-          <CardDescription>Visualize who shared which items. Tap to highlight connections.</CardDescription>
+          <CardTitle className="text-[13px] font-semibold font-body">Item Split Diagram</CardTitle>
+          <CardDescription className="text-xs">Tap any node to highlight its connections.</CardDescription>
         </div>
       </CardHeader>
       <CardContent>

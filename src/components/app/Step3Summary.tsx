@@ -227,95 +227,101 @@ export default function Step3Summary() {
         </motion.div>
       <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+            {/* ── Participant Balances ── */}
             <Card>
-                <CardHeader className='flex-row items-center gap-4 space-y-0'>
-                    <Scale className="w-8 h-8 text-primary" />
+                <CardHeader className="flex-row items-center gap-3 space-y-0 pb-3">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+                        <Scale className="w-3.5 h-3.5 text-primary" />
+                    </div>
                     <div>
-                        <CardTitle>Participant Balances</CardTitle>
-                        <CardDescription>The breakdown. Here's the nitty-gritty on each person's tab.</CardDescription>
+                        <CardTitle className="text-[13px] font-semibold font-body">Participant Balances</CardTitle>
+                        <CardDescription className="text-xs">Who paid what, and who owes who.</CardDescription>
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0 px-3 pb-3">
                     <BillSplitSummary summary={calculatedSummary} />
                 </CardContent>
             </Card>
 
+            {/* ── Settlement Plan ── */}
             <Card>
-                <CardHeader className='flex-row items-center gap-4 space-y-0'>
-                    <HandCoins className="w-8 h-8 text-primary" />
+                <CardHeader className="flex-row items-center gap-3 space-y-0 pb-3">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+                        <HandCoins className="w-3.5 h-3.5 text-primary" />
+                    </div>
                     <div>
-                        <CardTitle>Settlement Plan</CardTitle>
-                        <CardDescription>Payback time! The easiest way to get even. Mark payments as you go.</CardDescription>
+                        <CardTitle className="text-[13px] font-semibold font-body">Settlement Plan</CardTitle>
+                        <CardDescription className="text-xs">Mark each payment as it's made.</CardDescription>
                     </div>
                 </CardHeader>
-                <CardContent>
-                  <ul className="space-y-4">
+                <CardContent className="pt-0 px-3 pb-3">
+                  <ul className="space-y-0.5">
                       {calculatedSummary.settlements.length > 0 ? calculatedSummary.settlements.map((s) => {
                         const fromParticipant = participants.find(p => p.name === s.from);
-                        const toParticipant = participants.find(p => p.name === s.to);
                         const isPaid = !!paidSettlements[s.id];
                         return (
-                          <li
-                            key={s.id}
-                            className={cn("rounded-lg bg-card/80 transition-opacity", isPaid && "opacity-60")}
-                          >
-                           <Label
+                          <li key={s.id}>
+                            <Label
                               htmlFor={`paid-${s.id}`}
-                              className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 cursor-pointer hover:bg-accent/50 rounded-lg"
+                              className={cn(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors",
+                                "hover:bg-secondary/60",
+                                isPaid && "opacity-50"
+                              )}
                             >
-                              <div className="flex items-center gap-2 font-medium w-full sm:w-auto">
-                                  <Avatar className="h-8 w-8 text-xs">
-                                    <AvatarFallback>{fromParticipant ? getInitials(fromParticipant.name) : '?'}</AvatarFallback>
-                                  </Avatar>
-                                  <span className="truncate">{s.from}</span>
-                                  <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                  <span className="truncate">{s.to}</span>
-                                  <Avatar className="h-8 w-8 text-xs">
-                                    <AvatarFallback>{toParticipant ? getInitials(toParticipant.name) : '?'}</AvatarFallback>
-                                  </Avatar>
+                              {/* From avatar */}
+                              <Avatar className="h-7 w-7 shrink-0">
+                                <AvatarFallback className="text-[10px] font-bold font-headline">
+                                  {fromParticipant ? getInitials(fromParticipant.name) : '?'}
+                                </AvatarFallback>
+                              </Avatar>
+
+                              {/* From → To */}
+                              <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-hidden">
+                                <span className="text-sm font-semibold font-headline truncate">{s.from}</span>
+                                <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                                <span className="text-sm font-body text-muted-foreground truncate">{s.to}</span>
                               </div>
-                              <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
-                                <span
-                                  className={cn(
-                                    'text-xl font-bold text-primary',
-                                    isPaid && 'text-muted-foreground line-through'
-                                  )}
-                                >
-                                  {formatCurrency(s.amount)}
-                                </span>
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`paid-${s.id}`}
-                                    checked={isPaid}
-                                    onCheckedChange={() => handleTogglePaid(s.id)}
-                                    aria-label={`Mark transaction from ${s.from} to ${s.to} as paid`}
-                                  />
-                                  <span
-                                    className={cn(
-                                      'text-sm font-medium',
-                                      isPaid ? 'text-muted-foreground' : 'text-foreground'
-                                    )}
-                                  >
-                                    Paid
-                                  </span>
-                                </div>
-                              </div>
-                           </Label>
+
+                              {/* Amount */}
+                              <span className={cn(
+                                'text-sm font-bold font-headline tabular-nums shrink-0',
+                                isPaid ? 'text-muted-foreground line-through' : 'text-primary'
+                              )}>
+                                {formatCurrency(s.amount)}
+                              </span>
+
+                              {/* Paid checkbox */}
+                              <Checkbox
+                                id={`paid-${s.id}`}
+                                checked={isPaid}
+                                onCheckedChange={() => handleTogglePaid(s.id)}
+                                className="shrink-0"
+                                aria-label={`Mark payment from ${s.from} to ${s.to} as paid`}
+                              />
+                            </Label>
                           </li>
                         )
                       }) : (
-                          <p className="text-center text-muted-foreground py-4">All settled up!</p>
+                        <div className="flex flex-col items-center gap-1.5 py-5 text-center">
+                          <span className="text-xl" role="img" aria-label="Celebration">🎉</span>
+                          <p className="text-[13px] font-semibold font-body" style={{ color: '#E879F9' }}>All settled up!</p>
+                          <p className="text-xs font-body text-muted-foreground">No payments needed.</p>
+                        </div>
                       )}
                   </ul>
                 </CardContent>
             </Card>
 
+            {/* ── Category Breakdown ── */}
             <Card>
-                <CardHeader className='flex-row items-center gap-4 space-y-0'>
-                    <LayoutGrid className="w-8 h-8 text-primary" />
+                <CardHeader className="flex-row items-center gap-3 space-y-0 pb-3">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+                        <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+                    </div>
                     <div>
-                        <CardTitle>Category Breakdown</CardTitle>
-                        <CardDescription>A summary of spending by category.</CardDescription>
+                        <CardTitle className="text-[13px] font-semibold font-body">Category Breakdown</CardTitle>
+                        <CardDescription className="text-xs">Spending by category, per person or total.</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -323,24 +329,28 @@ export default function Step3Summary() {
                 </CardContent>
             </Card>
         </div>
+
+        {/* ── Right sidebar ── */}
         <div className="lg:col-span-1 space-y-8">
             <motion.div variants={fadeInUp}>
               <Card>
-                <CardHeader className='flex-row items-center gap-4 space-y-0'>
-                    <MessageSquareText className="w-8 h-8 text-primary" />
+                <CardHeader className="flex-row items-center gap-3 space-y-0 pb-3">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+                        <MessageSquareText className="w-3.5 h-3.5 text-primary" />
+                    </div>
                     <div>
-                        <CardTitle>Shareable Summary</CardTitle>
-                        <CardDescription>A simple text recap for your group.</CardDescription>
+                        <CardTitle className="text-[13px] font-semibold font-body">Shareable Summary</CardTitle>
+                        <CardDescription className="text-xs">Text recap ready to paste anywhere.</CardDescription>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="rounded-lg border bg-muted/50 p-4">
-                        <pre className="text-sm whitespace-pre-wrap font-sans text-muted-foreground">
+                <CardContent className="pt-0">
+                    <div className="rounded-md bg-secondary/50 px-3 py-2.5">
+                        <pre className="text-xs whitespace-pre-wrap font-body text-muted-foreground leading-relaxed">
                             {recapText}
                         </pre>
                     </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="pt-3">
                     <Button className="w-full" onClick={handleCopy}>
                         <Copy className="mr-2 h-4 w-4" />
                         Copy Recap
@@ -348,15 +358,19 @@ export default function Step3Summary() {
                 </CardFooter>
               </Card>
             </motion.div>
+
+          {/* ── Total Shares pie ── */}
           <Card>
-            <CardHeader className='pt-6 flex-row items-center gap-4 space-y-0'>
-                <Pizza className="w-8 h-8 text-primary" />
+            <CardHeader className="flex-row items-center gap-3 space-y-0 pb-3">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+                    <Pizza className="w-3.5 h-3.5 text-primary" />
+                </div>
                 <div>
-                  <CardTitle>Total Shares</CardTitle>
-                  <CardDescription>Your bill, visualized. See who's responsible for what slice of the pie.</CardDescription>
+                  <CardTitle className="text-[13px] font-semibold font-body">Total Shares</CardTitle>
+                  <CardDescription className="text-xs">Who's responsible for which slice.</CardDescription>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0 pb-4">
                 <SharePieChart summary={calculatedSummary} />
             </CardContent>
           </Card>
