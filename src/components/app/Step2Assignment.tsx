@@ -159,11 +159,11 @@ export default function Step2Assignment() {
             <Progress value={itemsWithCost.length > 0 ? (assignedItemsCount / itemsWithCost.length) * 100 : 100} />
         </motion.div>
 
-        {/* Sticky issues banner — visible on all screen sizes */}
+        {/* Fixed issues pill — floats above the sticky footer, hidden on xl where sidebar handles this */}
         {itemsRequiringAttention.length > 0 && (
-          <div className="xl:hidden sticky top-2 z-20 flex justify-center pointer-events-none">
+          <div className="xl:hidden fixed bottom-[72px] inset-x-0 z-30 flex justify-center pointer-events-none">
             <button
-              className="pointer-events-auto flex items-center gap-2 rounded-full bg-destructive text-destructive-foreground px-4 py-1.5 text-sm font-medium shadow-lg transition-opacity hover:opacity-90"
+              className="pointer-events-auto flex items-center gap-2 rounded-full bg-destructive text-destructive-foreground px-4 py-2 text-sm font-medium shadow-lg active:opacity-80 transition-opacity"
               onClick={() => handleJumpToItem(itemsRequiringAttention[0].index)}
             >
               <AlertCircle className="h-4 w-4 shrink-0" />

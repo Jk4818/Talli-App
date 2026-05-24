@@ -1,317 +1,455 @@
-
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
-import { assignItemToUser, unassignItemFromUser, toggleAllAssignees, setItemSplitMode, setPercentageAssignment, setExactAssignment } from '@/lib/redux/slices/sessionSlice';
-import { Switch } from '../ui/switch';
-import { Label } from '../ui/label';
-import { Button } from '../ui/button';
-import { AlertCircle, Users } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  assignItemToUser,
+  unassignItemFromUser,
+  toggleAllAssignees,
+  setItemSplitMode,
+  setPercentageAssignment,
+  setExactAssignment,
+} from '@/lib/redux/slices/sessionSlice';
 import { Input } from '../ui/input';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/lib/utils';
-import { ResponsiveSelect, ResponsiveSelectContent, ResponsiveSelectItem, ResponsiveSelectTrigger, ResponsiveSelectLabel } from '../ui/responsive-select';
+import { Check, Equal, Percent, Hash } from 'lucide-react';
+import { cn, formatCurrency } from '@/lib/utils';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface UserAssignmentsProps {
   itemId: string;
 }
 
+const SPLIT_MODES = [
+  { value: 'equal',      label: 'Equal',  shortLabel: '=', Icon: Equal   },
+  { value: 'percentage', label: '% Split', shortLabel: '%', Icon: Percent },
+  { value: 'exact',      label: 'Exact',  shortLabel: '#', Icon: Hash    },
+] as const;
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function UserAssignments({ itemId }: UserAssignmentsProps) {
   const dispatch = useDispatch<AppDispatch>();
-  const { participants, items, receipts } = useSelector((state: RootState) => state.session);
-  const item = items.find(i => i.id === itemId);
-  const receipt = receipts.find(r => r.id === item?.receiptId);
+  const { participants, items, receipts } = useSelector(
+    (state: RootState) => state.session,
+  );
+
+  const item = items.find((i) => i.id === itemId);
+  const receipt = receipts.find((r) => r.id === item?.receiptId);
+  const currency = receipt?.currency || 'USD';
   const assignees = item?.assignees || [];
   const splitMode = item?.splitMode || 'equal';
 
-  const [exactAmountStrings, setExactAmountStrings] = useState<{ [key: string]: string }>({});
-  
-  const itemCost = useMemo(() => {
-    if (!item) return 0;
-    const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
-    return item.cost - totalItemDiscount;
+  // Local state for exact-amount inputs (controlled + committed on blur)
+  const [exactStrings, setExactStrings] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (item?.splitMode === 'exact' && item.assignees && item.exactAssignments) {
+      const init: Record<string, string> = {};
+      item.assignees.forEach((pid) => {
+        const v = item.exactAssignments[pid];
+        init[pid] = v ? (v / 100).toFixed(2) : '';
+      });
+      setExactStrings(init);
+    }
   }, [item]);
 
-  // Synchronize local input state with Redux state whenever the item changes
-  useEffect(() => {
-    const initialStrings: { [key: string]: string } = {};
-    if (item?.splitMode === 'exact' && item.assignees && item.exactAssignments) {
-        // Ensure local state is synced for all current assignees
-        item.assignees.forEach(pId => {
-            const amount = item.exactAssignments[pId];
-            // Set the string value for the input, defaulting to an empty string
-            initialStrings[pId] = amount ? (amount / 100).toFixed(2) : '';
-        });
-    }
-    setExactAmountStrings(initialStrings);
-  }, [item]); // Depend on the whole item object to catch changes in assignees/assignments
+  // ── Derived values ──────────────────────────────────────────────────────────
 
+  const itemCost = useMemo(() => {
+    if (!item) return 0;
+    return item.cost - (item.discounts || []).reduce((s, d) => s + d.amount, 0);
+  }, [item]);
 
-  const handleAssignmentChange = (participantId: string, checked: boolean) => {
-    if (checked) {
-      dispatch(assignItemToUser({ itemId, participantId }));
-    } else {
-      dispatch(unassignItemFromUser({ itemId, participantId }));
+  const totalPercentage = useMemo(() => {
+    if (!item?.percentageAssignments) return 0;
+    return item.assignees.reduce(
+      (s, pid) => s + (item.percentageAssignments[pid] || 0),
+      0,
+    );
+  }, [item]);
+
+  const totalExactAmount = useMemo(() => {
+    if (!item?.exactAssignments) return 0;
+    return item.assignees.reduce(
+      (s, pid) => s + (item.exactAssignments[pid] || 0),
+      0,
+    );
+  }, [item]);
+
+  const shares = useMemo(() => {
+    const result: Record<string, number> = {};
+    if (!item || assignees.length === 0 || itemCost <= 0) return result;
+
+    if (splitMode === 'equal') {
+      const base = Math.floor(itemCost / assignees.length);
+      let remainder = itemCost % assignees.length;
+      const sorted = [...assignees].sort((a, b) => a.localeCompare(b));
+      sorted.forEach((id) => { result[id] = base; });
+      for (let i = 0; i < remainder; i++) result[sorted[i]] += 1;
+
+    } else if (splitMode === 'percentage' && totalPercentage === 100) {
+      let distributed = 0;
+      const calc = assignees.map((id) => {
+        const share = Math.round((itemCost * (item.percentageAssignments[id] || 0)) / 100);
+        distributed += share;
+        return { id, share };
+      });
+      let rem = itemCost - distributed;
+      const sorted = calc.sort((a, b) => a.id.localeCompare(b.id));
+      for (let i = 0; i < Math.abs(rem); i++) {
+        sorted[i % sorted.length].share += rem > 0 ? 1 : -1;
+      }
+      sorted.forEach(({ id, share }) => { result[id] = share; });
+
+    } else if (splitMode === 'exact' && totalExactAmount === itemCost) {
+      assignees.forEach((pid) => { result[pid] = item.exactAssignments[pid] || 0; });
     }
+
+    return result;
+  }, [item, assignees, itemCost, splitMode, totalPercentage, totalExactAmount]);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
+  const toggleAssignment = (participantId: string, checked: boolean) => {
+    if (checked) dispatch(assignItemToUser({ itemId, participantId }));
+    else dispatch(unassignItemFromUser({ itemId, participantId }));
   };
 
   const handleToggleAll = () => {
-    const assignAll = assignees.length < participants.length;
-    dispatch(toggleAllAssignees({ itemId, assignAll }));
+    dispatch(toggleAllAssignees({
+      itemId,
+      assignAll: assignees.length < participants.length,
+    }));
   };
-  
-  const handleModeChange = (mode: string) => {
-    if (mode === 'equal' || mode === 'percentage' || mode === 'exact') {
-      dispatch(setItemSplitMode({ itemId, splitMode: mode as 'equal' | 'percentage' | 'exact' }));
-    }
+
+  const handleModeChange = (mode: 'equal' | 'percentage' | 'exact') => {
+    dispatch(setItemSplitMode({ itemId, splitMode: mode }));
   };
-  
+
   const handlePercentageChange = (participantId: string, value: string) => {
     if (value === '') {
-        dispatch(setPercentageAssignment({ itemId, participantId, percentage: 0 }));
-        return;
+      dispatch(setPercentageAssignment({ itemId, participantId, percentage: 0 }));
+      return;
     }
-     // Only allow integer values
-    if (!/^\d*$/.test(value)) {
-        return;
+    if (!/^\d*$/.test(value)) return;
+    const n = parseInt(value, 10);
+    if (!isNaN(n)) {
+      dispatch(setPercentageAssignment({
+        itemId,
+        participantId,
+        percentage: Math.max(0, Math.min(100, n)),
+      }));
     }
-    const percentage = parseInt(value, 10);
-    if (!isNaN(percentage)) {
-        // Clamp value between 0 and 100
-        const clampedPercentage = Math.max(0, Math.min(100, percentage));
-        dispatch(setPercentageAssignment({ itemId, participantId, percentage: clampedPercentage }));
-    }
-  }
-  
-  const handleLocalExactAmountChange = (participantId: string, value: string) => {
-    // This regex allows for a valid currency format (e.g., 123.45) to be typed.
+  };
+
+  const handleExactChange = (participantId: string, value: string) => {
     if (/^(\d+\.?\d{0,2}|\d*\.?\d{0,2})$/.test(value) || value === '') {
-        setExactAmountStrings(prev => ({
-            ...prev,
-            [participantId]: value
-        }));
+      setExactStrings((prev) => ({ ...prev, [participantId]: value }));
     }
   };
 
-  const handleExactAmountBlur = (participantId: string) => {
-    const valueStr = exactAmountStrings[participantId] || '';
-    const amountInCents = valueStr ? Math.round(parseFloat(valueStr) * 100) : 0;
-    
-    // Dispatch the final, parsed value to the Redux store, but only if it's different
-    if (!isNaN(amountInCents) && item?.exactAssignments[participantId] !== amountInCents) {
-        dispatch(setExactAssignment({ itemId, participantId, amount: amountInCents }));
+  const handleExactBlur = (participantId: string) => {
+    const cents = Math.round(parseFloat(exactStrings[participantId] || '') * 100) || 0;
+    if (!isNaN(cents) && item?.exactAssignments[participantId] !== cents) {
+      dispatch(setExactAssignment({ itemId, participantId, amount: cents }));
     }
   };
 
-
-  const totalPercentage = useMemo(() => {
-    if (!item || !item.percentageAssignments) return 0;
-    return item.assignees.reduce((sum, pid) => sum + (item.percentageAssignments[pid] || 0), 0);
-  }, [item]);
-  
-  const totalExactAmount = useMemo(() => {
-    if (!item || !item.exactAssignments) return 0;
-    return item.assignees.reduce((sum, pid) => sum + (item.exactAssignments[pid] || 0), 0);
-  }, [item]);
-
-
-  const shares = useMemo(() => {
-    if (!item || assignees.length === 0 || itemCost <= 0) return {};
-    
-    const shares: { [key: string]: number } = {};
-
-    if (item.splitMode === 'equal') {
-        const baseShare = Math.floor(itemCost / assignees.length);
-        let remainder = itemCost % assignees.length;
-        
-        // Sort assignees by ID to make rounding distribution deterministic in this view
-        const sortedAssignees = [...assignees].sort((a,b) => a.localeCompare(b));
-
-        sortedAssignees.forEach(id => {
-          shares[id] = baseShare;
-        });
-        
-        // Distribute the remainder pennies to the first N people in the sorted list
-        for(let i = 0; i < remainder; i++) {
-          const pidToAdjust = sortedAssignees[i];
-          shares[pidToAdjust] += 1;
-        }
-    } else if (item.splitMode === 'percentage') {
-        if (totalPercentage === 100) {
-            let distributedAmount = 0;
-            const calculatedShares = assignees.map(id => {
-                const percentage = item.percentageAssignments[id] || 0;
-                const share = Math.round((itemCost * percentage) / 100);
-                distributedAmount += share;
-                return { id, share };
-            });
-
-            // Distribute rounding errors
-            let remainder = itemCost - distributedAmount;
-            // Sort by ID to make rounding deterministic in this view
-            const sortedCalculatedShares = calculatedShares.sort((a,b) => a.id.localeCompare(b.id));
-
-            for (let i = 0; i < Math.abs(remainder); i++) {
-                const amountToDistribute = remainder > 0 ? 1 : -1;
-                sortedCalculatedShares[i % sortedCalculatedShares.length].share += amountToDistribute;
-            }
-            sortedCalculatedShares.forEach(s => shares[s.id] = s.share);
-        } else {
-            assignees.forEach(id => shares[id] = 0);
-        }
-    } else if (item.splitMode === 'exact') {
-      if (totalExactAmount === itemCost) {
-          assignees.forEach(pid => {
-              shares[pid] = item.exactAssignments[pid] || 0;
-          });
-      } else {
-          assignees.forEach(id => shares[id] = 0);
-      }
-    }
-    return shares;
-  }, [item, assignees, itemCost, totalPercentage, totalExactAmount]);
+  // ── Guards ──────────────────────────────────────────────────────────────────
 
   if (!item) return null;
 
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <ResponsiveSelect value={splitMode} onValueChange={handleModeChange}>
-          <ResponsiveSelectTrigger className="w-full sm:w-[180px]">
-            <span className="capitalize">{splitMode} Split</span>
-          </ResponsiveSelectTrigger>
-          <ResponsiveSelectContent>
-            <ResponsiveSelectLabel>Split Mode</ResponsiveSelectLabel>
-            <ResponsiveSelectItem value="equal">Equal</ResponsiveSelectItem>
-            <ResponsiveSelectItem value="percentage">Percentage</ResponsiveSelectItem>
-            <ResponsiveSelectItem value="exact">Exact</ResponsiveSelectItem>
-          </ResponsiveSelectContent>
-        </ResponsiveSelect>
+  const allAssigned = assignees.length === participants.length && participants.length > 0;
+  const noneAssigned = assignees.length === 0;
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleToggleAll}
-          disabled={participants.length === 0}
-          className="w-full sm:w-32"
-        >
-          <Users className="mr-2 h-4 w-4" />
-          {assignees.length < participants.length ? 'Select All' : 'Deselect All'}
-        </Button>
+  const percentRemaining = 100 - totalPercentage;
+  const exactRemaining = itemCost - totalExactAmount;
+  const percentIsValid = totalPercentage === 100;
+  const exactIsValid = totalExactAmount === itemCost;
+  const exactIsOver = totalExactAmount > itemCost;
+
+  // Auto-fill: one unset → fill that person; multiple unset → distribute remaining equally
+  const autoFill = useMemo(() => {
+    if (splitMode !== 'percentage' || totalPercentage >= 100 || assignees.length === 0) return null;
+    const unset = assignees.filter((pid) => !(item.percentageAssignments?.[pid] ?? 0));
+    if (unset.length === 0) return null;
+    const remaining = 100 - totalPercentage;
+    if (unset.length === 1) {
+      return { kind: 'single' as const, pid: unset[0], remaining };
+    }
+    // Distribute remaining % evenly across unset participants (floor + give extras to first)
+    const base = Math.floor(remaining / unset.length);
+    const extras = remaining % unset.length;
+    return { kind: 'distribute' as const, pids: unset, base, extras, remaining };
+  }, [splitMode, totalPercentage, assignees, item.percentageAssignments]);
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="space-y-3">
+
+      {/* ── Mode tabs + Select all ── */}
+      <div className="flex items-center gap-2">
+        {/* Segmented control */}
+        <div className="flex flex-1 rounded-lg border bg-secondary/40 p-[3px] gap-[3px]">
+          {SPLIT_MODES.map(({ value, label, Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => handleModeChange(value)}
+              aria-pressed={splitMode === value}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all select-none',
+                splitMode === value
+                  ? 'bg-background shadow-sm text-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Icon className="h-3 w-3 shrink-0" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Select / deselect all */}
+        {participants.length > 0 && (
+          <button
+            type="button"
+            onClick={handleToggleAll}
+            className="shrink-0 text-xs font-medium text-primary hover:underline px-1 py-1"
+          >
+            {allAssigned ? 'Deselect all' : 'Select all'}
+          </button>
+        )}
       </div>
 
-      <div className="space-y-1">
-        <div className="rounded-md border p-3">
-          {participants.map(p => {
-              const isChecked = assignees.includes(p.id);
-              return (
-                  <div 
-                      key={p.id} 
-                      className={cn(
-                        "flex items-center justify-between rounded-md p-2 -mx-1 transition-colors",
-                        splitMode === 'equal' && "hover:bg-secondary/80 cursor-pointer"
-                      )}
-                      onClick={splitMode === 'equal' ? () => handleAssignmentChange(p.id, !isChecked) : undefined}
+      {/* ── Participant list ── */}
+      <div className="rounded-xl border overflow-hidden divide-y divide-border">
+        {participants.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground py-6 px-4">
+            Add participants in Step 1 to assign items.
+          </p>
+        ) : (
+          participants.map((p) => {
+            const isAssigned = assignees.includes(p.id);
+            const share = shares[p.id];
+
+            return (
+              <div
+                key={p.id}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 transition-colors',
+                  !isAssigned && 'bg-secondary/20',
+                )}
+              >
+                {/* Circular toggle — full touch target */}
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={isAssigned}
+                  aria-label={`${isAssigned ? 'Remove' : 'Add'} ${p.name}`}
+                  onClick={() => toggleAssignment(p.id, !isAssigned)}
+                  className={cn(
+                    'h-6 w-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-all',
+                    isAssigned
+                      ? 'bg-primary border-primary'
+                      : 'border-muted-foreground/30 hover:border-muted-foreground',
+                  )}
+                >
+                  {isAssigned && (
+                    <Check className="h-3.5 w-3.5 text-primary-foreground" strokeWidth={3} />
+                  )}
+                </button>
+
+                {/* Name */}
+                <span
+                  className={cn(
+                    'flex-1 text-sm font-medium min-w-0 truncate select-none',
+                    !isAssigned && 'text-muted-foreground',
+                  )}
+                >
+                  {p.name}
+                </span>
+
+                {/* Right side: input (if assigned) + share */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Percentage input */}
+                  {splitMode === 'percentage' && isAssigned && (
+                    <div className="relative w-16">
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        value={item.percentageAssignments?.[p.id] || ''}
+                        onChange={(e) => handlePercentageChange(p.id, e.target.value)}
+                        className="h-9 pr-6 text-right text-sm font-mono"
+                        placeholder="0"
+                        aria-label={`Percentage for ${p.name}`}
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
+                        %
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Exact amount input */}
+                  {splitMode === 'exact' && isAssigned && (
+                    <div className="relative w-24">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
+                        {currency}
+                      </span>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={exactStrings[p.id] || ''}
+                        onChange={(e) => handleExactChange(p.id, e.target.value)}
+                        onBlur={() => handleExactBlur(p.id)}
+                        className="h-9 pl-8 text-right text-sm font-mono"
+                        placeholder="0.00"
+                        aria-label={`Amount for ${p.name}`}
+                      />
+                    </div>
+                  )}
+
+                  {/* Calculated share */}
+                  <span
+                    className={cn(
+                      'font-mono text-sm tabular-nums text-right',
+                      share ? 'text-foreground' : 'text-muted-foreground/30',
+                      splitMode === 'equal' ? 'w-16' : 'w-0 overflow-hidden opacity-0',
+                    )}
                   >
-                      <div className='flex items-center space-x-3'>
-                          <Switch
-                              id={`assign-${itemId}-${p.id}`}
-                              checked={isChecked}
-                              onCheckedChange={(checked) => handleAssignmentChange(p.id, checked)}
-                          />
-                          <Label htmlFor={`assign-${itemId}-${p.id}`} className="font-normal text-base cursor-pointer">
-                              {p.name}
-                          </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                          {splitMode === 'percentage' && isChecked && (
-                              <div className="relative w-20">
-                                  <Input
-                                      type="text"
-                                      inputMode="numeric"
-                                      value={item?.percentageAssignments[p.id] || ''}
-                                      onChange={e => handlePercentageChange(p.id, e.target.value)}
-                                      className="pr-6 text-right"
-                                      placeholder="0"
-                                  />
-                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                              </div>
-                          )}
-                          {splitMode === 'exact' && isChecked && (
-                              <div className="relative w-24">
-                                  <Input
-                                      type="text"
-                                      inputMode="decimal"
-                                      value={exactAmountStrings[p.id] || ''}
-                                      onChange={e => handleLocalExactAmountChange(p.id, e.target.value)}
-                                      onBlur={() => handleExactAmountBlur(p.id)}
-                                      className="pl-4 text-right"
-                                      placeholder="0.00"
-                                  />
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{receipt?.currency}</span>
-                              </div>
-                          )}
-                          {shares[p.id] ? (
-                              <span className="font-mono text-sm text-muted-foreground w-20 text-right">
-                                  {formatCurrency(shares[p.id], receipt?.currency || 'USD' )}
-                              </span>
-                          ) : <div className='w-20'/>}
-                      </div>
-                  </div>
-              )
-          })}
-          {participants.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">Add participants in Step 1 to assign items.</p>
+                    {share ? formatCurrency(share, currency) : '—'}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ── % progress strip ── */}
+      {splitMode === 'percentage' && assignees.length > 0 && (
+        <div className="space-y-1.5 px-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">
+              {percentIsValid
+                ? 'Fully allocated'
+                : totalPercentage > 100
+                ? `${totalPercentage - 100}% over`
+                : `${percentRemaining}% remaining`}
+            </span>
+            <span
+              className={cn(
+                'font-semibold tabular-nums',
+                percentIsValid
+                  ? 'text-green-600 dark:text-green-400'
+                  : totalPercentage > 100
+                  ? 'text-destructive'
+                  : 'text-foreground',
+              )}
+            >
+              {totalPercentage}%
+              {percentIsValid && ' ✓'}
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+            <div
+              className={cn(
+                'h-full rounded-full transition-all duration-300',
+                percentIsValid
+                  ? 'bg-green-500'
+                  : totalPercentage > 100
+                  ? 'bg-destructive'
+                  : 'bg-primary',
+              )}
+              style={{ width: `${Math.min(totalPercentage, 100)}%` }}
+            />
+          </div>
+
+          {/* Auto-fill button */}
+          {autoFill && (
+            <button
+              type="button"
+              onClick={() => {
+                if (autoFill.kind === 'single') {
+                  dispatch(setPercentageAssignment({
+                    itemId,
+                    participantId: autoFill.pid,
+                    percentage: autoFill.remaining,
+                  }));
+                } else {
+                  autoFill.pids.forEach((pid, i) => {
+                    dispatch(setPercentageAssignment({
+                      itemId,
+                      participantId: pid,
+                      percentage: autoFill.base + (i < autoFill.extras ? 1 : 0),
+                    }));
+                  });
+                }
+              }}
+              className={cn(
+                'w-full flex items-center justify-between gap-2',
+                'rounded-lg border border-primary/30 bg-primary/5 px-3 py-2',
+                'text-sm font-medium text-primary',
+                'hover:bg-primary/10 active:bg-primary/15 transition-colors',
+              )}
+            >
+              <span className="flex items-center gap-1.5">
+                <Percent className="h-3.5 w-3.5 shrink-0" />
+                {autoFill.kind === 'single'
+                  ? `Fill ${participants.find((p) => p.id === autoFill.pid)?.name}`
+                  : `Distribute ${autoFill.remaining}% equally`}
+              </span>
+              <span className="font-mono text-xs bg-primary/10 rounded px-1.5 py-0.5">
+                {autoFill.kind === 'single'
+                  ? `→ ${autoFill.remaining}%`
+                  : `÷ ${autoFill.pids.length}`}
+              </span>
+            </button>
           )}
         </div>
-      </div>
-
-      {splitMode === 'percentage' && assignees.length > 0 && totalPercentage !== 100 && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Percentages must total 100%</AlertTitle>
-          <AlertDescription className="flex flex-col gap-2">
-            <span>Current total: {totalPercentage}% — {totalPercentage < 100 ? `${100 - totalPercentage}% remaining` : `${totalPercentage - 100}% over`}.</span>
-            {totalPercentage < 100 && (() => {
-              // Find participants with no percentage set yet (or 0%) to offer "fill last"
-              const unsetAssignees = assignees.filter(pid => !item?.percentageAssignments?.[pid]);
-              if (unsetAssignees.length === 1) {
-                const remaining = 100 - totalPercentage;
-                const pid = unsetAssignees[0];
-                const pName = participants.find(p => p.id === pid)?.name;
-                return (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="self-start border-destructive/50 text-destructive hover:bg-destructive/10 h-7"
-                    onClick={() => dispatch(setPercentageAssignment({ itemId, participantId: pid, percentage: remaining }))}
-                  >
-                    Fill {pName} → {remaining}%
-                  </Button>
-                );
-              }
-              return null;
-            })()}
-          </AlertDescription>
-        </Alert>
       )}
-      
-      {splitMode === 'exact' && assignees.length > 0 && totalExactAmount !== itemCost && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Amounts must total {formatCurrency(itemCost, receipt?.currency || 'USD')}</AlertTitle>
-          <AlertDescription>
-            Current total: {formatCurrency(totalExactAmount, receipt?.currency || 'USD')}. Remaining: {formatCurrency(itemCost - totalExactAmount, receipt?.currency || 'USD')}
-          </AlertDescription>
-        </Alert>
+
+      {/* ── Exact balance strip ── */}
+      {splitMode === 'exact' && assignees.length > 0 && (
+        <div
+          className={cn(
+            'flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-colors',
+            exactIsValid
+              ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+              : exactIsOver
+              ? 'bg-destructive/10 text-destructive'
+              : 'bg-secondary',
+          )}
+        >
+          {exactIsValid ? (
+            <span className="flex items-center gap-1.5 font-medium">
+              <Check className="h-4 w-4" />
+              Balanced — {formatCurrency(itemCost, currency)}
+            </span>
+          ) : (
+            <>
+              <span className="text-muted-foreground">
+                {exactIsOver ? 'Over by' : 'Remaining'}
+              </span>
+              <span className="font-mono font-semibold tabular-nums">
+                {formatCurrency(Math.abs(exactRemaining), currency)}
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Unassigned nudge (equal mode only) ── */}
+      {splitMode === 'equal' && noneAssigned && participants.length > 0 && (
+        <p className="text-xs text-center text-muted-foreground">
+          Tap a name above to assign this item.
+        </p>
       )}
     </div>
   );
 }
-
-    
