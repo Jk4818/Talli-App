@@ -275,8 +275,28 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Percentages must total 100%</AlertTitle>
-          <AlertDescription>
-            Current total: {totalPercentage}%.
+          <AlertDescription className="flex flex-col gap-2">
+            <span>Current total: {totalPercentage}% — {totalPercentage < 100 ? `${100 - totalPercentage}% remaining` : `${totalPercentage - 100}% over`}.</span>
+            {totalPercentage < 100 && (() => {
+              // Find participants with no percentage set yet (or 0%) to offer "fill last"
+              const unsetAssignees = assignees.filter(pid => !item?.percentageAssignments?.[pid]);
+              if (unsetAssignees.length === 1) {
+                const remaining = 100 - totalPercentage;
+                const pid = unsetAssignees[0];
+                const pName = participants.find(p => p.id === pid)?.name;
+                return (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="self-start border-destructive/50 text-destructive hover:bg-destructive/10 h-7"
+                    onClick={() => dispatch(setPercentageAssignment({ itemId, participantId: pid, percentage: remaining }))}
+                  >
+                    Fill {pName} → {remaining}%
+                  </Button>
+                );
+              }
+              return null;
+            })()}
           </AlertDescription>
         </Alert>
       )}

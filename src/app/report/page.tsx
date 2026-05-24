@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { restoreSession } from '@/lib/redux/slices/sessionSlice';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
-import { type SessionState, type ParticipantSummary, type BreakdownEntry, type Item } from '@/lib/types';
+import { type SessionState, type ParticipantSummary, type BreakdownEntry, type Item, type Participant, type Receipt, type Discount } from '@/lib/types';
 import { Logo } from '@/components/Logo';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
@@ -176,8 +176,7 @@ export default function ReportPage() {
   }, [sessionState]);
 
   const participantMap = useMemo(() => {
-    if (sessionState.participants.length === 0) return new Map();
-    return new Map(sessionState.participants.map(p => [p.id, p]));
+    return new Map<string, Participant>(sessionState.participants.map((p: Participant) => [p.id, p]));
   }, [sessionState.participants]);
 
   const getShareDetails = (item: Item) => {
@@ -188,17 +187,18 @@ export default function ReportPage() {
     switch (item.splitMode) {
         case 'equal':
             return `Equally by ${assignees.join(', ')}`;
-        case 'percentage':
+        case 'percentage': {
             const details = item.assignees.map(pid => {
                 const name = participantMap.get(pid)?.name || '?';
                 const percent = item.percentageAssignments[pid] || 0;
                 return `${name} (${percent}%)`;
             }).join(', ');
             return `By percentage: ${details}`;
-        case 'exact':
-            const receipt = sessionState.receipts.find(r => r.id === item.receiptId);
+        }
+        case 'exact': {
+            const receipt = sessionState.receipts.find((r: { id: string }) => r.id === item.receiptId);
             const currency = receipt?.currency || 'USD';
-            const totalItemDiscount = (item.discounts || []).reduce((acc, d) => acc + d.amount, 0);
+            const totalItemDiscount = (item.discounts || []).reduce((acc: number, d: { amount: number }) => acc + d.amount, 0);
             const effectiveCost = item.cost - totalItemDiscount;
 
             const exactDetails = item.assignees.map(pid => {
@@ -206,7 +206,8 @@ export default function ReportPage() {
                 const amount = item.exactAssignments[pid] || 0;
                 return `${name} (${formatCurrency(amount, currency)})`;
             }).join(', ');
-            return `By exact amount: ${exactDetails}`;
+            return `By exact amount: ${exactDetails} (total: ${formatCurrency(effectiveCost, currency)})`;
+        }
         default:
             return assignees.join(', ');
     }
@@ -284,7 +285,7 @@ export default function ReportPage() {
             <section className="report-section">
                 <h2 className="text-xl font-headline font-bold mb-3">Participants</h2>
                 <div className="flex flex-wrap gap-4">
-                    {participants.map(p => (
+                    {participants.map((p: Participant) => (
                         <div key={p.id} className="flex items-center gap-2">
                             <Avatar className="h-6 w-6 text-xs">
                                 <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
@@ -299,9 +300,9 @@ export default function ReportPage() {
 
             <section className="space-y-6 report-section">
                 <h2 className="text-xl font-headline font-bold">Receipts</h2>
-                {receipts.map(receipt => {
-                    const receiptItems = items.filter(i => i.receiptId === receipt.id);
-                    const payer = participants.find(p => p.id === receipt.payerId);
+                {receipts.map((receipt: Receipt) => {
+                    const receiptItems = items.filter((i: Item) => i.receiptId === receipt.id);
+                    const payer = participants.find((p: Participant) => p.id === receipt.payerId);
 
                     return (
                         <div key={receipt.id} className="receipt-card rounded-lg border bg-card/50 p-4 sm:p-6">
@@ -325,11 +326,11 @@ export default function ReportPage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {receiptItems.map(item => (
+                                        {receiptItems.map((item: Item) => (
                                             <tr key={item.id} className="border-b last:border-none">
                                                 <td className="p-2 align-top break-words">
                                                   {item.name}
-                                                  {(item.discounts || []).map(d => (
+                                                  {(item.discounts || []).map((d: Discount) => (
                                                     <div key={d.id} className='text-xs text-destructive'>↳ {d.name} ({formatCurrency(-d.amount, receipt.currency)})</div>
                                                   ))}
                                                 </td>
@@ -366,8 +367,8 @@ export default function ReportPage() {
                 <div className="space-y-4">
                      <ul className="space-y-3">
                       {summary.settlements.length > 0 ? summary.settlements.map((s) => {
-                        const fromParticipant = participants.find(p => p.name === s.from);
-                        const toParticipant = participants.find(p => p.name === s.to);
+                        const fromParticipant = participants.find((p: Participant) => p.name === s.from);
+                        const toParticipant = participants.find((p: Participant) => p.name === s.to);
                         return (
                           <li key={s.id} className="rounded-lg border bg-background p-4">
                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

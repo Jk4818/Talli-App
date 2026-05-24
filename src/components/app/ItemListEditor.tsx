@@ -213,7 +213,14 @@ export default function ItemListEditor() {
                       }
                     }}
                   >
-                    <Button variant="secondary" size="icon" className="absolute top-0 right-0 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity translate-x-1/3 -translate-y-1/3 z-10 hover:bg-secondary">
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className={cn(
+                        "absolute top-0 right-0 h-8 w-8 transition-opacity translate-x-1/3 -translate-y-1/3 z-10 hover:bg-secondary",
+                        isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      )}
+                    >
                         <Edit className="h-4 w-4" />
                     </Button>
 

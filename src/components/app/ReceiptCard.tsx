@@ -1,17 +1,18 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { type Receipt, type Discount, type ServiceCharge } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
-import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, removeReceipt, applySuggestedDiscount, ignoreSuggestedDiscount, reassignSuggestedDiscount } from '@/lib/redux/slices/sessionSlice';
+import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, removeReceipt, applySuggestedDiscount, ignoreSuggestedDiscount, reassignSuggestedDiscount, reprocessReceiptFromUri } from '@/lib/redux/slices/sessionSlice';
+import { useAuth } from '@/lib/firebase/auth';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, Pencil, Layers, FileWarning, MoreHorizontal } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, Pencil, Layers, FileWarning, MoreHorizontal, RefreshCw } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import ReceiptImageViewer from './ReceiptImageViewer';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
@@ -39,28 +40,110 @@ import {
 import { Badge } from '../ui/badge';
 import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerSub, DropDrawerSubContent, DropDrawerSubTrigger, DropDrawerTrigger } from '../ui/dropdrawer';
 
-const getFriendlyErrorMessage = (error?: string | null): string => {
-    if (!error) {
-        return "An unknown error occurred during processing. Please try again.";
-    }
-    if (error.includes('does not appear to be a receipt')) {
-        return "Our AI is pretty smart, but it's sure this isn't a receipt. Please try uploading a bill.";
-    }
-    if (error.includes('unclear to read') || error.includes('blurry')) {
-        return "This receipt is playing hard to get. Could you try a clearer, brighter photo?";
-    }
-    if (error.includes('AI service failed')) {
-        return "Our robot assistant seems to be on a coffee break. Please try again in a moment.";
-    }
-    return "Something went wrong during the scan. Please delete this attempt and try again.";
+interface ErrorInfo {
+  message: string;
+  hint: string;
+  canRetry: boolean;
+}
+
+const getErrorInfo = (error?: string | null): ErrorInfo => {
+  if (!error) {
+    return { message: 'An unknown error occurred during processing.', hint: 'Try again.', canRetry: true };
+  }
+  if (error.includes('does not appear to be a receipt')) {
+    return {
+      message: 'This doesn\'t look like a receipt.',
+      hint: 'Please upload a photo of your bill or itemised invoice.',
+      canRetry: false,
+    };
+  }
+  if (error.includes('unclear to read') || error.includes('blurry')) {
+    return {
+      message: 'The receipt was too blurry to read.',
+      hint: 'Try a clearer, brighter photo — flat on a surface works best.',
+      canRetry: true,
+    };
+  }
+  if (error === 'timeout') {
+    return {
+      message: 'Scan timed out after 30 seconds.',
+      hint: 'Your connection may be slow. Try again or check your network.',
+      canRetry: true,
+    };
+  }
+  if (error.includes('AI service failed') || error.includes('coffee break')) {
+    return {
+      message: 'The AI service is temporarily unavailable.',
+      hint: 'Please wait a moment and try again.',
+      canRetry: true,
+    };
+  }
+  return {
+    message: 'Something went wrong during the scan.',
+    hint: 'Try again with the same image, or delete and upload a clearer photo.',
+    canRetry: true,
+  };
 };
+
+/** Labels shown at each stage of processing, by elapsed seconds */
+const PROCESSING_STAGES = [
+  { afterSeconds: 0,  label: 'Preparing image…' },
+  { afterSeconds: 3,  label: 'Reading receipt…' },
+  { afterSeconds: 10, label: 'Analysing details…' },
+  { afterSeconds: 20, label: 'Almost there…' },
+] as const;
 
 
 export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
   const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
+  const { user } = useAuth();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>(undefined);
+
+  // ── Staged progress for processing state ────────────────────────────────
+  const [processingStageIndex, setProcessingStageIndex] = useState(0);
+  const processingStartRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (receipt.status !== 'processing') {
+      processingStartRef.current = null;
+      setProcessingStageIndex(0);
+      return;
+    }
+    processingStartRef.current = Date.now();
+    setProcessingStageIndex(0);
+
+    const interval = setInterval(() => {
+      if (!processingStartRef.current) return;
+      const elapsed = (Date.now() - processingStartRef.current) / 1000;
+      let nextStage = 0;
+      for (let i = PROCESSING_STAGES.length - 1; i >= 0; i--) {
+        if (elapsed >= PROCESSING_STAGES[i].afterSeconds) {
+          nextStage = i;
+          break;
+        }
+      }
+      setProcessingStageIndex(nextStage);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [receipt.status]);
+
+  const processingLabel = PROCESSING_STAGES[processingStageIndex].label;
+
+  // ── Retry handler ───────────────────────────────────────────────────────
+  const handleRetry = () => {
+    if (receipt.imageDataUri && user) {
+      dispatch(reprocessReceiptFromUri({
+        receiptId: receipt.id,
+        imageDataUri: receipt.imageDataUri,
+        user: { email: user.email, email_verified: user.emailVerified },
+      }));
+    }
+  };
+
+  const errorInfo = getErrorInfo(receipt.error);
 
   const discounts = receipt.discounts || [];
   const hasSuggestions = discounts.some(d => d.suggestedItemId);
@@ -158,9 +241,9 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                         </Button>
                       )}
                       {receipt.status === 'processing' && (
-                        <Button disabled>
-                          <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                          Scanning...
+                        <Button disabled className="min-w-[160px] justify-start">
+                          <Sparkles className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                          <span className="truncate">{processingLabel}</span>
                         </Button>
                       )}
                       {receipt.status === 'processed' && (
@@ -235,29 +318,36 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
                         </div>
                     </div>
                     <h3 className="text-lg font-semibold text-destructive">Scan Unsuccessful</h3>
-                    <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-sm mx-auto">
-                        {getFriendlyErrorMessage(receipt.error)}
-                    </p>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Attempt
-                        </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                            This will permanently delete this failed receipt attempt. This action cannot be undone.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleRemoveReceipt}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <p className="text-sm font-medium mt-1">{errorInfo.message}</p>
+                    <p className="text-sm text-muted-foreground mt-1 mb-5 max-w-sm mx-auto">{errorInfo.hint}</p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                        {errorInfo.canRetry && receipt.imageDataUri && user && (
+                            <Button size="sm" onClick={handleRetry}>
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Try Again
+                            </Button>
+                        )}
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Attempt
+                            </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                This will permanently delete this failed receipt attempt. This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleRemoveReceipt}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 </div>
               ) : (
                 <>

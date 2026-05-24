@@ -10,10 +10,12 @@ import { Input } from '@/components/ui/input';
 import { X, UserPlus } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 export default function ParticipantManager() {
   const [name, setName] = useState('');
   const { participants } = useSelector((state: RootState) => state.session);
+  const isMobile = useSelector((state: RootState) => state.ui.isMobile);
   const dispatch = useDispatch<AppDispatch>();
 
   const handleAdd = (e: React.FormEvent) => {
@@ -58,11 +60,15 @@ export default function ParticipantManager() {
                       <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
                   </Avatar>
                   <span className="font-medium text-sm text-center w-full truncate" title={p.name}>{p.name}</span>
-                  <Button 
-                      variant="destructive" 
-                      size="icon" 
-                      className="absolute top-0 right-0 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity -translate-y-1/2 translate-x-1/2" 
-                      onClick={() => dispatch(removeParticipant(p.id))} 
+                  <Button
+                      variant="destructive"
+                      size="icon"
+                      className={cn(
+                        "absolute top-0 right-0 h-6 w-6 rounded-full transition-opacity -translate-y-1/2 translate-x-1/2",
+                        // Always visible on touch devices; hover-only on desktop
+                        isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      )}
+                      onClick={() => dispatch(removeParticipant(p.id))}
                       aria-label={`Remove ${p.name}`}
                   >
                     <X className="h-4 w-4" />
@@ -93,7 +99,10 @@ export default function ParticipantManager() {
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className={cn(
+                                  "h-7 w-7 transition-opacity",
+                                  isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                )}
                                 onClick={() => dispatch(removeParticipant(p.id))}
                                 aria-label={`Remove ${p.name}`}
                             >

@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { setCurrentAssignmentIndex } from '@/lib/redux/slices/sessionSlice';
 import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { motion } from 'framer-motion';
@@ -31,7 +32,7 @@ export default function Step2Assignment() {
     });
   }, [items]);
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, watchDrag: true });
   
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
@@ -143,7 +144,7 @@ export default function Step2Assignment() {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-8"
       variants={staggerContainer(0.2, 0.1)}
       initial="hidden"
@@ -157,6 +158,24 @@ export default function Step2Assignment() {
             </div>
             <Progress value={itemsWithCost.length > 0 ? (assignedItemsCount / itemsWithCost.length) * 100 : 100} />
         </motion.div>
+
+        {/* Sticky issues banner — visible on all screen sizes */}
+        {itemsRequiringAttention.length > 0 && (
+          <div className="xl:hidden sticky top-2 z-20 flex justify-center pointer-events-none">
+            <button
+              className="pointer-events-auto flex items-center gap-2 rounded-full bg-destructive text-destructive-foreground px-4 py-1.5 text-sm font-medium shadow-lg transition-opacity hover:opacity-90"
+              onClick={() => handleJumpToItem(itemsRequiringAttention[0].index)}
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>
+                {itemsRequiringAttention.length} item{itemsRequiringAttention.length > 1 ? 's' : ''} need attention
+              </span>
+              <Badge variant="secondary" className="bg-destructive-foreground/20 text-destructive-foreground ml-1 px-1.5">
+                Jump
+              </Badge>
+            </button>
+          </div>
+        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <motion.div 
@@ -188,16 +207,40 @@ export default function Step2Assignment() {
                         className="w-28"
                         onClick={scrollPrev}
                         disabled={!canScrollPrev}
+                        aria-label="Previous item"
                     >
                         <ArrowLeft className="h-5 w-5" />
                         <span>Prev</span>
                     </Button>
+
+                    {/* Dot indicators for current position */}
+                    {itemsWithCost.length <= 10 && (
+                      <div className="flex items-center gap-1.5" aria-label={`Item ${currentAssignmentIndex + 1} of ${itemsWithCost.length}`}>
+                        {itemsWithCost.map((item, idx) => (
+                          <button
+                            key={item.id}
+                            onClick={() => handleJumpToItem(idx)}
+                            aria-label={`Go to item ${idx + 1}`}
+                            className={cn(
+                              'rounded-full transition-all',
+                              idx === currentAssignmentIndex
+                                ? 'w-4 h-2 bg-primary'
+                                : issueItems.has(item.id)
+                                  ? 'w-2 h-2 bg-destructive/70 hover:bg-destructive'
+                                  : 'w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/60'
+                            )}
+                          />
+                        ))}
+                      </div>
+                    )}
+
                     <Button
                         variant="outline"
                         size="lg"
                         className="w-28"
                         onClick={scrollNext}
                         disabled={!canScrollNext}
+                        aria-label="Next item"
                     >
                         <span>Next</span>
                         <ArrowRight className="h-5 w-5" />

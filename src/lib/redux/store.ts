@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import sessionReducer from './slices/sessionSlice';
 import uiReducer from './slices/uiSlice';
+import { localStoragePersistMiddleware } from './middleware/localStoragePersist';
 
 export const store = configureStore({
   reducer: {
@@ -15,7 +16,7 @@ export const store = configureStore({
       // inspects the `searchParams` object.
       // Disabling this check is the most robust way to prevent this class of errors.
       serializableCheck: false,
-    }),
+    }).concat(localStoragePersistMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

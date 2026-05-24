@@ -19,27 +19,59 @@ const initialState: SessionState = {
   currentAssignmentIndex: 0,
 };
 
+const PROCESSING_TIMEOUT_MS = 30_000;
+
+/** Shared helper: run receipt extraction with a 30-second hard timeout. */
+async function runExtraction(
+  imageDataUri: string,
+  user: AuthUser | null
+) {
+  if (!user) throw new Error('User authentication is required to process receipts.');
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('timeout')), PROCESSING_TIMEOUT_MS)
+  );
+  return Promise.race([
+    extractReceiptData({ receiptDataUri: imageDataUri, user }),
+    timeoutPromise,
+  ]);
+}
+
 export const uploadAndProcessReceipt = createAsyncThunk(
   'session/uploadAndProcessReceipt',
-  async ({ file, user }: { file: File; user: AuthUser | null }, { rejectWithValue }) => {
+  async (
+    { file, user }: { file: File; user: AuthUser | null },
+    { dispatch, rejectWithValue, requestId }
+  ) => {
     try {
       // Normalize the image before uploading
       const imageDataUri = await normalizeImageForAI(file);
 
-      if (!user) {
-        throw new Error('User authentication is required to process receipts.');
-      }
+      // Store the image early so a retry is possible if the AI call fails
+      dispatch(updateReceipt({ id: requestId, imageDataUri }));
 
-      const extractedData = await extractReceiptData({ receiptDataUri: imageDataUri, user });
-      
-      return {
-        name: file.name,
-        imageDataUri,
-        ...extractedData
-      };
+      const extractedData = await runExtraction(imageDataUri, user);
+
+      return { name: file.name, imageDataUri, ...extractedData };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Could not process file.';
       return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+/** Re-run AI extraction on an existing receipt using its stored image. */
+export const reprocessReceiptFromUri = createAsyncThunk(
+  'session/reprocessReceiptFromUri',
+  async (
+    { receiptId, imageDataUri, user }: { receiptId: string; imageDataUri: string; user: AuthUser | null },
+    { rejectWithValue }
+  ) => {
+    try {
+      const extractedData = await runExtraction(imageDataUri, user);
+      return { receiptId, imageDataUri, ...extractedData };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Could not process file.';
+      return rejectWithValue({ receiptId, message: msg });
     }
   }
 );
@@ -453,6 +485,88 @@ const sessionSlice = createSlice({
         }
         state.status = 'failed';
         state.error = action.payload as string;
+      })
+      // ── reprocessReceiptFromUri ──────────────────────────────────────────
+      .addCase(reprocessReceiptFromUri.pending, (state, action) => {
+        const receipt = state.receipts.find(r => r.id === action.meta.arg.receiptId);
+        if (receipt) {
+          receipt.status = 'processing';
+          receipt.error = undefined;
+        }
+      })
+      .addCase(reprocessReceiptFromUri.fulfilled, (state, action) => {
+        const { receiptId } = action.meta.arg;
+        const receipt = state.receipts.find(r => r.id === receiptId);
+        if (!receipt) return;
+
+        const payload = action.payload;
+        receipt.status = 'processed';
+        receipt.imageDataUri = payload.imageDataUri;
+        receipt.currency = payload.currency || state.globalCurrency;
+        receipt.overallConfidence = payload.overallConfidence;
+
+        // Remove old items for this receipt before adding freshly extracted ones
+        state.items = state.items.filter(i => i.receiptId !== receiptId);
+
+        const tempIdToPermanentIdMap = new Map<string, string>();
+        const newItems = payload.items.map((item: { id?: string; name: string; quantity: number; unitCost?: number; cost: number; confidence?: number; category?: string; subCategory?: string }, index: number) => {
+          const permanentId = `item_${receiptId}_retry_${index}`;
+          if (item.id) tempIdToPermanentIdMap.set(item.id, permanentId);
+          return {
+            id: permanentId,
+            receiptId,
+            name: item.name,
+            quantity: item.quantity,
+            unitCost: item.unitCost ? Math.round(item.unitCost * 100) : undefined,
+            cost: Math.round(item.cost * 100),
+            discounts: [],
+            assignees: [],
+            splitMode: 'equal' as const,
+            percentageAssignments: {},
+            exactAssignments: {},
+            confidence: item.confidence,
+            category: (item.category as 'Food' | 'Drink' | 'Other') || 'Other',
+            subCategory: item.subCategory,
+          };
+        });
+
+        receipt.discounts = (payload.discounts as Array<{ id?: string; name: string; amount: number; confidence?: number; suggestedItemId?: string | null }>).map((d, i) => {
+          const permanentSuggestedId = d.suggestedItemId
+            ? tempIdToPermanentIdMap.get(d.suggestedItemId)
+            : null;
+          return {
+            id: `d_${receiptId}_retry_${i}`,
+            name: d.name,
+            amount: Math.round(d.amount * 100),
+            confidence: d.confidence,
+            suggestedItemId: permanentSuggestedId,
+          };
+        });
+
+        const serviceChargeTotal = (payload.serviceCharges as Array<{ amount: number; confidence?: number }>).reduce(
+          (sum: number, sc: { amount: number }) => sum + sc.amount, 0
+        );
+        const serviceChargeConfidence =
+          payload.serviceCharges.length > 0
+            ? payload.serviceCharges.reduce((sum: number, sc: { confidence?: number }) => sum + (sc.confidence || 0), 0) /
+              payload.serviceCharges.length
+            : undefined;
+
+        receipt.serviceCharge = {
+          type: 'fixed',
+          value: Math.round(serviceChargeTotal * 100),
+          confidence: serviceChargeConfidence ? Math.round(serviceChargeConfidence) : undefined,
+        };
+
+        state.items.push(...newItems);
+      })
+      .addCase(reprocessReceiptFromUri.rejected, (state, action) => {
+        const { receiptId, message } = (action.payload as { receiptId: string; message: string }) || {};
+        const receipt = state.receipts.find(r => r.id === receiptId);
+        if (receipt) {
+          receipt.status = 'failed';
+          receipt.error = message;
+        }
       });
   }
 });
