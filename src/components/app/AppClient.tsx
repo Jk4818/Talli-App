@@ -146,7 +146,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
     <>
       {/* ── Draft recovery banner ── */}
       {recoveryDraft && !isDemo && (
-        <div className="bg-primary/10 border-b border-primary/20 px-4 py-3">
+        <div className="bg-primary/10 px-4 py-3">
           <div className="container mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
               <RotateCcw className="h-5 w-5 text-primary mt-0.5 shrink-0" />
@@ -174,7 +174,7 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
         {renderStep()}
       </div>
 
-      <footer className="sticky bottom-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
+      <footer className="sticky bottom-0 z-40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         {/* ── Readiness strip (Step 1 only, when blocked) ── */}
         {step === 1 && isStep1Blocked && (
           <div className="container mx-auto px-4 pt-3 pb-1 space-y-1">

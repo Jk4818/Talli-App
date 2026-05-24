@@ -24,7 +24,7 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
       {trigger}
     </AlertDialogTrigger>
     <AlertDialogContent className="flex flex-col max-h-[85vh] p-0">
-      <AlertDialogHeader className="border-b px-6 pt-6 pb-4">
+      <AlertDialogHeader className="px-6 pt-6 pb-4">
         <AlertDialogTitle>{title}</AlertDialogTitle>
       </AlertDialogHeader>
       <div className="flex-1 min-h-0 overflow-y-auto">
@@ -32,7 +32,7 @@ const InfoDialog = ({ title, description, trigger }: { title: string, descriptio
           {description}
         </div>
       </div>
-      <AlertDialogFooter className="border-t p-6">
+      <AlertDialogFooter className="p-6 pt-4">
         <AlertDialogAction>Got it</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
@@ -74,7 +74,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
     const fairnessInfoDescription = (
       <>
         <p>This metric shows how evenly the total cost was distributed. Here's the exact calculation for your session:</p>
-        <div className="space-y-3 rounded-md border p-3 bg-muted/50">
+        <div className="space-y-3 rounded-md bg-muted p-3">
           <div className="flex justify-between">
             <span>Total Bill:</span>
             <span className="font-mono">{formatCurrency(summary.total)}</span>
@@ -83,7 +83,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
             <span>Participants:</span>
             <span className="font-mono">{participants.length}</span>
           </div>
-          <Separator />
+          <div className="my-2 h-px bg-secondary/60" />
           <div className="flex justify-between font-semibold">
             <span>Average Share per Person:</span>
             <span className="font-mono">{formatCurrency(averageShare)}</span>
@@ -124,11 +124,11 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                     <div className="mt-4">
                         <h4 className="font-semibold text-foreground">Item-Level Rounding</h4>
                         <p className="text-muted-foreground text-xs mb-2">Happens when an item's cost doesn't divide perfectly among sharers.</p>
-                        <div className="rounded-md border bg-muted/50">
+                        <div className="rounded-md bg-muted">
                             <div className="space-y-3 p-2">
                                 {roundedItems.map((item, index) => (
                                     <React.Fragment key={index}>
-                                        {index > 0 && <Separator className="my-2 bg-border/50" />}
+                                        {index > 0 && <div className="my-2 h-px bg-secondary/60" />}
                                         <div>
                                             <div className="flex justify-between font-semibold">
                                                 <span>Item:</span>
@@ -164,11 +164,11 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                     <div className="mt-4">
                         <h4 className="font-semibold text-foreground">Discount Rounding</h4>
                         <p className="text-muted-foreground text-xs mb-2">Happens when a receipt-wide discount doesn't divide perfectly across participants' shares.</p>
-                        <div className="rounded-md border bg-muted/50">
+                        <div className="rounded-md bg-muted">
                             <div className="space-y-3 p-2">
                                 {(discountRounding || []).map((disc, index) => (
                                     <React.Fragment key={index}>
-                                        {index > 0 && <Separator className="my-2 bg-border/50" />}
+                                        {index > 0 && <div className="my-2 h-px bg-secondary/60" />}
                                         <div>
                                             <div className="flex justify-between font-semibold">
                                                 <span>Discount:</span>
@@ -200,11 +200,11 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                     <div className="mt-4">
                         <h4 className="font-semibold text-foreground">Service Charge Rounding</h4>
                         <p className="text-muted-foreground text-xs mb-2">Happens when a tip/fee doesn't divide perfectly across participants' shares.</p>
-                        <div className="rounded-md border bg-muted/50">
+                        <div className="rounded-md bg-muted">
                              <div className="space-y-3 p-2">
                                 {(serviceChargeRounding || []).map((sc, index) => (
                                     <React.Fragment key={index}>
-                                        {index > 0 && <Separator className="my-2 bg-border/50" />}
+                                        {index > 0 && <div className="my-2 h-px bg-secondary/60" />}
                                         <div>
                                             <div className="flex justify-between font-semibold">
                                                 <span>Charge:</span>
@@ -298,7 +298,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
     const aiConfidenceDialogDescription = (
       <>
         <div>This is the average confidence score from all AI-scanned receipts in this session. A lower score suggests you should double-check the extracted data. Here's the breakdown:</div>
-        <div className="space-y-3 rounded-md border p-3 bg-muted/50 mt-4">
+        <div className="space-y-3 rounded-md bg-muted p-3 mt-4">
           {receipts
             .filter(r => r.overallConfidence !== undefined && r.status === 'processed')
             .map((r, index, arr) => (
@@ -307,7 +307,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                   <span className="truncate pr-4">{r.name}</span>
                   <span className="font-mono font-semibold">{r.overallConfidence}%</span>
                 </div>
-                {index < arr.length - 1 && <Separator />}
+                {index < arr.length - 1 && <div className="my-2 h-px bg-secondary/60" />}
               </React.Fragment>
             ))
           }
@@ -360,7 +360,7 @@ export default function SmartSummaryCard({ summary, participants, items, receipt
                 </div>
             </CardHeader>
             <CardContent>
-                <ul className="divide-y divide-border/50">
+                <ul className="space-y-0">
                     {aiConfidence !== null && (
                         <SmartSummaryItem
                             icon={<Bot className="h-5 w-5" />}

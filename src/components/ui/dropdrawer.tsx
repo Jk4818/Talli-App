@@ -126,7 +126,7 @@ const DropDrawerContent = React.forwardRef<
     return (
       <DrawerContent ref={ref as React.Ref<HTMLDivElement>} className={cn("flex flex-col h-max max-h-[90vh]", drawerClassName)}>
         {viewStack.length > 0 && (
-          <DrawerHeader className="p-4 border-b flex-shrink-0">
+          <DrawerHeader className="p-4 flex-shrink-0">
              <Button variant="ghost" size="sm" className="justify-start w-fit p-0 h-auto" onClick={popView}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back

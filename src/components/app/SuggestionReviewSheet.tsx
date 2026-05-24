@@ -144,7 +144,7 @@ export default function SuggestionReviewSheet({
           </div>
 
           {/* Suggestion card */}
-          <div className="rounded-xl border bg-primary/5 border-primary/20 p-4 space-y-3">
+          <div className="rounded-xl bg-primary/10 p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-1.5 text-primary font-semibold text-sm">
                 <Sparkles className="h-4 w-4" />
@@ -169,14 +169,14 @@ export default function SuggestionReviewSheet({
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Suggested for:</p>
             {targetItem ? (
-              <div className="rounded-lg border bg-secondary/40 px-3 py-2.5 flex items-center justify-between">
+              <div className="rounded-lg bg-secondary px-3 py-2.5 flex items-center justify-between">
                 <span className="font-medium text-sm">{targetItem.name}</span>
                 <span className="text-sm text-muted-foreground font-mono">
                   {formatCurrency(targetItem.cost, receipt.currency)}
                 </span>
               </div>
             ) : (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5">
+              <div className="rounded-lg bg-destructive/15 px-3 py-2.5">
                 <p className="text-sm text-destructive">Item not found — it may have been deleted.</p>
               </div>
             )}
@@ -184,7 +184,7 @@ export default function SuggestionReviewSheet({
 
           {/* Conflict warning */}
           {isConflict && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-400/40 bg-amber-50/50 dark:bg-amber-950/20 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-400">
+            <div className="flex items-start gap-2 rounded-lg bg-warning/15 px-3 py-2.5 text-sm text-warning">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <p>Note: this discount is larger than the item cost — applying it would make the item negative.</p>
             </div>

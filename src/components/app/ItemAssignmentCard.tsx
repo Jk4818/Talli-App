@@ -87,7 +87,7 @@ export default function ItemAssignmentCard({ item, itemNumber, totalItems, hasIs
           <p className="text-sm font-medium mb-2">Who is sharing this item?</p>
           <UserAssignments itemId={item.id} />
         </CardContent>
-        <CardFooter className={cn("flex-col gap-2 text-sm text-muted-foreground text-center transition-all pt-4", needsAssignment && participants.length > 0 ? "border-t" : "")}>
+        <CardFooter className={cn("flex-col gap-2 text-sm text-muted-foreground text-center transition-all pt-4")}>
            {needsAssignment && participants.length > 0 && <p className="text-center text-destructive text-sm font-medium">This item must be assigned to at least one person.</p>}
           <p>Item {itemNumber} of {totalItems}</p>
         </CardFooter>

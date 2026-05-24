@@ -253,13 +253,13 @@ export default function ItemListEditor() {
                               <div className="flex items-center -space-x-2">
                                   {assignedParticipants.slice(0, MAX_AVATARS).map(p => (
                                       <AccessibleTooltip key={p.id} content={<p>{p.name}</p>}>
-                                          <Avatar className="h-6 w-6 border-2 border-background">
+                                          <Avatar className="h-6 w-6 ring-2 ring-background">
                                               <AvatarFallback className="text-[10px]">{getInitials(p.name)}</AvatarFallback>
                                           </Avatar>
                                       </AccessibleTooltip>
                                   ))}
                                   {assignedParticipants.length > MAX_AVATARS && (
-                                      <Avatar className="h-6 w-6 border-2 border-background">
+                                      <Avatar className="h-6 w-6 ring-2 ring-background">
                                           <AvatarFallback className="text-[10px]">+{assignedParticipants.length - MAX_AVATARS}</AvatarFallback>
                                       </Avatar>
                                   )}
@@ -272,7 +272,7 @@ export default function ItemListEditor() {
 
                           {suggestion && (
                               <AccessibleTooltip content={<p>AI has a discount suggestion. Click to review.</p>}>
-                                  <Badge variant="outline" className="h-6 border-primary/80 text-primary font-medium">
+                                  <Badge variant="default" className="h-6 font-medium">
                                       <Sparkles className="h-3 w-3 mr-1.5" />
                                       Suggestion
                                   </Badge>
@@ -286,7 +286,7 @@ export default function ItemListEditor() {
                             </AccessibleTooltip>
                           )}
                           <AccessibleTooltip content={<p className='capitalize'>{item.splitMode} Split</p>}>
-                            <Badge variant="outline" className="h-6 p-1.5">{getSplitModeIcon(item.splitMode)}</Badge>
+                            <Badge variant="secondary" className="h-6 p-1.5">{getSplitModeIcon(item.splitMode)}</Badge>
                           </AccessibleTooltip>
                         </div>
                     </div>
@@ -294,7 +294,7 @@ export default function ItemListEditor() {
                 );
               })
             ) : (
-              <div className="md:col-span-2 lg:col-span-3 h-32 text-center flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg space-y-2">
+              <div className="md:col-span-2 lg:col-span-3 h-32 text-center flex flex-col items-center justify-center text-muted-foreground bg-secondary/50 rounded-lg space-y-2">
                 <ListX className="h-8 w-8" />
                 <div>
                   <p className='font-medium'>No items found</p>

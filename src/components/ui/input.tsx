@@ -2,13 +2,31 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Input — Borderless dark surface.
+ * No border at rest. Focus state indicated exclusively by an Electric Cyan
+ * ambient glow ring (box-shadow) — not a border-color change.
+ * Error states are communicated via background tint + label text, never a red stroke.
+ */
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, ...props }, ref) => {
     return (
       <input
         type={type}
         className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          // Layout & shape
+          "flex h-12 w-full rounded-sm px-4 py-3",
+          // Surface — raised layer above card
+          "bg-secondary text-foreground",
+          // Typography
+          "text-sm font-body placeholder:text-muted-foreground",
+          // No border at rest — focus uses glow only
+          "focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(34,211,238,0.25)]",
+          // File input reset
+          "file:bg-transparent file:text-sm file:font-medium file:text-foreground file:border-0",
+          // States
+          "disabled:cursor-not-allowed disabled:opacity-40",
+          "transition-shadow duration-150",
           className
         )}
         ref={ref}

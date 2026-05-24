@@ -22,7 +22,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return (
         <div className="flex flex-col min-h-dvh">
             {/* Skeleton for Header */}
-            <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+            <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl">
                 <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
                     <Skeleton className="h-8 w-32" />
                     <Skeleton className="h-8 w-48 hidden sm:block" />
@@ -39,7 +39,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     <Skeleton className="h-96 w-full" />
                 </div>
                  {/* Skeleton for footer */}
-                <footer className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
+                <footer className="sticky bottom-0 bg-background/80 backdrop-blur-xl">
                     <div className="container mx-auto px-4 py-3 flex items-center justify-between">
                         <Skeleton className="h-10 w-24" />
                         <Skeleton className="h-10 w-32" />
@@ -53,7 +53,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col min-h-dvh">
       <AppHeader />
-      <main className="flex-1 flex flex-col bg-secondary/50">
+      <main className="flex-1 flex flex-col">
         {children}
       </main>
     </div>

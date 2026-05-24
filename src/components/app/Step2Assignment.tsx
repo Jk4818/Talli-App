@@ -260,7 +260,7 @@ export default function Step2Assignment() {
                         </CardHeader>
                         <CardContent className="p-0">
                             <ScrollArea className="h-72">
-                                <div className="divide-y divide-border">
+                                <div className="flex flex-col gap-px">
                                     {itemsRequiringAttention.map(({ item, index, issue }) => {
                                         const receipt = receipts.find(r => r.id === item.receiptId);
                                         const currency = receipt?.currency || globalCurrency;

@@ -32,10 +32,10 @@ const ParticipantCard = ({ participant, currency }: { participant: ParticipantSu
 
     return (
         <Card className={cn(
-            "overflow-hidden bg-background shadow-sm transition-shadow hover:shadow-md border-l-4",
-            isOwed && "border-accent",
-            owes && "border-destructive",
-            isSettled && "border-border"
+            "overflow-hidden transition-colors",
+            isOwed && "bg-accent/5",
+            owes && "bg-destructive/5",
+            isSettled && "bg-card"
         )}>
             <div className="p-4">
                 <div className="flex items-start justify-between gap-4">

@@ -3,18 +3,39 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Badge — No border strokes on any variant.
+ * Status conveyed through background tint + text color combination (never color alone).
+ * label-sm typography: 11px, uppercase, +0.06em tracking for legibility.
+ */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-widest transition-colors",
   {
     variants: {
       variant: {
+        // Brand — violet tint
         default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "bg-primary/20 text-primary",
+
+        // Neutral surface
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground",
+
+        // Error — soft red surface
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
+          "bg-destructive/20 text-destructive",
+
+        // Success — emerald surface
+        success:
+          "bg-success/20 text-success",
+
+        // Warning — amber surface
+        warning:
+          "bg-warning/20 text-warning",
+
+        // Muted / low-emphasis
+        outline:
+          "bg-secondary/60 text-muted-foreground",
       },
     },
     defaultVariants: {

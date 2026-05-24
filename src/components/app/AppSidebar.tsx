@@ -75,7 +75,7 @@ export default function AppSidebar() {
     if (stepId === currentStep) {
       return <Dot className="h-8 w-8 text-primary" />;
     }
-    return <div className="h-5 w-5 rounded-full border-2 border-border" />;
+    return <div className="h-5 w-5 rounded-full bg-secondary" />;
   };
 
   return (

@@ -199,7 +199,7 @@ export default function ItemSplitDiagram() {
                       animate={{ 
                         opacity: lineIsHighlighted ? 1 : (highlightedId ? 0.1 : 0.3),
                         pathLength: 1,
-                        stroke: lineIsHighlighted ? 'hsl(var(--primary))' : 'hsl(var(--border))'
+                        stroke: lineIsHighlighted ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))'
                       }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.5, ease: 'easeInOut' }}

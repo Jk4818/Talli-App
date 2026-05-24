@@ -226,7 +226,7 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
       </div>
 
       {/* ── Participant list ── */}
-      <div className="rounded-xl border overflow-hidden divide-y divide-border">
+      <div className="rounded-xl bg-secondary/20 overflow-hidden flex flex-col gap-px">
         {participants.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-6 px-4">
             Add participants in Step 1 to assign items.
@@ -252,10 +252,10 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
                   aria-label={`${isAssigned ? 'Remove' : 'Add'} ${p.name}`}
                   onClick={() => toggleAssignment(p.id, !isAssigned)}
                   className={cn(
-                    'h-6 w-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-all',
+                    'h-6 w-6 shrink-0 rounded-full flex items-center justify-center transition-all',
                     isAssigned
-                      ? 'bg-primary border-primary'
-                      : 'border-muted-foreground/30 hover:border-muted-foreground',
+                      ? 'bg-primary'
+                      : 'bg-secondary hover:bg-secondary/70',
                   )}
                 >
                   {isAssigned && (
@@ -393,7 +393,7 @@ export default function UserAssignments({ itemId }: UserAssignmentsProps) {
               }}
               className={cn(
                 'w-full flex items-center justify-between gap-2',
-                'rounded-lg border border-primary/30 bg-primary/5 px-3 py-2',
+                'rounded-lg bg-primary/10 px-3 py-2',
                 'text-sm font-medium text-primary',
                 'hover:bg-primary/10 active:bg-primary/15 transition-colors',
               )}

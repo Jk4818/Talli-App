@@ -6,6 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, BarChart, Users, UploadCloud, Divide, Menu, Rocket } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import Image from 'next/image';
 import {
   Sheet,
@@ -72,31 +73,30 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-dvh bg-background">
-      <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4">
           <Logo />
 
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-2 md:flex">
-            <Link href="/demo" className={buttonVariants({ variant: 'outline' })}>
+            <Link href="/demo" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
               Live Demo
             </Link>
             {user && (
-              <Link href="/app" className={buttonVariants({ variant: 'ghost' })}>
+              <Link href="/app" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
                 Go to App
               </Link>
             )}
-
-
+            <ThemeToggle size="icon-sm" />
             {user ? (
               <UserNav />
             ) : (
               !loading && (
                 <>
-                  <Button variant="ghost" asChild>
+                  <Button variant="ghost" size="sm" asChild>
                     <Link href="/login">Sign In</Link>
                   </Button>
-                  <Button asChild>
+                  <Button size="sm" asChild>
                     <Link href="/signup">
                       Sign Up
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -108,11 +108,11 @@ export default function Home() {
           </nav>
 
           {/* Mobile Navigation */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-1">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
+                <Button variant="ghost" size="icon-sm">
+                  <Menu className="h-5 w-5" />
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
@@ -142,7 +142,11 @@ export default function Home() {
                     Terms of Service
                   </Link>
                 </nav>
-                <div className="absolute bottom-6 left-6 right-6">
+                <div className="absolute bottom-6 left-6 right-6 space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-sm text-muted-foreground">Appearance</span>
+                    <ThemeToggle size="icon-sm" />
+                  </div>
                   {user ? (
                     <UserNav />
                   ) : (
@@ -179,7 +183,7 @@ export default function Home() {
                 Talli makes group expenses simple. Upload a receipt, assign items, and we'll tell you exactly who owes what. Fair, fast, and free.
               </motion.p>
               <motion.div variants={fadeInUp} className="mt-8 flex justify-start">
-                <Alert className="max-w-2xl text-left bg-background/80 backdrop-blur-sm">
+                <Alert className="max-w-2xl text-left glass rounded-xl">
                   <Rocket className="h-4 w-4" />
                   <AlertTitle>Welcome to the Beta!</AlertTitle>
                   <AlertDescription>
@@ -197,7 +201,7 @@ export default function Home() {
               </motion.div>
             </motion.section>
           </div>
-          <div className="h-full font-headline font-bold text-right pt-4 px-4">AI can make mistakes, so double-check it</div>
+          <div className="font-body text-xs text-right pt-3 px-4 text-muted-foreground">AI can make mistakes, so double-check it</div>
         </div>
 
         <motion.section 
@@ -224,7 +228,7 @@ export default function Home() {
                 viewport={{ once: true, amount: 0.5 }}
               >
                 <motion.div variants={fadeInUp} className="max-w-xl space-y-4 text-background ">
-                  <div className="inline-block rounded-lg bg-background  px-3 py-1 text-sm font-medium text-primary">How It Works</div>
+                  <div className="inline-block rounded-full bg-primary/20 px-3 py-1 text-sm font-medium text-primary">How It Works</div>
                   <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">From Receipt to Resolution in 3 Steps</h2>
                   <p className="text-muted-background">
                     Splitting a bill has never been easier. Our streamlined process saves you time and prevents awkward "who had what" conversations.
@@ -331,8 +335,8 @@ export default function Home() {
           </div>
         </motion.section>
       </main>
-      <motion.footer 
-        className="border-t py-6"
+      <motion.footer
+        className="py-8"
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.1 }}

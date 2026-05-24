@@ -10,23 +10,25 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1rem",
       screens: {
+        "sm": "640px",
+        "md": "768px",
+        "lg": "1024px",
+        "xl": "1280px",
         "2xl": "1400px",
       },
     },
     extend: {
       fontFamily: {
-        body: ['Rubik', 'sans-serif'],
-        headline: ['"Doto"', 'sans-serif'],
+        // Headline: Space Grotesk — geometric, bold, technical
+        headline: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+        // Body: DM Sans — humanist, warm, high legibility on dark
+        body: ['"DM Sans"', 'system-ui', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
-        'ice-cold': '#a0d2eb',
-        'freeze-purple': '#e5eaf5',
-        'medium-purple': '#d0bdf4',
-        'purple-pain': '#8458B3',
-        'heavy-purple': '#494d5f',
+        // CSS-variable driven semantic tokens
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
@@ -57,6 +59,12 @@ export default {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -79,26 +87,22 @@ export default {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        // Based on --radius: 1.25rem (20px)
+        lg: 'var(--radius)',                     // 20px — primary cards
+        md: 'calc(var(--radius) - 4px)',         // 16px — standard cards
+        sm: 'calc(var(--radius) - 8px)',         // 12px — inputs, chips
+        xs: 'calc(var(--radius) - 12px)',        // 8px  — small tags
+        xl: 'calc(var(--radius) + 8px)',         // 28px — modals, feature panels
       },
       keyframes: {
+        // Overlays
         'accordion-down': {
-          from: {
-            height: '0',
-          },
-          to: {
-            height: 'var(--radix-accordion-content-height)',
-          },
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
-          from: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-          to: {
-            height: '0',
-          },
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
         },
         'collapsible-down': {
           from: { height: '0' },
@@ -108,12 +112,18 @@ export default {
           from: { height: 'var(--radix-collapsible-content-height)' },
           to: { height: '0' },
         },
+        // Skeleton shimmer — the only approved idle animation
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'collapsible-down': 'collapsible-down 0.2s ease-out',
         'collapsible-up': 'collapsible-up 0.2s ease-out',
+        shimmer: 'shimmer 1.6s linear infinite',
       },
     },
   },

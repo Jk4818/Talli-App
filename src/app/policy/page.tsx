@@ -23,7 +23,7 @@ export default function PolicyPage() {
 
   return (
     <div className="flex flex-col min-h-dvh bg-background">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4">
           <Logo />
           <Button asChild variant="outline">
@@ -102,7 +102,7 @@ export default function PolicyPage() {
           </div>
         </div>
       </main>
-      <footer className="border-t py-6">
+      <footer className="py-6">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 text-center text-sm text-muted-foreground md:flex-row">
             <Logo />
             <p className="order-last md:order-none">&copy; {currentYear} Talli. All rights reserved.</p>

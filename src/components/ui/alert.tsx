@@ -3,14 +3,23 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Alert — Semantic surface-tinted notification.
+ * No border strokes. Background tint communicates severity.
+ * Icon and text color match the semantic tone.
+ */
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  "relative w-full rounded-lg p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
+        default: "bg-secondary text-foreground [&>svg]:text-muted-foreground",
         destructive:
-          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+          "bg-destructive/15 text-destructive [&>svg]:text-destructive",
+        success:
+          "bg-success/15 text-success [&>svg]:text-success",
+        warning:
+          "bg-warning/15 text-warning [&>svg]:text-warning",
       },
     },
     defaultVariants: {
@@ -38,7 +47,7 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("mb-1 font-headline font-bold leading-none tracking-tight", className)}
+    className={cn("mb-1 font-headline font-semibold leading-none tracking-tight", className)}
     {...props}
   />
 ))
@@ -50,7 +59,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    className={cn("text-sm leading-relaxed [&_p]:leading-relaxed", className)}
     {...props}
   />
 ))

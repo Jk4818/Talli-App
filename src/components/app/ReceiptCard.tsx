@@ -193,12 +193,14 @@ export default function ReceiptCard({
   // Hide body while processing (nothing to interact with)
   const bodyVisible = isOpen && receipt.status !== 'processing';
 
-  // ── Border colour ──────────────────────────────────────────────────────
+  // ── Card status style — tonal bg + inset shadow accent, no border ──────
   const cardBorder = cn(
-    'rounded-2xl border bg-card shadow-sm',
-    hasConflict ? 'border-destructive' :
-    isPayerMissing && receipt.status === 'processed' ? 'border-amber-400/60' :
-    receipt.status === 'failed' ? 'border-destructive' : ''
+    'rounded-2xl bg-card shadow-[var(--card-elevation)] dark:shadow-none',
+    hasConflict || receipt.status === 'failed'
+      ? 'shadow-[var(--card-elevation),inset_3px_0_0_hsl(var(--destructive)/0.6)] bg-destructive/5'
+      : isPayerMissing && receipt.status === 'processed'
+      ? 'shadow-[var(--card-elevation),inset_3px_0_0_hsl(var(--warning)/0.6)] bg-warning/5'
+      : ''
   );
 
   return (
@@ -320,7 +322,7 @@ export default function ReceiptCard({
               transition={{ duration: 0.22, ease: [0.04, 0.62, 0.23, 0.98] }}
               className="overflow-hidden"
             >
-              <div className="h-px bg-border mx-5" />
+              <div className="h-px bg-secondary/60 mx-5" />
 
               {receipt.status === 'failed' ? (
                 /* ── Failed state ──────────────────────────────────────── */
@@ -376,7 +378,7 @@ export default function ReceiptCard({
 
                   {/* Conflict alert */}
                   {hasConflict && (
-                    <div className="flex items-start gap-2.5 rounded-xl bg-destructive/8 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+                    <div className="flex items-start gap-2.5 rounded-xl bg-destructive/15 px-4 py-3 text-sm text-destructive">
                       <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                       <p>Receipt total is negative — adjust discounts or item costs.</p>
                     </div>
@@ -384,15 +386,15 @@ export default function ReceiptCard({
 
                   {/* AI suggestions banner */}
                   {hasSuggestions && (
-                    <div className="flex items-center justify-between rounded-xl bg-primary/8 border border-primary/20 px-4 py-3">
+                    <div className="flex items-center justify-between rounded-xl bg-primary/10 px-4 py-3">
                       <div className="flex items-center gap-2 text-sm font-medium text-primary">
                         <Sparkles className="h-4 w-4 shrink-0" />
                         ✦ {pendingSuggestions.length} discount suggestion{pendingSuggestions.length > 1 ? 's' : ''} — review
                       </div>
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="border-primary/30 text-primary text-xs ml-2 shrink-0"
+                        variant="ghost"
+                        className="text-primary text-xs ml-2 shrink-0"
                         onClick={() => setIsSuggestionReviewOpen(true)}
                       >
                         Review

@@ -144,7 +144,7 @@ function FormBody({
 
       {/* ── AI Suggestion panel ── */}
       {pendingSuggestion && (
-        <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3">
+        <div className="rounded-xl bg-primary/10 p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 font-semibold text-sm text-primary">
               <Sparkles className="h-4 w-4 shrink-0" />
@@ -390,10 +390,10 @@ function FormBody({
               type="button"
               onClick={() => setCategory(value)}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 rounded-xl border py-3 text-sm font-medium transition-all',
+                'flex flex-col items-center justify-center gap-1 rounded-xl py-3 text-sm font-medium transition-all',
                 category === value
-                  ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/30'
-                  : 'border-border bg-secondary/30 text-muted-foreground hover:bg-secondary/60',
+                  ? 'bg-primary/15 text-primary shadow-[0_0_0_2px_rgba(168,85,247,0.4)]'
+                  : 'bg-secondary text-muted-foreground hover:bg-secondary/70',
               )}
             >
               <span className="text-xl leading-none">{emoji}</span>
@@ -491,7 +491,7 @@ function FormBody({
           variant="outline"
           size="sm"
           onClick={onAddDiscount}
-          className="w-full h-10 border-dashed"
+          className="w-full h-10"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add discount
@@ -546,7 +546,7 @@ function FooterContent({
               type="button"
               variant="outline"
               className={cn(
-                "h-12 text-base border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive",
+                "h-12 text-base bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive",
                 isMobile ? "w-full" : "sm:h-10 sm:text-sm"
               )}
             >
@@ -748,7 +748,7 @@ export default function ItemEditDialog({
     return (
       <Drawer open={isOpen} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[92dvh] flex flex-col">
-          <DrawerHeader className="px-4 pt-4 pb-3 text-left border-b">
+          <DrawerHeader className="px-4 pt-4 pb-3 text-left">
             <DrawerTitle className="text-xl font-headline">Edit item</DrawerTitle>
             <DrawerDescription className="text-sm">
               {item.name}
@@ -769,7 +769,7 @@ export default function ItemEditDialog({
               </div>
             </ScrollArea>
 
-            <DrawerFooter className="border-t px-4 py-4 bg-background">
+            <DrawerFooter className="px-4 py-4 bg-background/80 backdrop-blur-sm">
               <FooterContent
                 item={item}
                 effectiveCost={effectiveCost}
@@ -789,7 +789,7 @@ export default function ItemEditDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] flex flex-col p-0 sm:max-w-lg">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Edit item</DialogTitle>
           <DialogDescription>
             Update the details for this item.
@@ -803,7 +803,7 @@ export default function ItemEditDialog({
             </div>
           </ScrollArea>
 
-          <DialogFooter className="px-6 py-4 border-t">
+          <DialogFooter className="px-6 py-4">
             <FooterContent
               item={item}
               effectiveCost={effectiveCost}

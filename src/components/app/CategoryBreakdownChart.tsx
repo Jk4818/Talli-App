@@ -166,7 +166,7 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
                 return (
                 <Collapsible
                     key={cat.category}
-                    className="rounded-lg bg-card transition-colors data-[state=open]:bg-primary/10 data-[state=open]:border-primary/20"
+                    className="rounded-lg bg-card transition-colors data-[state=open]:bg-primary/10"
                 >
                     <CollapsibleTrigger className="group flex w-full flex-col gap-2 p-3 text-left">
                         <div className="flex justify-between items-center">
@@ -191,7 +191,7 @@ export default function CategoryBreakdownChart({ items, participants, summary, g
                         )}
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                        <div className="space-y-1.5 px-3 pb-3 pt-1 border-t border-inherit">
+                        <div className="space-y-1.5 px-3 pb-3 pt-2">
                             {cat.subCategories.length > 0 ? cat.subCategories.map(sub => (
                                 <div key={sub.name} className={cn("flex justify-between items-center text-sm text-muted-foreground pl-9", isDiscount && "text-destructive/90")}>
                                     <span className="break-words pr-2">{sub.name}</span>

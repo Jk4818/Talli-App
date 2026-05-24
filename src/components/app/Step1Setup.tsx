@@ -290,7 +290,7 @@ export default function Step1Setup() {
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-0.5">
           Who&apos;s splitting?
         </h3>
-        <div className="rounded-2xl border bg-card px-5 py-4 shadow-sm">
+        <div className="rounded-2xl bg-card px-5 py-4">
           <ParticipantManager />
         </div>
       </motion.div>
@@ -312,7 +312,7 @@ export default function Step1Setup() {
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground">Settling in</span>
             <ResponsiveSelect value={globalCurrency} onValueChange={(c) => dispatch(setGlobalCurrency(c))}>
-              <ResponsiveSelectTrigger className="h-7 text-xs px-2 w-auto gap-1 border-primary/30 text-primary">
+              <ResponsiveSelectTrigger className="h-7 text-xs px-2 w-auto gap-1 bg-primary/15 text-primary rounded-full">
                 {globalCurrency}
               </ResponsiveSelectTrigger>
               <ResponsiveSelectContent>
@@ -372,7 +372,7 @@ export default function Step1Setup() {
           </div>
         ) : (
           /* ── Empty state CTA ─────────────────────────────────────────── */
-          <div className="rounded-2xl border bg-card shadow-sm">
+          <div className="rounded-2xl bg-card">
             <div className="flex flex-col items-center text-center px-6 py-10 gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                 <Camera className="h-7 w-7 text-primary" />
@@ -392,9 +392,9 @@ export default function Step1Setup() {
                 </span>
               </AccessibleTooltip>
               <div className="flex items-center gap-3 w-full max-w-xs">
-                <div className="flex-1 h-px bg-border" />
+                <div className="flex-1 h-px bg-secondary/60" />
                 <span className="text-xs text-muted-foreground">or</span>
-                <div className="flex-1 h-px bg-border" />
+                <div className="flex-1 h-px bg-secondary/60" />
               </div>
               <button
                 onClick={handleAddManually}
@@ -415,7 +415,7 @@ export default function Step1Setup() {
             initial="hidden"
             animate="show"
             exit="exit"
-            className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            className="flex items-start gap-2 rounded-lg bg-destructive/15 px-4 py-3 text-sm text-destructive"
           >
             <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
             <div className="space-y-1">
@@ -467,7 +467,7 @@ export default function Step1Setup() {
                   <button
                     key={item.id}
                     onClick={() => setEditingItem(item)}
-                    className="shrink-0 w-36 rounded-xl border bg-card p-3 text-left hover:bg-secondary/30 active:bg-secondary/50 transition-colors shadow-sm space-y-1.5"
+                    className="shrink-0 w-36 rounded-xl bg-card p-3 text-left hover:bg-secondary active:bg-secondary/80 active:scale-[0.98] transition-all space-y-1.5"
                   >
                     <p className="text-sm font-medium leading-tight truncate">{item.name || 'Unnamed item'}</p>
                     <p className="text-sm font-semibold tabular-nums">

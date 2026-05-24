@@ -112,7 +112,7 @@ export default function ParticipantManager() {
                   <button
                     onClick={() => dispatch(removeParticipant(p.id))}
                     aria-label={`Remove ${p.name}`}
-                    className="absolute -top-1 -right-1 h-[22px] w-[22px] rounded-full bg-background border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive active:scale-90 transition-all"
+                    className="absolute -top-1 -right-1 h-[22px] w-[22px] rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:bg-destructive/20 hover:text-destructive active:scale-90 transition-all"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -173,7 +173,7 @@ export default function ParticipantManager() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.1 }}
-            className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border border-dashed border-primary/40 text-sm font-medium text-primary hover:bg-primary/5 active:bg-primary/10 transition-colors"
+            className="w-full flex items-center justify-center gap-2 h-12 rounded-xl bg-primary/10 text-sm font-medium text-primary hover:bg-primary/20 active:bg-primary/25 active:scale-[0.98] transition-all"
           >
             <UserRoundPlus className="h-4 w-4" />
             Add person
