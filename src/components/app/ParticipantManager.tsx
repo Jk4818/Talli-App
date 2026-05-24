@@ -1,121 +1,185 @@
-
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { addParticipant, removeParticipant } from '@/lib/redux/slices/sessionSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, UserPlus } from 'lucide-react';
+import { X, UserPlus, UserRoundPlus } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
-import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+
+function getInitials(name: string) {
+  const parts = name.trim().split(' ');
+  if (parts.length > 1) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  return name.substring(0, 2).toUpperCase();
+}
+
+const AVATAR_COLOURS = [
+  'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+  'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300',
+  'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+  'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  'bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300',
+];
 
 export default function ParticipantManager() {
   const [name, setName] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const { participants } = useSelector((state: RootState) => state.session);
-  const isMobile = useSelector((state: RootState) => state.ui.isMobile);
   const dispatch = useDispatch<AppDispatch>();
+
+  const openForm = () => {
+    setIsAdding(true);
+    setTimeout(() => inputRef.current?.focus(), 80);
+  };
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
-      dispatch(addParticipant(name.trim()));
-      setName('');
-    }
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    dispatch(addParticipant(trimmed));
+    setName('');
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
-  const getInitials = (name: string) => {
-    const names = name.split(' ');
-    if (names.length > 1) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  }
+  const handleBlur = () => {
+    if (!name.trim()) setIsAdding(false);
+  };
 
-  return (
-    <div className="space-y-4 h-full flex flex-col">
+  const isEmpty = participants.length === 0;
+
+  // ── Empty state: just the input, no strip ────────────────────────────────
+  if (isEmpty) {
+    return (
       <form onSubmit={handleAdd} className="flex gap-2">
         <Input
+          ref={inputRef}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Enter participant's name"
+          placeholder="Who's splitting? Add a name…"
           aria-label="New participant name"
+          className="flex-1 h-12 text-base"
+          autoFocus
         />
-        <Button type="submit" size="icon" aria-label="Add participant">
-          <UserPlus className="h-4 w-4" />
+        <Button
+          type="submit"
+          size="icon"
+          className="h-12 w-12 shrink-0"
+          aria-label="Add participant"
+          disabled={!name.trim()}
+        >
+          <UserPlus className="h-5 w-5" />
         </Button>
       </form>
-      
-      {/* Mobile & Tablet: Horizontal Scrolling Cards */}
-      <div className="lg:hidden">
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex w-max space-x-3 pt-3 pb-4 pr-3">
-            {participants.length > 0 ? (
-              participants.map((p) => (
-                <div key={p.id} className="relative group flex flex-col items-center justify-center p-3 rounded-lg bg-secondary/80 w-24 h-24">
-                  <Avatar className="h-10 w-10 text-base mb-2">
-                      <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium text-sm text-center w-full truncate" title={p.name}>{p.name}</span>
-                  <Button
-                      variant="destructive"
-                      size="icon"
-                      className={cn(
-                        "absolute top-0 right-0 h-6 w-6 rounded-full transition-opacity -translate-y-1/2 translate-x-1/2",
-                        // Always visible on touch devices; hover-only on desktop
-                        isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                      )}
-                      onClick={() => dispatch(removeParticipant(p.id))}
-                      aria-label={`Remove ${p.name}`}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))
-            ) : (
-              <div className="w-full">
-                <p className="text-sm text-center py-4 text-muted-foreground">No participants added yet.</p>
-              </div>
-            )}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </div>
+    );
+  }
 
-      {/* Desktop: Vertical List */}
-      <div className="hidden lg:block flex-1 min-h-0">
-        <ScrollArea className="h-full">
-            <div className="space-y-2 pr-4">
-                {participants.length > 0 ? (
-                    participants.map((p) => (
-                        <div key={p.id} className="group flex items-center p-2 rounded-md hover:bg-secondary/80">
-                            <Avatar className="h-8 w-8 text-xs mr-3">
-                                <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium text-sm flex-1 truncate" title={p.name}>{p.name}</span>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className={cn(
-                                  "h-7 w-7 transition-opacity",
-                                  isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                                )}
-                                onClick={() => dispatch(removeParticipant(p.id))}
-                                aria-label={`Remove ${p.name}`}
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    ))
-                ) : (
-                    <p className="text-sm text-center py-4 text-muted-foreground">No participants added yet.</p>
-                )}
-            </div>
-        </ScrollArea>
-      </div>
+  // ── Strip + add form ─────────────────────────────────────────────────────
+  return (
+    <div className="space-y-4">
+
+      {/* ── Horizontal avatar strip ────────────────────────────────────────
+          Each column: avatar circle (56px) with × badge, name below.
+          This is the standard mobile contact-chip pattern — scales to 10+
+          people without growing the page height.
+      ──────────────────────────────────────────────────────────────────── */}
+      <ScrollArea className="w-full">
+        <div className="flex gap-4 px-0.5 pb-2 pt-1">
+          <AnimatePresence initial={false}>
+            {participants.map((p, i) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="shrink-0 flex flex-col items-center gap-1.5 w-16"
+              >
+                {/* Avatar + × badge */}
+                <div className="relative">
+                  <Avatar className="h-14 w-14">
+                    <AvatarFallback className={`text-sm font-semibold ${AVATAR_COLOURS[i % AVATAR_COLOURS.length]}`}>
+                      {getInitials(p.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    onClick={() => dispatch(removeParticipant(p.id))}
+                    aria-label={`Remove ${p.name}`}
+                    className="absolute -top-1 -right-1 h-[22px] w-[22px] rounded-full bg-background border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive active:scale-90 transition-all"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+
+                {/* Name */}
+                <span className="text-xs font-medium text-center w-full truncate leading-tight px-0.5">
+                  {p.name}
+                </span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+
+      {/* ── Add form (collapsible) ─────────────────────────────────────────
+          Collapsed  → full-width "Add person" button (44px min-height)
+          Expanded   → input + submit button, blur-to-collapse if empty
+      ──────────────────────────────────────────────────────────────────── */}
+      <AnimatePresence initial={false} mode="wait">
+        {isAdding ? (
+          <motion.form
+            key="form"
+            onSubmit={handleAdd}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="flex gap-2"
+          >
+            <Input
+              ref={inputRef}
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Add another person…"
+              aria-label="New participant name"
+              className="flex-1 h-12 text-base"
+              onBlur={handleBlur}
+            />
+            <Button
+              type="submit"
+              size="icon"
+              className="h-12 w-12 shrink-0"
+              aria-label="Add participant"
+              disabled={!name.trim()}
+            >
+              <UserPlus className="h-5 w-5" />
+            </Button>
+          </motion.form>
+        ) : (
+          <motion.button
+            key="trigger"
+            type="button"
+            onClick={openForm}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1 }}
+            className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border border-dashed border-primary/40 text-sm font-medium text-primary hover:bg-primary/5 active:bg-primary/10 transition-colors"
+          >
+            <UserRoundPlus className="h-4 w-4" />
+            Add person
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -9,16 +9,14 @@ import Step1Setup from './Step1Setup';
 import Step2Assignment from './Step2Assignment';
 import Step3Summary from './Step3Summary';
 import { Button } from '../ui/button';
-import { ArrowLeft, ArrowRight, Sparkles, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCcw, X } from 'lucide-react';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
-import type { Discount, Item, Receipt, SessionState } from '@/lib/types';
-import SuggestionResolverDialog from './SuggestionResolverDialog';
+import type { SessionState } from '@/lib/types';
 import { loadDraft, clearDraft } from '@/lib/redux/middleware/localStoragePersist';
 
 export function AppClient({ isDemo }: { isDemo: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
   const { step, participants, items, receipts, isDemoSession } = useSelector((state: RootState) => state.session);
-  const [isSuggestionResolverOpen, setIsSuggestionResolverOpen] = useState(false);
 
   // ── Draft recovery ──────────────────────────────────────────────────────
   const [recoveryDraft, setRecoveryDraft] = useState<{ savedAt: string; session: unknown } | null>(null);
@@ -63,22 +61,6 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
-
-  // ── Pending AI suggestions ──────────────────────────────────────────────
-  const pendingSuggestions = useMemo(() => {
-    const suggestions: { receiptId: string; discount: Discount; targetItem?: Item }[] = [];
-    receipts.forEach((receipt: Receipt) => {
-      (receipt.discounts || []).forEach((discount: Discount) => {
-        if (discount.suggestedItemId) {
-          const targetItem = items.find((i: Item) => i.id === discount.suggestedItemId);
-          suggestions.push({ receiptId: receipt.id, discount, targetItem });
-        }
-      });
-    });
-    return suggestions;
-  }, [receipts, items]);
-
-  const hasPendingSuggestions = pendingSuggestions.length > 0;
 
   // ── Navigation ──────────────────────────────────────────────────────────
   const handleNext = () => {
@@ -187,35 +169,56 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
         </div>
       )}
 
-      {/* ── Pending suggestions banner (non-blocking) ── */}
-      {hasPendingSuggestions && step === 1 && (
-        <div className="bg-primary/5 border-b border-primary/15 px-4 py-2.5">
-          <div className="container mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm text-primary">
-              <Sparkles className="h-4 w-4 shrink-0" />
-              <span>
-                <span className="font-semibold">{pendingSuggestions.length}</span> AI discount{' '}
-                {pendingSuggestions.length === 1 ? 'suggestion' : 'suggestions'} need your review.
-              </span>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-primary/40 text-primary hover:bg-primary/10 self-end sm:self-auto shrink-0"
-              onClick={() => setIsSuggestionResolverOpen(true)}
-            >
-              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              Review suggestions
-            </Button>
-          </div>
-        </div>
-      )}
 
-      <div className="flex-1 bg-background p-4 md:p-8">
+<div className="flex-1 bg-background p-4 md:p-8">
         {renderStep()}
       </div>
 
-      <footer className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
+      <footer className="sticky bottom-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
+        {/* ── Readiness strip (Step 1 only, when blocked) ── */}
+        {step === 1 && isStep1Blocked && (
+          <div className="container mx-auto px-4 pt-3 pb-1 space-y-1">
+            {[
+              {
+                ok: participants.length > 0,
+                label: participants.length > 0
+                  ? `${participants.length} ${participants.length === 1 ? 'person' : 'people'} added`
+                  : 'Add at least one person',
+              },
+              {
+                ok: receipts.length > 0 && receipts.some(r => r.status === 'processed'),
+                label:
+                  receipts.length === 0
+                    ? 'Add at least one receipt'
+                    : receipts.every(r => r.status === 'processing')
+                    ? 'Waiting for scan to finish…'
+                    : `${receipts.filter(r => r.status === 'processed').length} receipt${receipts.filter(r => r.status === 'processed').length !== 1 ? 's' : ''} ready`,
+              },
+              {
+                ok: receipts.every(r => r.payerId !== null),
+                label: receipts.some(r => !r.payerId)
+                  ? `Payer not set for "${receipts.find(r => !r.payerId)?.name}"`
+                  : 'All payers assigned',
+              },
+              ...(hasConflictingReceipts
+                ? [{ ok: false, label: 'Fix negative receipt total' }]
+                : []),
+              ...(hasOrphanedItems
+                ? [{ ok: false, label: 'Some items have no receipt' }]
+                : []),
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs">
+                <span className={item.ok ? 'text-emerald-500' : 'text-destructive'}>
+                  {item.ok ? '✓' : '✗'}
+                </span>
+                <span className={item.ok ? 'text-muted-foreground' : 'text-foreground font-medium'}>
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div>
             {step > 1 && (
@@ -228,14 +231,10 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
           <div>
             {step === 1 && (
               isStep1Blocked ? (
-                <AccessibleTooltip content={<p>{step1TooltipMessage}</p>}>
-                  <span tabIndex={0}>
-                    <Button disabled className="pointer-events-none">
-                      Assign Items
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </span>
-                </AccessibleTooltip>
+                <Button disabled>
+                  Assign Items
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               ) : (
                 <Button onClick={handleNext}>
                   Assign Items
@@ -264,11 +263,6 @@ export function AppClient({ isDemo }: { isDemo: boolean }) {
         </div>
       </footer>
 
-      <SuggestionResolverDialog
-        isOpen={isSuggestionResolverOpen}
-        onOpenChange={setIsSuggestionResolverOpen}
-        suggestions={pendingSuggestions}
-      />
     </>
   );
 }

@@ -1,21 +1,31 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { type Receipt, type Discount, type ServiceCharge } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
+import { type Receipt } from '@/lib/types';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '@/lib/redux/store';
-import { updateReceipt, updateServiceCharge, addDiscount, updateDiscount, removeDiscount, removeReceipt, applySuggestedDiscount, ignoreSuggestedDiscount, reassignSuggestedDiscount, reprocessReceiptFromUri } from '@/lib/redux/slices/sessionSlice';
+import {
+  updateReceipt,
+  removeReceipt,
+  reprocessReceiptFromUri,
+} from '@/lib/redux/slices/sessionSlice';
 import { useAuth } from '@/lib/firebase/auth';
 import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle, ChevronDown, Check, Pencil, Layers, FileWarning, MoreHorizontal, RefreshCw } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Label } from '../ui/label';
+import {
+  Image as ImageIcon,
+  Sparkles,
+  ChevronDown,
+  FileWarning,
+  RefreshCw,
+  SlidersHorizontal,
+  Pencil,
+  AlertCircle,
+  CircleCheck,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ReceiptImageViewer from './ReceiptImageViewer';
-import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
   AlertDialog,
@@ -28,8 +38,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '../ui/collapsible';
 import {
   ResponsiveSelect,
   ResponsiveSelectContent,
@@ -37,8 +45,12 @@ import {
   ResponsiveSelectLabel,
   ResponsiveSelectTrigger,
 } from '../ui/responsive-select';
-import { Badge } from '../ui/badge';
-import { DropDrawer, DropDrawerContent, DropDrawerItem, DropDrawerLabel, DropDrawerSub, DropDrawerSubContent, DropDrawerSubTrigger, DropDrawerTrigger } from '../ui/dropdrawer';
+import { Separator } from '../ui/separator';
+import BillAdjustmentsSheet from './BillAdjustmentsSheet';
+import ReceiptDetailsSheet from './ReceiptDetailsSheet';
+import SuggestionReviewSheet from './SuggestionReviewSheet';
+
+// ── Error parsing ────────────────────────────────────────────────────────────
 
 interface ErrorInfo {
   message: string;
@@ -47,61 +59,53 @@ interface ErrorInfo {
 }
 
 const getErrorInfo = (error?: string | null): ErrorInfo => {
-  if (!error) {
-    return { message: 'An unknown error occurred during processing.', hint: 'Try again.', canRetry: true };
-  }
-  if (error.includes('does not appear to be a receipt')) {
-    return {
-      message: 'This doesn\'t look like a receipt.',
-      hint: 'Please upload a photo of your bill or itemised invoice.',
-      canRetry: false,
-    };
-  }
-  if (error.includes('unclear to read') || error.includes('blurry')) {
-    return {
-      message: 'The receipt was too blurry to read.',
-      hint: 'Try a clearer, brighter photo — flat on a surface works best.',
-      canRetry: true,
-    };
-  }
-  if (error === 'timeout') {
-    return {
-      message: 'Scan timed out after 30 seconds.',
-      hint: 'Your connection may be slow. Try again or check your network.',
-      canRetry: true,
-    };
-  }
-  if (error.includes('AI service failed') || error.includes('coffee break')) {
-    return {
-      message: 'The AI service is temporarily unavailable.',
-      hint: 'Please wait a moment and try again.',
-      canRetry: true,
-    };
-  }
-  return {
-    message: 'Something went wrong during the scan.',
-    hint: 'Try again with the same image, or delete and upload a clearer photo.',
-    canRetry: true,
-  };
+  if (!error) return { message: 'An unknown error occurred during processing.', hint: 'Try again.', canRetry: true };
+  if (error.includes('does not appear to be a receipt'))
+    return { message: "This doesn't look like a receipt.", hint: 'Please upload a photo of your bill or itemised invoice.', canRetry: false };
+  if (error.includes('unclear to read') || error.includes('blurry'))
+    return { message: 'The receipt was too blurry to read.', hint: 'Try a clearer, brighter photo — flat on a surface works best.', canRetry: true };
+  if (error === 'timeout')
+    return { message: 'Scan timed out after 30 seconds.', hint: 'Your connection may be slow. Try again or check your network.', canRetry: true };
+  if (error.includes('AI service failed') || error.includes('coffee break'))
+    return { message: 'The AI service is temporarily unavailable.', hint: 'Please wait a moment and try again.', canRetry: true };
+  return { message: 'Something went wrong during the scan.', hint: 'Try again with the same image, or enter items manually.', canRetry: true };
 };
 
-/** Labels shown at each stage of processing, by elapsed seconds */
+// ── Processing stage labels ──────────────────────────────────────────────────
+
 const PROCESSING_STAGES = [
-  { afterSeconds: 0,  label: 'Preparing image…' },
-  { afterSeconds: 3,  label: 'Reading receipt…' },
+  { afterSeconds: 0, label: 'Preparing image…' },
+  { afterSeconds: 3, label: 'Reading receipt…' },
   { afterSeconds: 10, label: 'Analysing details…' },
   { afterSeconds: 20, label: 'Almost there…' },
 ] as const;
 
+// ── Component ────────────────────────────────────────────────────────────────
 
-export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
+export default function ReceiptCard({
+  receipt,
+  autoFocusName = false,
+}: {
+  receipt: Receipt;
+  autoFocusName?: boolean;
+}) {
   const { participants, items, globalCurrency } = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useAuth();
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [openAccordion, setOpenAccordion] = useState<string | undefined>(undefined);
 
-  // ── Staged progress for processing state ────────────────────────────────
+  // Sheet open states
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isAdjustmentsOpen, setIsAdjustmentsOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isSuggestionReviewOpen, setIsSuggestionReviewOpen] = useState(false);
+
+  // Card open/closed
+  const [isOpen, setIsOpen] = useState(true);
+
+  // Name input ref (for auto-focus)
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Processing stage label ─────────────────────────────────────────────
   const [processingStageIndex, setProcessingStageIndex] = useState(0);
   const processingStartRef = useRef<number | null>(null);
 
@@ -113,26 +117,41 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     }
     processingStartRef.current = Date.now();
     setProcessingStageIndex(0);
-
     const interval = setInterval(() => {
       if (!processingStartRef.current) return;
       const elapsed = (Date.now() - processingStartRef.current) / 1000;
-      let nextStage = 0;
+      let next = 0;
       for (let i = PROCESSING_STAGES.length - 1; i >= 0; i--) {
-        if (elapsed >= PROCESSING_STAGES[i].afterSeconds) {
-          nextStage = i;
-          break;
-        }
+        if (elapsed >= PROCESSING_STAGES[i].afterSeconds) { next = i; break; }
       }
-      setProcessingStageIndex(nextStage);
+      setProcessingStageIndex(next);
     }, 1000);
-
     return () => clearInterval(interval);
   }, [receipt.status]);
 
   const processingLabel = PROCESSING_STAGES[processingStageIndex].label;
 
-  // ── Retry handler ───────────────────────────────────────────────────────
+  // ── Auto-open when scan completes ──────────────────────────────────────
+  const prevStatusRef = useRef(receipt.status);
+  useEffect(() => {
+    if (prevStatusRef.current === 'processing' && receipt.status === 'processed') {
+      setIsOpen(true);
+    }
+    if (receipt.status === 'failed') {
+      setIsOpen(true);
+    }
+    prevStatusRef.current = receipt.status;
+  }, [receipt.status]);
+
+  // ── Auto-focus name input for new manual receipts ──────────────────────
+  useEffect(() => {
+    if (autoFocusName && nameInputRef.current) {
+      const t = setTimeout(() => nameInputRef.current?.focus(), 200);
+      return () => clearTimeout(t);
+    }
+  }, [autoFocusName]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────
   const handleRetry = () => {
     if (receipt.imageDataUri && user) {
       dispatch(reprocessReceiptFromUri({
@@ -143,539 +162,391 @@ export default function ReceiptCard({ receipt }: { receipt: Receipt }) {
     }
   };
 
+  const handleEnterManually = () => {
+    dispatch(updateReceipt({ id: receipt.id, status: 'processed', error: null, imageDataUri: undefined, overallConfidence: undefined }));
+  };
+
+  // ── Derived values ─────────────────────────────────────────────────────
   const errorInfo = getErrorInfo(receipt.error);
-
   const discounts = receipt.discounts || [];
-  const hasSuggestions = discounts.some(d => d.suggestedItemId);
+  const pendingSuggestions = discounts.filter((d) => d.suggestedItemId);
+  const hasSuggestions = pendingSuggestions.length > 0;
   const isPayerMissing = !receipt.payerId;
-  const [isCardOpen, setIsCardOpen] = useState(isPayerMissing || hasSuggestions || receipt.status === 'failed');
-  
-  const hasDiscountConfidence = discounts.some(d => d.confidence !== undefined);
-  const hasServiceChargeConfidence = receipt.serviceCharge?.confidence !== undefined;
-  const hasMediumConfidence = receipt.overallConfidence !== undefined && receipt.overallConfidence < 85;
+  const payerName = receipt.payerId ? participants.find((p) => p.id === receipt.payerId)?.name : null;
 
-  const subtotal = items
-    .filter(i => i.receiptId === receipt.id)
-    .reduce((acc, item) => acc + item.cost, 0);
-
-  const totalReceiptDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
+  const subtotal = items.filter((i) => i.receiptId === receipt.id).reduce((acc, item) => acc + item.cost, 0);
+  const totalReceiptDiscounts = discounts.filter((d) => !d.suggestedItemId).reduce((acc, d) => acc + d.amount, 0);
   const subtotalAfterDiscounts = subtotal - totalReceiptDiscounts;
-
   const serviceChargeAmount = receipt.serviceCharge?.type === 'fixed'
     ? receipt.serviceCharge.value
     : Math.round(subtotalAfterDiscounts * (receipt.serviceCharge.value / 100));
-  
   const totalItemLevelDiscounts = items
-    .filter(i => i.receiptId === receipt.id)
-    .reduce((acc, item) => acc + (item.discounts || []).reduce((s,d) => s + d.amount, 0), 0);
-  
+    .filter((i) => i.receiptId === receipt.id)
+    .reduce((acc, item) => acc + (item.discounts || []).reduce((s, d) => s + d.amount, 0), 0);
   const receiptTotal = subtotalAfterDiscounts - totalItemLevelDiscounts + serviceChargeAmount;
-
   const hasConflict = receiptTotal < 0;
+  const hasServiceCharge = receipt.serviceCharge && receipt.serviceCharge.value > 0;
+  const hasDiscounts = totalReceiptDiscounts > 0;
+  const showLowConfidence = receipt.overallConfidence !== undefined && receipt.overallConfidence < 85;
+  const isManualEmpty = !receipt.imageDataUri && receipt.status === 'processed' && items.filter((i) => i.receiptId === receipt.id).length === 0;
 
-  useEffect(() => {
-    // This effect ensures that if the payer status changes to missing
-    // or new suggestions appear, the card will open to prompt the user.
-    if (isPayerMissing || hasSuggestions || receipt.status === 'failed') {
-      setIsCardOpen(true);
-    }
-  }, [isPayerMissing, hasSuggestions, receipt.status]);
+  // Hide body while processing (nothing to interact with)
+  const bodyVisible = isOpen && receipt.status !== 'processing';
 
-  useEffect(() => {
-    // Automatically expand the discounts section if there's a conflict or suggestions
-    if ((hasConflict || hasSuggestions) && isCardOpen) {
-      setOpenAccordion('discounts');
-    }
-  }, [hasConflict, hasSuggestions, isCardOpen]);
-  
-  const handleRemoveReceipt = () => {
-    dispatch(removeReceipt(receipt.id));
-  };
-
-  const handleUpdateReceipt = (updates: Partial<Receipt>) => {
-    dispatch(updateReceipt({ id: receipt.id, ...updates }));
-  };
-
-  const handleUpdateServiceCharge = (updates: Partial<ServiceCharge>) => {
-    dispatch(updateServiceCharge({ receiptId: receipt.id, serviceCharge: { ...receipt.serviceCharge, ...updates } as ServiceCharge }));
-  };
-  
-  const handleDiscountChange = (id: string, updates: Partial<Discount>) => {
-    dispatch(updateDiscount({ receiptId: receipt.id, discount: { id, ...updates } }));
-  }
-
-  const serviceChargeDisplay =
-    receipt.serviceCharge?.type === 'percentage' && receipt.serviceCharge.value > 0
-      ? `(${receipt.serviceCharge.value}% → ${formatCurrency(
-          serviceChargeAmount,
-          receipt.currency
-        )})`
-      : `(${formatCurrency(serviceChargeAmount, receipt.currency)})`;
+  // ── Border colour ──────────────────────────────────────────────────────
+  const cardBorder = cn(
+    'rounded-2xl border bg-card shadow-sm',
+    hasConflict ? 'border-destructive' :
+    isPayerMissing && receipt.status === 'processed' ? 'border-amber-400/60' :
+    receipt.status === 'failed' ? 'border-destructive' : ''
+  );
 
   return (
     <>
+      {/* Sheets — rendered via portal, outside card DOM */}
       <ReceiptImageViewer receipt={receipt} isOpen={isViewerOpen} onOpenChange={setIsViewerOpen} />
-      <Collapsible open={isCardOpen} onOpenChange={setIsCardOpen}>
-        <Card className={cn(
-          'bg-card/50 overflow-hidden', 
-          hasConflict && 'border-destructive',
-          isPayerMissing && !hasConflict && isCardOpen && 'border-primary',
-          receipt.status === 'failed' && 'border-destructive bg-destructive/10',
-          !isCardOpen && hasSuggestions && 'ring-2 ring-red-400/30'
-        )}>
-            <div className="flex items-start p-6">
-                <CardHeader className="flex-1 p-0">
-                  <div className="flex flex-wrap sm:flex-nowrap justify-between items-start gap-2">
-                    <Input 
-                      defaultValue={receipt.name}
-                      onBlur={(e) => handleUpdateReceipt({ name: e.target.value })}
-                      className="text-lg font-semibold border-0 shadow-none -ml-3 focus-visible:ring-1 focus-visible:ring-ring flex-1"
-                      maxLength={50}
-                      disabled={receipt.status !== 'processed'}
-                    />
-                    <div className='flex items-center gap-2 flex-shrink-0'>
-                      {receipt.imageDataUri && (
-                        <Button variant="outline" size="icon" onClick={() => setIsViewerOpen(true)}>
-                            <ImageIcon className="h-5 w-5" />
-                            <span className="sr-only">View Receipt Image</span>
-                        </Button>
-                      )}
-                      {receipt.status === 'processing' && (
-                        <Button disabled className="min-w-[160px] justify-start">
-                          <Sparkles className="mr-2 h-4 w-4 animate-spin shrink-0" />
-                          <span className="truncate">{processingLabel}</span>
-                        </Button>
-                      )}
-                      {receipt.status === 'processed' && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon">
-                                <Trash2 className="h-5 w-5" />
-                                <span className="sr-only">Remove Receipt</span>
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action will permanently delete the receipt "{receipt.name}" and all of its associated items. This cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleRemoveReceipt}>Continue</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
-                  </div>
-                   {receipt.status === 'processed' && (
-                    <CardDescription className='flex items-center flex-wrap gap-x-4 gap-y-1 mt-1.5'>
-                      {!isCardOpen && hasConflict ? (
-                        <div className="text-destructive font-medium flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4" />
-                          <span>Receipt conflict - expand to resolve</span>
-                        </div>
-                      ) : !isCardOpen && isPayerMissing ? (
-                         <div className="text-primary font-medium flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4" />
-                          <span>Payer needed - expand to assign</span>
-                        </div>
-                      ) : !isCardOpen && hasSuggestions ? (
-                        <Badge variant="outline" className="border-primary/50 text-primary font-medium">
-                            <Sparkles className="h-3 w-3 mr-1.5" />
-                            AI Suggestions Pending
-                        </Badge>
-                      ) : (
-                        <>
-                          <span>Subtotal: {formatCurrency(subtotal, receipt.currency)}</span>
-                          {receipt.overallConfidence !== undefined && (
-                            <AccessibleTooltip content={<p>The AI was {receipt.overallConfidence}% confident in its analysis of this receipt.</p>}>
-                              <span className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium'>
-                                <Sparkles className='h-3.5 w-3.5 text-primary' />
-                                <span>AI Confidence: {receipt.overallConfidence}%</span>
-                              </span>
-                            </AccessibleTooltip>
-                          )}
-                        </>
-                      )}
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                <CollapsibleTrigger className="flex-shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring -mr-2">
-                    <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", isCardOpen && "rotate-180")} />
-                    <span className='sr-only'>{isCardOpen ? "Collapse" : "Expand"}</span>
-                </CollapsibleTrigger>
+      <BillAdjustmentsSheet receipt={receipt} open={isAdjustmentsOpen} onOpenChange={setIsAdjustmentsOpen} />
+      <ReceiptDetailsSheet receipt={receipt} open={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
+      <SuggestionReviewSheet receiptId={receipt.id} open={isSuggestionReviewOpen} onOpenChange={setIsSuggestionReviewOpen} />
+
+      <div className={cardBorder}>
+
+        {/* ── HEADER — full-width tap target ──────────────────────────── */}
+        <button
+          onClick={() => receipt.status !== 'processing' && setIsOpen((v) => !v)}
+          aria-expanded={isOpen}
+          className={cn(
+            'w-full flex items-center justify-between gap-3 px-5 py-4 text-left rounded-2xl transition-colors',
+            receipt.status !== 'processing' && 'hover:bg-secondary/20 active:bg-secondary/30',
+            bodyVisible && 'rounded-b-none',
+          )}
+          style={{ minHeight: 64 }}
+          disabled={receipt.status === 'processing'}
+        >
+          {/* Left: name + status badges */}
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <p className={cn(
+              'text-base font-semibold leading-tight',
+              receipt.status === 'processing' && 'text-muted-foreground'
+            )}>
+              {receipt.status === 'processing' ? processingLabel : receipt.name || 'Untitled receipt'}
+            </p>
+
+            {/* Status badge row */}
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
+              {/* Processing */}
+              {receipt.status === 'processing' && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Sparkles className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
+                  Scanning…
+                </span>
+              )}
+
+              {/* Failed */}
+              {receipt.status === 'failed' && (
+                <span className="flex items-center gap-1 text-xs font-medium text-destructive">
+                  <FileWarning className="h-3.5 w-3.5 shrink-0" />
+                  Couldn't read
+                </span>
+              )}
+
+              {/* Payer status (processed only) */}
+              {receipt.status === 'processed' && (
+                isPayerMissing ? (
+                  <span className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    No payer set
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <CircleCheck className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    {payerName} paid
+                  </span>
+                )
+              )}
+
+              {/* AI suggestions */}
+              {hasSuggestions && receipt.status === 'processed' && (
+                <span className="flex items-center gap-1 text-xs font-medium text-primary">
+                  <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                  {pendingSuggestions.length} suggestion{pendingSuggestions.length > 1 ? 's' : ''}
+                </span>
+              )}
+
+              {/* Low confidence */}
+              {showLowConfidence && receipt.status === 'processed' && (
+                <span className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                  <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                  {receipt.overallConfidence}% confident
+                </span>
+              )}
+
+              {/* Non-global currency */}
+              {receipt.currency !== globalCurrency && receipt.status === 'processed' && (
+                <span className="text-xs font-medium text-muted-foreground bg-secondary/70 px-1.5 py-0.5 rounded">
+                  {receipt.currency}
+                </span>
+              )}
             </div>
-          
-            <CollapsibleContent>
+          </div>
+
+          {/* Right: total + chevron */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            {receipt.status === 'processed' && (
+              <span className={cn(
+                'text-lg font-bold tabular-nums',
+                hasConflict && 'text-destructive'
+              )}>
+                {formatCurrency(receiptTotal, receipt.currency)}
+              </span>
+            )}
+            {receipt.status !== 'processing' && (
+              <ChevronDown className={cn(
+                'h-5 w-5 text-muted-foreground transition-transform duration-220 shrink-0',
+                bodyVisible && 'rotate-180'
+              )} />
+            )}
+          </div>
+        </button>
+
+        {/* ── BODY — Framer Motion expand/collapse ────────────────────── */}
+        <AnimatePresence initial={false}>
+          {bodyVisible && (
+            <motion.div
+              key="body"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.04, 0.62, 0.23, 0.98] }}
+              className="overflow-hidden"
+            >
+              <div className="h-px bg-border mx-5" />
+
               {receipt.status === 'failed' ? (
-                <div className="p-6 pt-0 text-center">
-                    <div className="flex justify-center mb-4">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-                            <FileWarning className="h-8 w-8 text-destructive" />
-                        </div>
-                    </div>
-                    <h3 className="text-lg font-semibold text-destructive">Scan Unsuccessful</h3>
-                    <p className="text-sm font-medium mt-1">{errorInfo.message}</p>
-                    <p className="text-sm text-muted-foreground mt-1 mb-5 max-w-sm mx-auto">{errorInfo.hint}</p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-                        {errorInfo.canRetry && receipt.imageDataUri && user && (
-                            <Button size="sm" onClick={handleRetry}>
-                                <RefreshCw className="mr-2 h-4 w-4" />
-                                Try Again
-                            </Button>
-                        )}
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Attempt
-                            </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                This will permanently delete this failed receipt attempt. This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleRemoveReceipt}>Delete</AlertDialogAction>
-                            </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
+                /* ── Failed state ──────────────────────────────────────── */
+                <div className="px-5 py-6 flex flex-col items-center text-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+                    <FileWarning className="h-7 w-7 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-destructive">{errorInfo.message}</p>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">{errorInfo.hint}</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs">
+                    {errorInfo.canRetry && receipt.imageDataUri && user && (
+                      <Button size="sm" onClick={handleRetry} className="w-full sm:w-auto">
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Try again
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" onClick={handleEnterManually} className="w-full sm:w-auto">
+                      Enter manually instead
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-full sm:w-auto text-destructive hover:text-destructive">
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this failed receipt?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently remove the failed scan attempt. This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => dispatch(removeReceipt(receipt.id))}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               ) : (
-                <>
-                  {hasConflict && (
-                      <div className='px-6 pb-6'>
-                          <Alert variant="destructive">
-                              <AlertCircle className="h-4 w-4" />
-                              <AlertTitle>Receipt Conflict</AlertTitle>
-                              <AlertDescription>
-                                  This receipt's total is negative. Please adjust the values in the expanded "Discounts" section below, or correct the item costs in the list at the bottom of the page.
-                              </AlertDescription>
-                          </Alert>
-                      </div>
-                  )}
-                  <CardContent className="space-y-4">
-                    {hasMediumConfidence && (
-                        <Alert variant="default" className="border-primary/50 text-primary-foreground [&>svg]:text-primary">
-                          <Sparkles className="h-4 w-4" />
-                          <AlertTitle>AI Confidence is Moderate</AlertTitle>
-                          <AlertDescription>
-                            The AI was about {receipt.overallConfidence}% confident in this scan. Please review the items and totals carefully for any errors.
-                          </AlertDescription>
-                        </Alert>
-                    )}
-                     <div className="flex flex-col sm:flex-row sm:items-end sm:gap-4 space-y-4 sm:space-y-0">
-                        <div className="flex-1 space-y-1.5">
-                            <Label htmlFor={`payer-${receipt.id}`} className="flex items-center gap-1.5 text-sm font-medium">
-                                Payer
-                                {isPayerMissing && (
-                                    <AccessibleTooltip content={<p>A payer must be assigned to this receipt.</p>}>
-                                        <AlertCircle className="h-4 w-4 text-destructive" />
-                                    </AccessibleTooltip>
-                                )}
-                            </Label>
-                            <ResponsiveSelect onValueChange={(payerId) => handleUpdateReceipt({ payerId })} value={receipt.payerId ?? undefined}>
-                              <ResponsiveSelectTrigger
-                                id={`payer-${receipt.id}`}
-                                className={cn(
-                                  "w-full",
-                                  isPayerMissing && "ring-2 ring-offset-2 ring-destructive focus:ring-destructive"
-                                )}
-                                disabled={participants.length === 0}
-                              >
-                                {receipt.payerId ? (
-                                  participants.find((p) => p.id === receipt.payerId)?.name
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    {participants.length > 0 ? "Select a payer" : "Add participants first"}
-                                  </span>
-                                )}
-                              </ResponsiveSelectTrigger>
-                              <ResponsiveSelectContent>
-                                <ResponsiveSelectLabel>Select a Payer</ResponsiveSelectLabel>
-                                {participants.map((p) => (
-                                  <ResponsiveSelectItem key={p.id} value={p.id}>
-                                    {p.name}
-                                  </ResponsiveSelectItem>
-                                ))}
-                              </ResponsiveSelectContent>
-                            </ResponsiveSelect>
-                        </div>
-                        <div className="w-full sm:w-auto space-y-1.5">
-                            <Label>Currency</Label>
-                             <ResponsiveSelect onValueChange={(currency) => handleUpdateReceipt({ currency })} value={receipt.currency}>
-                              <ResponsiveSelectTrigger className="w-full sm:w-[120px]">
-                                {receipt.currency}
-                              </ResponsiveSelectTrigger>
-                              <ResponsiveSelectContent>
-                                <ResponsiveSelectLabel>Select Currency</ResponsiveSelectLabel>
-                                <ResponsiveSelectItem value="USD">USD</ResponsiveSelectItem>
-                                <ResponsiveSelectItem value="EUR">EUR</ResponsiveSelectItem>
-                                <ResponsiveSelectItem value="GBP">GBP</ResponsiveSelectItem>
-                                <ResponsiveSelectItem value="CAD">CAD</ResponsiveSelectItem>
-                                <ResponsiveSelectItem value="AUD">AUD</ResponsiveSelectItem>
-                                <ResponsiveSelectItem value="JPY">JPY</ResponsiveSelectItem>
-                                <ResponsiveSelectItem value="INR">INR</ResponsiveSelectItem>
-                                <ResponsiveSelectItem value="CNY">CNY</ResponsiveSelectItem>
-                                <ResponsiveSelectItem value="CHF">CHF</ResponsiveSelectItem>
-                                <ResponsiveSelectItem value="NZD">NZD</ResponsiveSelectItem>
-                              </ResponsiveSelectContent>
-                            </ResponsiveSelect>
-                        </div>
+                /* ── Processed body ────────────────────────────────────── */
+                <div className="px-5 py-5 space-y-5">
+
+                  {/* Manual receipt help text */}
+                  {isManualEmpty && (
+                    <div className="rounded-xl bg-secondary/40 border px-4 py-3 text-sm text-muted-foreground">
+                      Give this receipt a name, then add items using the review section below.
                     </div>
-                    
-                    {receipt.currency !== globalCurrency && (
-                      <div className="space-y-2">
-                        <Label>Exchange Rate to {globalCurrency}</Label>
-                        <div className='flex items-center gap-2'>
-                          <span className='text-sm text-muted-foreground'>1 {receipt.currency} =</span>
-                          <Input 
-                            type="text"
-                            inputMode="decimal"
-                            placeholder='e.g. 1.25'
-                            defaultValue={receipt.exchangeRate}
-                            onBlur={(e) => handleUpdateReceipt({ exchangeRate: parseFloat(e.target.value) || undefined })}
-                            className='max-w-[120px]'
-                          />
-                          <span className='text-sm text-muted-foreground'>{globalCurrency}</span>
-                        </div>
+                  )}
+
+                  {/* Conflict alert */}
+                  {hasConflict && (
+                    <div className="flex items-start gap-2.5 rounded-xl bg-destructive/8 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                      <p>Receipt total is negative — adjust discounts or item costs.</p>
+                    </div>
+                  )}
+
+                  {/* AI suggestions banner */}
+                  {hasSuggestions && (
+                    <div className="flex items-center justify-between rounded-xl bg-primary/8 border border-primary/20 px-4 py-3">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                        <Sparkles className="h-4 w-4 shrink-0" />
+                        ✦ {pendingSuggestions.length} discount suggestion{pendingSuggestions.length > 1 ? 's' : ''} — review
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-primary/30 text-primary text-xs ml-2 shrink-0"
+                        onClick={() => setIsSuggestionReviewOpen(true)}
+                      >
+                        Review
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Name + image viewer */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 space-y-1.5">
+                      <Label htmlFor={`name-${receipt.id}`} className="text-sm font-medium text-muted-foreground">
+                        Receipt name
+                      </Label>
+                      <Input
+                        id={`name-${receipt.id}`}
+                        ref={nameInputRef}
+                        defaultValue={receipt.name}
+                        onBlur={(e) => dispatch(updateReceipt({ id: receipt.id, name: e.target.value }))}
+                        className="h-12 text-base"
+                        maxLength={50}
+                      />
+                    </div>
+                    {receipt.imageDataUri && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-12 w-12 shrink-0 mt-6"
+                        onClick={() => setIsViewerOpen(true)}
+                      >
+                        <ImageIcon className="h-5 w-5" />
+                        <span className="sr-only">View receipt image</span>
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Paid by */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                      Paid by
+                      {isPayerMissing && (
+                        <span className="font-normal text-amber-600">— required to continue</span>
+                      )}
+                    </Label>
+                    <ResponsiveSelect
+                      onValueChange={(payerId) => dispatch(updateReceipt({ id: receipt.id, payerId }))}
+                      value={receipt.payerId ?? undefined}
+                    >
+                      <ResponsiveSelectTrigger
+                        className={cn(
+                          'w-full h-12 text-base',
+                          isPayerMissing && 'ring-2 ring-amber-400 focus:ring-amber-400'
+                        )}
+                        disabled={participants.length === 0}
+                      >
+                        {receipt.payerId
+                          ? participants.find((p) => p.id === receipt.payerId)?.name
+                          : (
+                            <span className="text-muted-foreground">
+                              {participants.length > 0 ? 'Select who paid' : 'Add participants first'}
+                            </span>
+                          )}
+                      </ResponsiveSelectTrigger>
+                      <ResponsiveSelectContent>
+                        <ResponsiveSelectLabel>Who paid?</ResponsiveSelectLabel>
+                        {participants.map((p) => (
+                          <ResponsiveSelectItem key={p.id} value={p.id}>{p.name}</ResponsiveSelectItem>
+                        ))}
+                      </ResponsiveSelectContent>
+                    </ResponsiveSelect>
+                  </div>
+
+                  {/* Financial summary */}
+                  <div className="rounded-xl bg-secondary/30 px-4 py-4 space-y-2.5 text-sm">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span className="font-mono">{formatCurrency(subtotal, receipt.currency)}</span>
+                    </div>
+
+                    {hasServiceCharge && (
+                      <div className="flex justify-between">
+                        <button
+                          onClick={() => setIsAdjustmentsOpen(true)}
+                          className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors text-left"
+                        >
+                          Service &amp; tips
+                          {receipt.serviceCharge.type === 'percentage' && ` (${receipt.serviceCharge.value}%)`}
+                        </button>
+                        <span className="font-mono">{formatCurrency(serviceChargeAmount, receipt.currency)}</span>
                       </div>
                     )}
 
-                    <Accordion type="single" collapsible className="w-full" value={openAccordion} onValueChange={setOpenAccordion}>
-                      <AccordionItem value="discounts">
-                        <AccordionTrigger className={cn(
-                          'hover:no-underline rounded-md -mx-3 px-3',
-                          hasSuggestions && 'ring-2 ring-red-400/30 data-[state=open]:ring-0'
-                        )}>
-                          <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2">
-                                  <span>Receipt-Wide Discounts ({formatCurrency(totalReceiptDiscounts, receipt.currency)})</span>
-                                  {hasSuggestions && <Sparkles className="h-4 w-4 text-primary" />}
-                                  {hasDiscountConfidence && !hasSuggestions && (
-                                      <AccessibleTooltip content={
-                                        <div className="p-1 space-y-1 text-xs max-w-xs">
-                                            <p className="font-bold mb-1">AI Confidence Scores</p>
-                                            {discounts.filter(d => d.confidence !== undefined).map(d => (
-                                                <div key={d.id} className="flex justify-between gap-4">
-                                                    <span className="truncate pr-2">{d.name}:</span>
-                                                    <span className="flex-shrink-0">{d.confidence}%</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                      }>
-                                        <Sparkles
-                                            className="h-4 w-4 text-primary"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                            }}
-                                        />
-                                      </AccessibleTooltip>
-                                  )}
-                              </div>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-2 pt-2 px-1">
-                          {discounts.map(discount => {
-                            const suggestedItem = discount.suggestedItemId ? items.find(i => i.id === discount.suggestedItemId) : null;
-    
-                            if (suggestedItem) {
-                              const isConflict = discount.amount > suggestedItem.cost;
-                              return (
-                                <div key={discount.id} className="p-3 rounded-md ring-2 ring-red-400/30 space-y-3">
-                                  {isConflict && (
-                                    <Alert variant="destructive" className="my-2">
-                                      <AlertCircle className="h-4 w-4" />
-                                      <AlertTitle>Potential Conflict</AlertTitle>
-                                      <AlertDescription>
-                                        Applying this discount would make the item cost negative.
-                                      </AlertDescription>
-                                    </Alert>
-                                  )}
-                                  <div className="flex justify-between items-start gap-4">
-                                    <div className="flex-1">
-                                      <div className='flex items-center gap-2 font-semibold text-primary'>
-                                          <Sparkles className="h-4 w-4" />
-                                          AI Suggestion
-                                      </div>
-                                      <p className="mt-1 text-sm text-muted-foreground">
-                                        Apply <span className="font-medium text-foreground">{discount.name}</span> (-{formatCurrency(discount.amount, receipt.currency)}) to <span className="font-medium text-foreground">{suggestedItem.name}</span>?
-                                      </p>
-                                    </div>
-                                    {discount.confidence && <Badge variant="secondary" className="text-primary font-medium shrink-0"><Sparkles className='h-3 w-3 mr-1.5' /> {discount.confidence}%</Badge>}
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2">
-                                      <AccessibleTooltip content={isConflict ? "Cannot apply: discount exceeds item cost." : "Apply this discount to the item"}>
-                                        <span className="w-full" tabIndex={0}>
-                                          <Button size="sm" className="w-full" onClick={() => dispatch(applySuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))} disabled={isConflict}>
-                                            <Check className="mr-1.5 h-4 w-4" /> Apply
-                                          </Button>
-                                        </span>
-                                      </AccessibleTooltip>
-                                      <DropDrawer>
-                                        <DropDrawerTrigger asChild>
-                                            <Button size="sm" variant="outline" className="w-full">
-                                                <MoreHorizontal className="h-4 w-4" /> More Options
-                                            </Button>
-                                        </DropDrawerTrigger>
-                                        <DropDrawerContent>
-                                            <DropDrawerLabel>More Options for "{discount.name}"</DropDrawerLabel>
-                                            <DropDrawerSub>
-                                                <DropDrawerSubTrigger icon={<Pencil className="h-4 w-4" />}>Reassign...</DropDrawerSubTrigger>
-                                                <DropDrawerSubContent>
-                                                    <DropDrawerLabel>Reassign to another item</DropDrawerLabel>
-                                                    {items.filter(i => i.receiptId === receipt.id).map(item => (
-                                                        <DropDrawerItem 
-                                                            key={item.id}
-                                                            onClick={() => dispatch(reassignSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id, newTargetItemId: item.id }))}
-                                                        >
-                                                            {item.name}
-                                                        </DropDrawerItem>
-                                                    ))}
-                                                </DropDrawerSubContent>
-                                            </DropDrawerSub>
-                                            <DropDrawerItem onClick={() => dispatch(ignoreSuggestedDiscount({ receiptId: receipt.id, discountId: discount.id }))} icon={<Layers className="h-4 w-4" />}>
-                                                Make Receipt-Wide
-                                            </DropDrawerItem>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <DropDrawerItem
-                                                        onSelect={(e) => e.preventDefault()}
-                                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                                        icon={<Trash2 className="h-4 w-4"/>}
-                                                    >
-                                                        Remove Discount
-                                                    </DropDrawerItem>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                        This will permanently remove the AI-suggested &quot;{discount.name}&quot; discount. This action cannot be undone.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>Delete</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </DropDrawerContent>
-                                    </DropDrawer>
-                                  </div>
-                                </div>
-                              )
-                            } else {
-                              return (
-                                <div key={discount.id} className="flex flex-wrap items-end gap-2 rounded-md border p-3 bg-secondary/30">
-                                  <div className='space-y-1.5 flex-1 min-w-[150px]'>
-                                      <Label htmlFor={`receipt-discount-name-${discount.id}`} className="text-xs text-muted-foreground">Discount Name</Label>
-                                      <Input
-                                          id={`receipt-discount-name-${discount.id}`}
-                                          placeholder="e.g. 20% Off"
-                                          defaultValue={discount.name}
-                                          onBlur={(e) => handleDiscountChange(discount.id, { name: e.target.value })}
-                                      />
-                                  </div>
-                                  <div className="flex w-full items-end justify-between gap-2 sm:w-auto sm:justify-start">
-                                      <div className='space-y-1.5'>
-                                          <Label htmlFor={`receipt-discount-amount-${discount.id}`} className="text-xs text-muted-foreground">Amount ({receipt.currency})</Label>
-                                          <Input
-                                              id={`receipt-discount-amount-${discount.id}`}
-                                              type="text"
-                                              inputMode="decimal"
-                                              placeholder="0.00"
-                                              defaultValue={(discount.amount / 100).toFixed(2)}
-                                              onBlur={(e) => handleDiscountChange(discount.id, { amount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
-                                              className="w-28 text-right"
-                                          />
-                                      </div>
-                                      <Button variant="ghost" size="icon" className="mb-[1px]" onClick={() => dispatch(removeDiscount({ receiptId: receipt.id, discountId: discount.id }))}>
-                                          <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                  </div>
-                                </div>
-                              )
-                            }
-                          })}
-                          <Button variant="outline" size="sm" onClick={() => dispatch(addDiscount({ receiptId: receipt.id }))}>
-                            <Plus className="h-4 w-4 mr-2"/> Add Discount
-                          </Button>
-                        </AccordionContent>
-                      </AccordionItem>
-                      <AccordionItem value="service-charge">
-                          <AccordionTrigger className='hover:no-underline'>
-                              <div className="flex items-center justify-between w-full">
-                                  <div className="flex items-center gap-2">
-                                      <span>Service Charge / Tip {serviceChargeDisplay}</span>
-                                      {hasServiceChargeConfidence && (
-                                          <AccessibleTooltip content={<p className="text-xs">AI Confidence: {receipt.serviceCharge.confidence}%</p>}>
-                                              <Sparkles
-                                                className="h-4 w-4 text-primary"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                }}
-                                              />
-                                          </AccessibleTooltip>
-                                      )}
-                                  </div>
-                              </div>
-                          </AccordionTrigger>
-                        <AccordionContent className="pt-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <RadioGroup
-                              value={receipt.serviceCharge.type}
-                              onValueChange={(type: 'fixed' | 'percentage') => handleUpdateServiceCharge({ type, value: 0 })}
-                              className="flex items-center gap-4"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="percentage" id={`sc-type-percentage-${receipt.id}`} />
-                                <Label htmlFor={`sc-type-percentage-${receipt.id}`} className="font-normal cursor-pointer">Percentage (%)</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="fixed" id={`sc-type-fixed-${receipt.id}`} />
-                                <Label htmlFor={`sc-type-fixed-${receipt.id}`} className="font-normal cursor-pointer">Fixed ({receipt.currency})</Label>
-                              </div>
-                            </RadioGroup>
-                            <Input
-                              key={`${receipt.id}-${receipt.serviceCharge.type}`}
-                              type="text"
-                              inputMode="decimal"
-                              defaultValue={receipt.serviceCharge.type === 'fixed' ? (receipt.serviceCharge.value / 100).toFixed(2) : receipt.serviceCharge.value.toString()}
-                              onBlur={(e) => handleUpdateServiceCharge({
-                                value: receipt.serviceCharge.type === 'fixed'
-                                  ? Math.round(parseFloat(e.target.value) * 100) || 0
-                                  : parseFloat(e.target.value) || 0
-                              })}
-                              className="w-full sm:w-32 text-right"
-                            />
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </CardContent>
-                  <CardFooter>
-                    <div className="w-full text-right font-bold text-lg">
-                      Receipt Total: {formatCurrency(receiptTotal, receipt.currency)}
+                    {hasDiscounts && (
+                      <div className="flex justify-between">
+                        <button
+                          onClick={() => setIsAdjustmentsOpen(true)}
+                          className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
+                        >
+                          Discounts
+                        </button>
+                        <span className="font-mono text-emerald-600">
+                          -{formatCurrency(totalReceiptDiscounts, receipt.currency)}
+                        </span>
+                      </div>
+                    )}
+
+                    {receipt.currency !== globalCurrency && (
+                      <div className="flex justify-between text-muted-foreground text-xs">
+                        <span>Currency</span>
+                        <button
+                          onClick={() => setIsDetailsOpen(true)}
+                          className="font-medium hover:underline underline-offset-2"
+                        >
+                          {receipt.currency}
+                          {receipt.exchangeRate ? ` (1 ${receipt.currency} = ${receipt.exchangeRate} ${globalCurrency})` : ''}
+                        </button>
+                      </div>
+                    )}
+
+                    <Separator className="opacity-50" />
+
+                    <div className="flex justify-between font-semibold text-base">
+                      <span>Total</span>
+                      <span className={cn('font-mono', hasConflict && 'text-destructive')}>
+                        {formatCurrency(receiptTotal, receipt.currency)}
+                      </span>
                     </div>
-                  </CardFooter>
-                </>
+                  </div>
+
+                  {/* Action row */}
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-11 text-sm"
+                      onClick={() => setIsAdjustmentsOpen(true)}
+                    >
+                      <SlidersHorizontal className="h-4 w-4 mr-1.5" />
+                      {hasServiceCharge || hasDiscounts ? 'Edit adjustments' : 'Add discount or tip'}
+                    </Button>
+                    <button
+                      onClick={() => setIsDetailsOpen(true)}
+                      className="h-11 px-3 text-sm text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors flex items-center gap-1.5 rounded-lg hover:bg-secondary/40"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Edit details
+                    </button>
+                  </div>
+
+                </div>
               )}
-            </CollapsibleContent>
-        </Card>
-      </Collapsible>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </>
   );
 }
-
-    
