@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Item, Receipt, Discount } from '@/lib/types';
 import {
   Dialog,
@@ -16,7 +16,6 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
-  DrawerFooter,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,6 +69,56 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AccessibleTooltip } from '../ui/accessible-tooltip';
 import { ScrollArea } from '../ui/scroll-area';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Clamp a raw quantity value to a safe positive integer.
+ * Handles NaN, Infinity, 0, negatives, and non-integer values that can
+ * arrive from AI receipt parsing or corrupt Redux state.
+ */
+function safeQuantity(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.round(n);
+}
+
+/**
+ * Detect the iOS software keyboard height via the Visual Viewport API.
+ *
+ * On iOS, the layout viewport does NOT resize when the keyboard appears —
+ * the keyboard overlays the content instead. `window.visualViewport.height`
+ * shrinks while `window.innerHeight` stays constant, giving us the exact
+ * keyboard height.
+ *
+ * On Android, BOTH heights shrink together (the layout viewport resizes), so
+ * their difference stays near 0 — this hook returns 0 on Android, which is
+ * the correct behaviour since the fixed drawer already moves up with the
+ * viewport there.
+ */
+function useIosKeyboardInset(enabled: boolean): number {
+  const [inset, setInset] = useState(0);
+
+  useEffect(() => {
+    if (!enabled || typeof window === 'undefined') return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const update = () => {
+      const kb = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+      setInset(kb);
+    };
+
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, [enabled]);
+
+  return inset;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -139,6 +188,10 @@ function FormBody({
   effectiveCost, originalCostInCents,
   currentReceiptCurrency,
 }: FormBodyProps) {
+
+  // Safe display value — guards the stepper span against any lingering NaN
+  const displayQty = Number.isFinite(quantity) && quantity >= 1 ? quantity : 1;
+
   return (
     <div className="space-y-5">
 
@@ -298,32 +351,32 @@ function FormBody({
       <div className="space-y-1.5">
         <div className="flex items-end justify-between">
           <Label>Quantity &amp; Unit Cost</Label>
-          {quantity > 1 && (
+          {displayQty > 1 && (
             <span className="text-xs text-muted-foreground font-mono">
               Total: {formatCurrency(originalCostInCents, currentReceiptCurrency)}
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          {/* Stepper */}
+          {/* Stepper — NaN-safe: always reads/writes through safeQuantity() */}
           <div className="flex items-center rounded-lg border bg-background">
             <button
               type="button"
               aria-label="Decrease quantity"
               className="flex h-11 w-11 items-center justify-center rounded-l-lg text-muted-foreground hover:bg-secondary/80 active:bg-secondary disabled:opacity-40 transition-colors"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              disabled={quantity <= 1}
+              onClick={() => setQuantity(Math.max(1, displayQty - 1))}
+              disabled={displayQty <= 1}
             >
               <Minus className="h-4 w-4" />
             </button>
             <span className="w-10 text-center text-base font-semibold tabular-nums select-none">
-              {quantity}
+              {displayQty}
             </span>
             <button
               type="button"
               aria-label="Increase quantity"
               className="flex h-11 w-11 items-center justify-center rounded-r-lg text-muted-foreground hover:bg-secondary/80 active:bg-secondary transition-colors"
-              onClick={() => setQuantity(quantity + 1)}
+              onClick={() => setQuantity(displayQty + 1)}
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -599,15 +652,34 @@ export default function ItemEditDialog({
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [discountAmountStrings, setDiscountAmountStrings] = useState<Record<string, string>>({});
 
+  // ── iOS keyboard detection ──────────────────────────────────────────────────
+  // Returns the keyboard height on iOS (where keyboard overlays rather than
+  // resizes the viewport). Returns 0 on Android and desktop.
+  const iosKeyboardInset = useIosKeyboardInset(!!isMobile && isOpen);
+
+  // ── Populate form when item changes ────────────────────────────────────────
   useEffect(() => {
     if (item) {
       setName(item.name);
-      setQuantity(item.quantity);
-      setUnitCostStr(
-        item.unitCost
-          ? (item.unitCost / 100).toFixed(2)
-          : (item.cost / 100 / item.quantity).toFixed(2),
-      );
+
+      // ── Quantity: sanitise before touching state ──
+      // AI parsing or corrupt data can produce NaN/0/Infinity.
+      // safeQuantity() clamps to a positive integer, defaulting to 1.
+      const qty = safeQuantity(item.quantity);
+      setQuantity(qty);
+
+      // ── Unit cost: sanitise the derived string ──
+      // item.unitCost is in cents (may be undefined/NaN).
+      // Fallback: divide total cost by quantity — use the sanitised qty to
+      // avoid 0/NaN division.
+      let costStr = '0.00';
+      if (item.unitCost != null && Number.isFinite(item.unitCost) && item.unitCost >= 0) {
+        costStr = (item.unitCost / 100).toFixed(2);
+      } else if (Number.isFinite(item.cost) && item.cost >= 0) {
+        costStr = (item.cost / 100 / qty).toFixed(2);
+      }
+      setUnitCostStr(costStr);
+
       setReceiptId(item.receiptId);
       setCategory(item.category || 'Other');
       setSubCategory(item.subCategory || '');
@@ -625,7 +697,9 @@ export default function ItemEditDialog({
   const currentReceipt = receipts.find((r) => r.id === receiptId);
   const currentReceiptCurrency = currentReceipt?.currency || 'USD';
   const unitCostInCents = Math.round(parseFloat(unitCostStr) * 100) || 0;
-  const originalCostInCents = unitCostInCents * quantity;
+  // Use safeQuantity for all calculations so NaN can never propagate into math
+  const safeQty = safeQuantity(quantity);
+  const originalCostInCents = unitCostInCents * safeQty;
   const totalItemDiscounts = discounts.reduce((acc, d) => acc + d.amount, 0);
   const effectiveCost = originalCostInCents - totalItemDiscounts;
   const isSuggestionConflict = !!(
@@ -640,7 +714,9 @@ export default function ItemEditDialog({
         id: item.id,
         name: name.trim(),
         cost: originalCostInCents,
-        quantity,
+        // Always write a sanitised quantity — prevents NaN from persisting
+        // in the Redux store and corrupting future calculations.
+        quantity: safeQty,
         unitCost: unitCostInCents,
         receiptId,
         discounts,
@@ -717,6 +793,22 @@ export default function ItemEditDialog({
     }
   };
 
+  /**
+   * When any input inside the form gains focus, wait for the keyboard
+   * animation to finish (≈350ms) then scroll the element into view.
+   *
+   * This covers both iOS (where the keyboard overlays content) and Android
+   * (where the viewport resizes and Radix's ScrollArea may not auto-scroll).
+   */
+  const handleFocusCapture = useCallback((e: React.FocusEvent) => {
+    const target = e.target as HTMLElement;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+      setTimeout(() => {
+        target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }, 350);
+    }
+  }, []);
+
   if (!item) return null;
 
   const formBodyProps: FormBodyProps = {
@@ -744,11 +836,33 @@ export default function ItemEditDialog({
   };
 
   // ── Mobile: vaul bottom-sheet ───────────────────────────────────────────────
+  //
+  // Key design decisions for keyboard compatibility:
+  //
+  // 1. `maxHeight: '92svh'` (small viewport height) instead of `92dvh`:
+  //    svh is stable — it does NOT recalculate when the keyboard appears on
+  //    Android (dvh does, causing the drawer to jank-resize mid-animation).
+  //
+  // 2. Footer buttons live INSIDE the ScrollArea (not in a separate sticky
+  //    DrawerFooter). This fixes the iOS bug where a sticky footer sits behind
+  //    the keyboard and becomes unreachable without dismissing it.
+  //    With the footer in the scroll content, the user simply scrolls down
+  //    to reach Save/Delete — and `iosKeyboardInset` adds exactly enough
+  //    bottom padding so the buttons scroll above the keyboard.
+  //
+  // 3. `onFocusCapture` scrolls the focused input into view after the keyboard
+  //    animation completes, covering cases where Radix's ScrollArea doesn't
+  //    auto-scroll (common on older iOS Safari).
+  //
   if (isMobile) {
     return (
       <Drawer open={isOpen} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[92dvh] flex flex-col">
-          <DrawerHeader className="px-4 pt-4 pb-3 text-left">
+        <DrawerContent
+          className="flex flex-col"
+          // svh: stable small-viewport height — unaffected by Android keyboard resize
+          style={{ maxHeight: '92svh' }}
+        >
+          <DrawerHeader className="px-4 pt-4 pb-3 text-left shrink-0">
             <DrawerTitle className="text-xl font-headline">Edit item</DrawerTitle>
             <DrawerDescription className="text-sm">
               {item.name}
@@ -760,25 +874,39 @@ export default function ItemEditDialog({
             </DrawerDescription>
           </DrawerHeader>
 
-          <form onSubmit={handleSaveAndClose} className="flex flex-col flex-1 min-h-0">
+          <form
+            onSubmit={handleSaveAndClose}
+            className="flex flex-col flex-1 min-h-0"
+            onFocusCapture={handleFocusCapture}
+          >
             <ScrollArea className="flex-1 min-h-0">
-              <div className="px-4 py-4">
+              <div className="px-4 pt-4">
                 <FormBody {...formBodyProps} />
-                {/* bottom padding so last field clears the footer */}
-                <div className="h-4" />
+              </div>
+
+              {/*
+               * Footer is part of the scroll content — not a sticky overlay.
+               * paddingBottom = iosKeyboardInset ensures these buttons can be
+               * scrolled above the iOS software keyboard.
+               * The extra 24px is standard spacing; env(safe-area-inset-bottom)
+               * is handled by the base DrawerContent class.
+               */}
+              <div
+                className="px-4 pt-5"
+                style={{
+                  paddingBottom: Math.max(iosKeyboardInset + 24, 24),
+                }}
+              >
+                <FooterContent
+                  item={item}
+                  effectiveCost={effectiveCost}
+                  currentReceiptCurrency={currentReceiptCurrency}
+                  onDelete={handleDeleteItem}
+                  onClose={() => onOpenChange(false)}
+                  isMobile
+                />
               </div>
             </ScrollArea>
-
-            <DrawerFooter className="px-4 py-4 bg-background/80 backdrop-blur-sm">
-              <FooterContent
-                item={item}
-                effectiveCost={effectiveCost}
-                currentReceiptCurrency={currentReceiptCurrency}
-                onDelete={handleDeleteItem}
-                onClose={() => onOpenChange(false)}
-                isMobile
-              />
-            </DrawerFooter>
           </form>
         </DrawerContent>
       </Drawer>

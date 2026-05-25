@@ -283,9 +283,14 @@ export default function ReceiptCard({
                 </span>
               )}
 
-              {/* Non-global currency */}
+              {/* Non-global currency badge — amber when exchange rate is missing */}
               {receipt.currency !== globalCurrency && receipt.status === 'processed' && (
-                <span className="text-xs font-medium text-muted-foreground bg-secondary/70 px-1.5 py-0.5 rounded">
+                <span className={cn(
+                  "text-[10px] font-semibold font-body uppercase tracking-[0.04em] px-1.5 py-[3px] rounded",
+                  receipt.exchangeRate
+                    ? "text-muted-foreground bg-secondary/70"
+                    : "text-amber-500 bg-amber-500/15"
+                )}>
                   {receipt.currency}
                 </span>
               )}
@@ -500,26 +505,35 @@ export default function ReceiptCard({
                       </div>
                     )}
 
-                    {receipt.currency !== globalCurrency && (
-                      <div className="flex justify-between text-muted-foreground text-xs">
-                        <span>Currency</span>
-                        <button
-                          onClick={() => setIsDetailsOpen(true)}
-                          className="font-medium hover:underline underline-offset-2"
-                        >
-                          {receipt.currency}
-                          {receipt.exchangeRate ? ` (1 ${receipt.currency} = ${receipt.exchangeRate} ${globalCurrency})` : ''}
-                        </button>
-                      </div>
-                    )}
-
                     <Separator className="opacity-50" />
 
-                    <div className="flex justify-between font-semibold text-base">
+                    {/* Total — local currency + optional conversion line */}
+                    <div className="flex justify-between items-start font-semibold text-base">
                       <span>Total</span>
-                      <span className={cn('font-mono', hasConflict && 'text-destructive')}>
-                        {formatCurrency(receiptTotal, receipt.currency)}
-                      </span>
+                      <div className="text-right">
+                        <span className={cn('font-mono', hasConflict && 'text-destructive')}>
+                          {formatCurrency(receiptTotal, receipt.currency)}
+                        </span>
+                        {receipt.currency !== globalCurrency && (
+                          <button
+                            onClick={() => setIsDetailsOpen(true)}
+                            className="block mt-0.5 ml-auto"
+                            aria-label="Edit exchange rate"
+                          >
+                            {receipt.exchangeRate ? (
+                              // Rate set — show converted equivalent
+                              <span className="text-xs font-normal font-body text-muted-foreground tabular-nums">
+                                ≈&nbsp;{formatCurrency(Math.round(receiptTotal * receipt.exchangeRate), globalCurrency)}
+                              </span>
+                            ) : (
+                              // Rate missing — amber prompt to set it
+                              <span className="text-[10px] font-semibold font-body uppercase tracking-[0.04em] text-amber-500 bg-amber-500/15 px-1.5 py-[3px] rounded">
+                                Set rate
+                              </span>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
