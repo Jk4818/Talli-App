@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { addParticipant, removeParticipant } from '@/lib/redux/slices/sessionSlice';
@@ -10,6 +10,7 @@ import { X, UserPlus, UserRoundPlus } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
+import { handleFocusCapture } from '@/lib/keyboard-utils';
 
 function getInitials(name: string) {
   const parts = name.trim().split(' ');
@@ -54,10 +55,22 @@ export default function ParticipantManager() {
 
   const isEmpty = participants.length === 0;
 
+  // Deferred focus for the empty-state input.
+  // Using useEffect instead of the `autoFocus` attribute avoids triggering the
+  // iOS keyboard before the page has settled (autoFocus fires synchronously
+  // during render, causing layout thrash on iOS before the scroll position
+  // is established).
+  useEffect(() => {
+    if (isEmpty) {
+      const id = setTimeout(() => inputRef.current?.focus(), 80);
+      return () => clearTimeout(id);
+    }
+  }, [isEmpty]);
+
   // ── Empty state: just the input, no strip ────────────────────────────────
   if (isEmpty) {
     return (
-      <form onSubmit={handleAdd} className="flex gap-2">
+      <form onSubmit={handleAdd} className="flex gap-2" onFocusCapture={handleFocusCapture}>
         <Input
           ref={inputRef}
           type="text"
@@ -66,7 +79,6 @@ export default function ParticipantManager() {
           placeholder="Who's splitting? Add a name…"
           aria-label="New participant name"
           className="flex-1 h-12 text-base"
-          autoFocus
         />
         <Button
           type="submit"
@@ -138,6 +150,7 @@ export default function ParticipantManager() {
           <motion.form
             key="form"
             onSubmit={handleAdd}
+            onFocusCapture={handleFocusCapture}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}

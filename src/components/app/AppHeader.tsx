@@ -13,8 +13,7 @@ import { UserNav } from '../auth/UserNav';
 import { calculateSplits } from '@/lib/splitter';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button'
-import { ThemeToggle } from '../ThemeToggle';
+import { Button } from '../ui/button';
 
 const steps = [
     { id: 1, name: 'Setup', description: 'Add participants & receipts' },
@@ -189,7 +188,6 @@ export function AppHeader() {
               </Link>
             </Button>
           )}
-          <ThemeToggle size="icon-sm" />
           <UserNav />
         </div>
       </div>

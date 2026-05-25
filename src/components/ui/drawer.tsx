@@ -42,10 +42,30 @@ const DrawerOverlay = React.forwardRef<
 ))
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
+interface DrawerContentProps
+  extends React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> {
+  /**
+   * iOS software keyboard height in pixels, from `useIosKeyboardInset()`.
+   *
+   * When non-zero, `paddingBottom` is set to `keyboardInset + env(safe-area-inset-bottom)`
+   * via an inline style. Because the drawer is `position: fixed; bottom: 0; height: auto`,
+   * the extra padding makes the element taller — and since it grows from the bottom, all
+   * content (header, scroll area, footer) shifts upward by exactly the keyboard height,
+   * clearing the keyboard. The keyboard slides under the transparent padding space.
+   *
+   * When zero (default), the inline style falls back to `env(safe-area-inset-bottom)` —
+   * identical to the previous static Tailwind class, so there is no regression for callers
+   * that do not pass this prop.
+   *
+   * @default 0
+   */
+  keyboardInset?: number;
+}
+
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  DrawerContentProps
+>(({ className, children, keyboardInset = 0, ...props }, ref) => (
   <DrawerPortal>
     <DrawerOverlay />
     <DrawerPrimitive.Content
@@ -57,10 +77,18 @@ const DrawerContent = React.forwardRef<
         "rounded-t-xl",
         // Glass surface — NO border
         "bg-popover/90 backdrop-blur-xl",
-        // Safe area for iOS home indicator
-        "pb-[env(safe-area-inset-bottom)]",
+        // Note: bottom padding is handled by the inline style below so we can
+        // dynamically combine safe-area-inset with the iOS keyboard inset.
         className
       )}
+      style={{
+        // Always include safe-area-inset-bottom so the home indicator is never
+        // obscured. When the keyboard is visible, add the keyboard height on
+        // top — this lifts the entire drawer above the keyboard.
+        paddingBottom: keyboardInset > 0
+          ? `calc(${keyboardInset}px + env(safe-area-inset-bottom))`
+          : 'env(safe-area-inset-bottom)',
+      }}
       {...props}
     >
       {/* Drag handle — 32px wide, 4px tall muted pill */}

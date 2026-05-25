@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useIosKeyboardInset } from '@/hooks/use-ios-keyboard-inset';
+import { handleFocusCapture } from '@/lib/keyboard-utils';
 import { Item, Receipt, Discount } from '@/lib/types';
 import {
   Dialog,
@@ -83,43 +85,6 @@ function safeQuantity(raw: unknown): number {
   const n = Number(raw);
   if (!Number.isFinite(n) || n < 1) return 1;
   return Math.round(n);
-}
-
-/**
- * Detect the iOS software keyboard height via the Visual Viewport API.
- *
- * On iOS, the layout viewport does NOT resize when the keyboard appears —
- * the keyboard overlays the content instead. `window.visualViewport.height`
- * shrinks while `window.innerHeight` stays constant, giving us the exact
- * keyboard height.
- *
- * On Android, BOTH heights shrink together (the layout viewport resizes), so
- * their difference stays near 0 — this hook returns 0 on Android, which is
- * the correct behaviour since the fixed drawer already moves up with the
- * viewport there.
- */
-function useIosKeyboardInset(enabled: boolean): number {
-  const [inset, setInset] = useState(0);
-
-  useEffect(() => {
-    if (!enabled || typeof window === 'undefined') return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    const update = () => {
-      const kb = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
-      setInset(kb);
-    };
-
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
-    return () => {
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
-    };
-  }, [enabled]);
-
-  return inset;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -794,22 +759,6 @@ export default function ItemEditDialog({
       onOpenChange(false);
     }
   };
-
-  /**
-   * When any input inside the form gains focus, wait for the keyboard
-   * animation to finish (≈350ms) then scroll the element into view.
-   *
-   * This covers both iOS (where the keyboard overlays content) and Android
-   * (where the viewport resizes and Radix's ScrollArea may not auto-scroll).
-   */
-  const handleFocusCapture = useCallback((e: React.FocusEvent) => {
-    const target = e.target as HTMLElement;
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
-      setTimeout(() => {
-        target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }, 350);
-    }
-  }, []);
 
   if (!item) return null;
 

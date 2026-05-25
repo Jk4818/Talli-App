@@ -44,6 +44,8 @@ import {
 import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
+import { useIosKeyboardInset } from '@/hooks/use-ios-keyboard-inset';
+import { handleFocusCapture } from '@/lib/keyboard-utils';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'INR', 'CNY', 'CHF', 'NZD'];
 
@@ -61,6 +63,9 @@ export default function ReceiptDetailsSheet({
   const dispatch = useDispatch<AppDispatch>();
   const isMobile = useSelector((state: RootState) => state.ui.isMobile);
   const globalCurrency = useSelector((state: RootState) => state.session.globalCurrency);
+
+  // Track iOS keyboard height so the drawer lifts above it when inputs are focused.
+  const iosKeyboardInset = useIosKeyboardInset(!!isMobile && open);
 
   const handleUpdate = (updates: Partial<Receipt>) => {
     dispatch(updateReceipt({ id: receipt.id, ...updates }));
@@ -169,11 +174,22 @@ export default function ReceiptDetailsSheet({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent keyboardInset={iosKeyboardInset}>
           <DrawerHeader className="text-left">
             <DrawerTitle>Receipt details</DrawerTitle>
           </DrawerHeader>
-          <ScrollArea className="max-h-[60vh]">{content}</ScrollArea>
+          {/*
+            Native overflow-y-auto instead of Radix ScrollArea — required so
+            scrollIntoView can cross the scroll boundary (Radix uses
+            overflow:hidden on its root which blocks the browser algorithm).
+          */}
+          <div
+            className="overflow-y-auto overscroll-contain"
+            style={{ maxHeight: '60vh' }}
+            onFocusCapture={handleFocusCapture}
+          >
+            {content}
+          </div>
           <DrawerFooter>
             <Button onClick={() => onOpenChange(false)}>Done</Button>
           </DrawerFooter>

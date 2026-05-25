@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ReduxProvider } from '@/lib/redux/provider';
 import { Toaster } from '@/components/ui/toaster';
@@ -8,6 +8,24 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { UIStateInitializer } from '@/components/UIStateInitializer';
 import { Analytics } from '@vercel/analytics/react';
 import { ThemeProvider } from 'next-themes';
+
+/**
+ * Viewport config — kept separate from metadata per Next.js 14 convention.
+ *
+ * `interactiveWidget: 'resizes-content'` tells Android Chrome 108+ to shrink
+ * the *layout* viewport (not just the visual viewport) when the software
+ * keyboard opens. This means `dvh` units, flexbox heights, and
+ * `position: fixed; bottom: 0` elements all adapt automatically — the
+ * keyboard pushes the whole layout up rather than overlaying it.
+ *
+ * iOS ignores this value entirely (WebKit always overlays the keyboard);
+ * iOS keyboard handling is done per-component via `useIosKeyboardInset`.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  interactiveWidget: 'resizes-content',
+};
 
 export const metadata: Metadata = {
   title: 'Talli - Effortless Bill Splitting',

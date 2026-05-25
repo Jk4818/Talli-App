@@ -32,6 +32,8 @@ import {
   DrawerFooter,
 } from '../ui/drawer';
 import { ScrollArea } from '../ui/scroll-area';
+import { useIosKeyboardInset } from '@/hooks/use-ios-keyboard-inset';
+import { handleFocusCapture } from '@/lib/keyboard-utils';
 
 interface BillAdjustmentsSheetProps {
   receipt: Receipt;
@@ -49,6 +51,10 @@ export default function BillAdjustmentsSheet({
   const dispatch = useDispatch<AppDispatch>();
   const isMobile = useSelector((state: RootState) => state.ui.isMobile);
   const items = useSelector((state: RootState) => state.session.items);
+
+  // Track iOS keyboard height so the drawer can lift above it.
+  // Gated on isMobile && open — zero overhead when closed or on desktop.
+  const iosKeyboardInset = useIosKeyboardInset(!!isMobile && open);
 
   const discounts = receipt.discounts || [];
 
@@ -171,7 +177,6 @@ export default function BillAdjustmentsSheet({
                   onChange={(e) => setScValueStr(e.target.value)}
                   onBlur={handleScValueBlur}
                   className="w-24 text-right"
-                  autoFocus
                 />
               </div>
             )}
@@ -190,7 +195,6 @@ export default function BillAdjustmentsSheet({
                     onChange={(e) => setScValueStr(e.target.value)}
                     onBlur={handleScValueBlur}
                     className="w-20 text-right"
-                    autoFocus
                   />
                   <span className="text-sm text-muted-foreground">%</span>
                 </div>
@@ -268,11 +272,24 @@ export default function BillAdjustmentsSheet({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        {/*
+          keyboardInset lifts the drawer above the iOS keyboard.
+          Native overflow-y-auto (not Radix ScrollArea) is required so
+          scrollIntoView can traverse the scroll boundary — Radix ScrollArea
+          uses overflow:hidden on its root, which blocks the browser's
+          scroll-into-view algorithm.
+        */}
+        <DrawerContent keyboardInset={iosKeyboardInset}>
           <DrawerHeader className="text-left">
             <DrawerTitle>Bill Adjustments</DrawerTitle>
           </DrawerHeader>
-          <ScrollArea className="max-h-[60vh]">{content}</ScrollArea>
+          <div
+            className="overflow-y-auto overscroll-contain"
+            style={{ maxHeight: '60vh' }}
+            onFocusCapture={handleFocusCapture}
+          >
+            {content}
+          </div>
           <DrawerFooter>
             <Button onClick={() => onOpenChange(false)}>Done</Button>
           </DrawerFooter>
