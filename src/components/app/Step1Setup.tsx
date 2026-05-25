@@ -310,7 +310,7 @@ export default function Step1Setup() {
 
           {/* Settlement currency chip */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">Settling in</span>
+            <span className="text-xs text-muted-foreground">All amounts in</span>
             <ResponsiveSelect value={globalCurrency} onValueChange={(c) => dispatch(setGlobalCurrency(c))}>
               <ResponsiveSelectTrigger className="h-7 text-xs px-2 w-auto gap-1 bg-primary/15 text-primary rounded-full">
                 {globalCurrency}

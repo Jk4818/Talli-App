@@ -251,7 +251,7 @@ export default function Step3Summary() {
                     </div>
                     <div>
                         <CardTitle className="text-[13px] font-semibold font-body">Settlement Plan</CardTitle>
-                        <CardDescription className="text-xs">Mark each payment as it's made.</CardDescription>
+                        <CardDescription className="text-xs">All amounts in {globalCurrency} · mark each payment as made.</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent className="pt-0 px-3 pb-3">

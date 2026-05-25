@@ -283,7 +283,7 @@ export default function ReceiptCard({
                 </span>
               )}
 
-              {/* Non-global currency badge — amber when exchange rate is missing */}
+              {/* Non-global currency badge — amber with action hint when exchange rate is missing */}
               {receipt.currency !== globalCurrency && receipt.status === 'processed' && (
                 <span className={cn(
                   "text-[10px] font-semibold font-body uppercase tracking-[0.04em] px-1.5 py-[3px] rounded",
@@ -291,7 +291,7 @@ export default function ReceiptCard({
                     ? "text-muted-foreground bg-secondary/70"
                     : "text-amber-500 bg-amber-500/15"
                 )}>
-                  {receipt.currency}
+                  {receipt.exchangeRate ? receipt.currency : `${receipt.currency} · rate?`}
                 </span>
               )}
             </div>

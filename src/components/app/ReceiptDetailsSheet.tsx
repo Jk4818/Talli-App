@@ -42,6 +42,7 @@ import {
   ResponsiveSelectTrigger,
 } from '../ui/responsive-select';
 import { Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'INR', 'CNY', 'CHF', 'NZD'];
@@ -107,10 +108,14 @@ export default function ReceiptDetailsSheet({
       {/* Exchange rate — only when different from global */}
       {receipt.currency !== globalCurrency && (
         <div className="space-y-1.5">
-          <Label>Exchange rate</Label>
-          <p className="text-xs text-muted-foreground -mt-0.5">
-            How many {globalCurrency} does 1 {receipt.currency} equal?
-          </p>
+          <Label className="flex items-center gap-1.5">
+            Exchange rate
+            {!receipt.exchangeRate && (
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-500">
+                · required
+              </span>
+            )}
+          </Label>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground shrink-0">
               1 {receipt.currency} =
@@ -118,14 +123,17 @@ export default function ReceiptDetailsSheet({
             <Input
               type="text"
               inputMode="decimal"
-              placeholder="e.g. 1.25"
+              placeholder="0.00"
               defaultValue={receipt.exchangeRate}
               onBlur={(e) =>
                 handleUpdate({
                   exchangeRate: parseFloat(e.target.value) || undefined,
                 })
               }
-              className="max-w-[120px]"
+              className={cn(
+                "max-w-[120px]",
+                !receipt.exchangeRate && "ring-2 ring-amber-400 focus-visible:ring-amber-400"
+              )}
             />
             <span className="text-sm text-muted-foreground shrink-0">{globalCurrency}</span>
           </div>
