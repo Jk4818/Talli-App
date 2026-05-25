@@ -11,12 +11,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-} from '@/components/ui/drawer';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetClose,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +41,7 @@ import {
   Pencil,
   Layers,
   AlertCircle,
+  X,
 } from 'lucide-react';
 import {
   ResponsiveSelect,
@@ -835,81 +837,92 @@ export default function ItemEditDialog({
     currentReceiptCurrency,
   };
 
-  // ── Mobile: vaul bottom-sheet ───────────────────────────────────────────────
+  // ── Mobile: full-screen sheet (Radix Dialog base, no drag gesture) ──────────
   //
-  // Key design decisions for keyboard compatibility:
+  // Replacing the vaul Drawer solves three distinct issues:
   //
-  // 1. `maxHeight: '92svh'` (small viewport height) instead of `92dvh`:
-  //    svh is stable — it does NOT recalculate when the keyboard appears on
-  //    Android (dvh does, causing the drawer to jank-resize mid-animation).
+  // 1. Scroll-to-dismiss conflict: vaul intercepts downward swipes when the
+  //    scroll container is at the top, making the form dismiss mid-scroll.
+  //    A Radix Sheet has no drag gesture — scroll is never misread as dismiss.
   //
-  // 2. Footer buttons live INSIDE the ScrollArea (not in a separate sticky
-  //    DrawerFooter). This fixes the iOS bug where a sticky footer sits behind
-  //    the keyboard and becomes unreachable without dismissing it.
-  //    With the footer in the scroll content, the user simply scrolls down
-  //    to reach Save/Delete — and `iosKeyboardInset` adds exactly enough
-  //    bottom padding so the buttons scroll above the keyboard.
+  // 2. Keyboard jitter: vaul re-animates its height on every visual-viewport
+  //    resize event (i.e. every keyboard open/close). A Sheet at `h-dvh` is a
+  //    fixed-size overlay with no height recalculation, so there's no judder.
   //
-  // 3. `onFocusCapture` scrolls the focused input into view after the keyboard
-  //    animation completes, covering cases where Radix's ScrollArea doesn't
-  //    auto-scroll (common on older iOS Safari).
+  // 3. Native scroll + overscroll-contain: replacing Radix ScrollArea with a
+  //    plain `overflow-y-auto` div and `overscroll-contain` gives the browser
+  //    full control over touch scrolling and guarantees scroll stops cleanly
+  //    at the container boundary without bleeding to the backdrop.
+  //
+  // Footer lives OUTSIDE the scroll area (sticky at the bottom of the flex
+  // column). `iosKeyboardInset` tracks the iOS keyboard overlay height and adds
+  // equivalent bottom padding so Save/Delete are always reachable above it.
+  // `onFocusCapture` still auto-scrolls the active input into view on older iOS.
   //
   if (isMobile) {
     return (
-      <Drawer open={isOpen} onOpenChange={onOpenChange}>
-        <DrawerContent
-          className="flex flex-col"
-          // svh: stable small-viewport height — unaffected by Android keyboard resize
-          style={{ maxHeight: '92svh' }}
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          className={cn(
+            // Full-screen overrides: remove rounded top corners, strip default
+            // padding, and hide the auto-rendered SheetClose so we can place
+            // our own inside the header for a clean flex layout.
+            '!rounded-none !p-0 !pb-0 h-dvh flex flex-col',
+            '[&>button:last-of-type]:hidden',
+          )}
         >
-          <DrawerHeader className="px-4 pt-4 pb-3 text-left shrink-0">
-            <DrawerTitle className="text-xl font-headline">Edit item</DrawerTitle>
-            <DrawerDescription className="text-sm">
-              {item.name}
-              {pendingSuggestion && (
-                <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
-                  <Sparkles className="h-3 w-3" /> AI suggestion
-                </span>
-              )}
-            </DrawerDescription>
-          </DrawerHeader>
+          {/* Header */}
+          <SheetHeader className="flex-row items-start justify-between gap-3 px-4 pt-4 pb-3 shrink-0 border-b !space-y-0">
+            <div className="min-w-0 flex-1 pt-0.5">
+              <SheetTitle className="text-xl font-headline">Edit item</SheetTitle>
+              <SheetDescription className="text-sm mt-0.5">
+                {item.name}
+                {pendingSuggestion && (
+                  <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
+                    <Sparkles className="h-3 w-3" /> AI suggestion
+                  </span>
+                )}
+              </SheetDescription>
+            </div>
+            <SheetClose asChild>
+              <Button variant="ghost" size="icon" className="shrink-0 -mr-1 mt-0.5">
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close without saving</span>
+              </Button>
+            </SheetClose>
+          </SheetHeader>
 
+          {/* Form */}
           <form
             onSubmit={handleSaveAndClose}
             className="flex flex-col flex-1 min-h-0"
             onFocusCapture={handleFocusCapture}
           >
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="px-4 pt-4">
-                <FormBody {...formBodyProps} />
-              </div>
+            {/* Native scroll container — no Radix ScrollArea */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+              <FormBody {...formBodyProps} />
+            </div>
 
-              {/*
-               * Footer is part of the scroll content — not a sticky overlay.
-               * paddingBottom = iosKeyboardInset ensures these buttons can be
-               * scrolled above the iOS software keyboard.
-               * The extra 24px is standard spacing; env(safe-area-inset-bottom)
-               * is handled by the base DrawerContent class.
-               */}
-              <div
-                className="px-4 pt-5"
-                style={{
-                  paddingBottom: Math.max(iosKeyboardInset + 24, 24),
-                }}
-              >
-                <FooterContent
-                  item={item}
-                  effectiveCost={effectiveCost}
-                  currentReceiptCurrency={currentReceiptCurrency}
-                  onDelete={handleDeleteItem}
-                  onClose={() => onOpenChange(false)}
-                  isMobile
-                />
-              </div>
-            </ScrollArea>
+            {/* Sticky footer — always visible, keyboard-aware bottom padding */}
+            <div
+              className="shrink-0 px-4 pt-4 border-t bg-popover/90 backdrop-blur-xl"
+              style={{
+                paddingBottom: Math.max(iosKeyboardInset + 16, 16),
+              }}
+            >
+              <FooterContent
+                item={item}
+                effectiveCost={effectiveCost}
+                currentReceiptCurrency={currentReceiptCurrency}
+                onDelete={handleDeleteItem}
+                onClose={() => onOpenChange(false)}
+                isMobile
+              />
+            </div>
           </form>
-        </DrawerContent>
-      </Drawer>
+        </SheetContent>
+      </Sheet>
     );
   }
 
